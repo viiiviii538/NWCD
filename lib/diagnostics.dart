@@ -62,6 +62,14 @@ class SecurityReport {
   });
 }
 
+class NetworkSpeed {
+  final double downloadMbps;
+  final double uploadMbps;
+  final double pingMs;
+
+  const NetworkSpeed(this.downloadMbps, this.uploadMbps, this.pingMs);
+}
+
 /// Runs the system ping command.
 Future<String> runPing([String host = 'google.com']) async {
   final args = Platform.isWindows ? ['-n', '4', host] : ['-c', '4', host];
@@ -70,6 +78,24 @@ Future<String> runPing([String host = 'google.com']) async {
     return result.stdout.toString();
   } catch (e) {
     return 'Failed to run ping: $e';
+  }
+}
+
+/// Measures network speed using the `network_speed.py` script.
+Future<NetworkSpeed?> measureNetworkSpeed() async {
+  const script = 'network_speed.py';
+  try {
+    final result = await Process.run('python', [script]);
+    if (result.exitCode != 0) {
+      return null;
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final down = (data['download'] as num).toDouble();
+    final up = (data['upload'] as num).toDouble();
+    final ping = (data['ping'] as num).toDouble();
+    return NetworkSpeed(down, up, ping);
+  } catch (_) {
+    return null;
   }
 }
 
