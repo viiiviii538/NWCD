@@ -78,7 +78,10 @@ def _run_nmap_scan(subnet):
     if not subnet:
         raise ValueError('subnet is required for nmap scan')
     cmd = ['nmap', '-sn', subnet, '-oX', '-']
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+    except FileNotFoundError as e:
+        raise RuntimeError('nmap command not found') from e
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip())
     root = ET.fromstring(proc.stdout)
