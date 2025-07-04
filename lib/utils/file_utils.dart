@@ -1,4 +1,4 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart' as fs;
 import 'package:path/path.dart' as p;
 import 'dart:io';
 
@@ -8,11 +8,8 @@ import 'dart:io';
 /// to the user in the dialog.
 Future<String?> getSavePath({String suggestedName = 'report.txt'}) async {
   try {
-    final path = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save Report',
-      fileName: suggestedName,
-    );
-    return path;
+    final location = await fs.getSaveLocation(suggestedName: suggestedName);
+    return location?.path;
   } catch (e) {
     return null;
   }
