@@ -27,3 +27,5 @@ report.txt
 
 windows/flutter/ephemeral/
 .flutter-plugins-dependencies
+
+.flutter-plugins
