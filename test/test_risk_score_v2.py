@@ -32,14 +32,14 @@ class CalcRiskScoreV2Test(unittest.TestCase):
         score, _ = calc_risk_score_v2(ports, ["RU", "CN"])
         self.assertEqual(score, 10.0)
         utm = calc_utm_items(score, ports, ["RU", "CN"])
-        self.assertEqual(utm, ["firewall", "web_filter"])
+        self.assertEqual(utm, ["firewall", "ips", "web_filter"])
 
     def test_calc_utm_items(self):
         ports = ["3389"]
         countries = ["CN"]
         score, _ = calc_risk_score_v2(ports, countries, True)
         utm = calc_utm_items(score, ports, countries)
-        self.assertEqual(utm, ["firewall", "web_filter"])
+        self.assertEqual(utm, ["firewall", "ips", "web_filter"])
 
     def test_mixed_countries(self):
         score, warnings = calc_risk_score_v2([], ["JP", "RU"])

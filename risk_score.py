@@ -100,7 +100,7 @@ def main():
         name = dev.get("device") or dev.get("ip") or "unknown"
         ports = dev.get("open_ports", [])
         countries = dev.get("countries", [])
-        score, warns = calc_risk([str(p) for p in ports], [c.upper() for c in countries])
+        score, warns = calc_risk_score_v2([str(p) for p in ports], [c.upper() for c in countries])
         warn_text = "; ".join(warns) if warns else ""
         print(f"{name}\tScore: {score}\t{warn_text}")
 

@@ -9,7 +9,7 @@ import html
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
-from risk_score import calc_risk
+from risk_score import calc_risk_score_v2
 from common_constants import DANGER_COUNTRIES
 try:
     from generate_csv_report import calc_utm_items
@@ -21,7 +21,7 @@ except Exception:  # pragma: no cover - fallback if script renamed
             items.add("firewall")
         if any(str(c).upper() in DANGER_COUNTRIES for c in countries):
             items.add("web_filter")
-        if score >= 50:
+        if score >= 5:
             items.add("ips")
         return sorted(items)
 
@@ -104,13 +104,13 @@ def generate_html(data: Any) -> str:
         ip = dev.get("ip") or dev.get("device") or ""
         ports = [str(p) for p in dev.get("open_ports", [])]
         countries = _collect_countries(dev)
-        score, _ = calc_risk(ports, countries)
+        score, _ = calc_risk_score_v2(ports, countries)
         utm = calc_utm_items(score, ports, countries)
         all_utm.update(utm)
         cls = ""
-        if score >= 80:
+        if score >= 8:
             cls = "score-high"
-        elif score >= 50:
+        elif score >= 5:
             cls = "score-mid"
         parts.append(f"<tr class='{cls}'><td>{_escape(ip)}</td><td>{score}</td></tr>")
     parts.append("</table>")
