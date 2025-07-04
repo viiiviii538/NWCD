@@ -1,0 +1,29 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub/
+build/
+
+# Visual Studio Code
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Generated reports
+report_*.txt
+*_report.csv
+report.txt
+
+# IDE files
+*.iml
+
+windows/flutter/ephemeral/
+.flutter-plugins-dependencies

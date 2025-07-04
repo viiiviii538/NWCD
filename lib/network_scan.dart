@@ -1,0 +1,37 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+/// Represents a discovered network device.
+class NetworkDevice {
+  final String ip;
+  final String mac;
+  final String vendor;
+
+  const NetworkDevice(this.ip, this.mac, this.vendor);
+}
+
+/// Runs the LAN discovery script and returns a list of devices.
+Future<List<NetworkDevice>> scanNetwork() async {
+  const script = 'discover_hosts.py';
+  try {
+    final result = await Process.run('python', [script]);
+    if (result.exitCode != 0) {
+      throw result.stderr.toString();
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final devices = <NetworkDevice>[];
+    if (data.containsKey('hosts')) {
+      for (final item in data['hosts']) {
+        devices.add(NetworkDevice(
+          item['ip'] ?? '',
+          item['mac'] ?? '',
+          item['vendor'] ?? '',
+        ));
+      }
+    }
+    return devices;
+  } catch (_) {
+    return [];
+  }
+}

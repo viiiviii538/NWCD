@@ -1,0 +1,4 @@
+geoip2
+psutil
+pdfkit
+weasyprint
