@@ -57,6 +57,17 @@ python port_scan.py <host> [port_list]
 
 `discover_hosts.py` は `arp-scan --localnet` または `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。
 
+### PATH の確認
+
+`discover_hosts.py` が外部ツールとして呼び出す `nmap` または `arp-scan` は PATH に含まれている必要があります。次のコマンドで認識されるか確認してください。
+
+```bash
+nmap -V # または arp-scan --version
+```
+
+表示されない場合はインストール先を PATH に追加してください。
+
+
 ## LAN + Port Scan
 
 `lan_port_scan.py` は上記 2 つの機能を組み合わせ、LAN 内の各ホストを自動で検出した後、指定したポート (未指定時は主要ポート) をスキャンします。次のように実行します。
