@@ -12,12 +12,15 @@ class NetworkDevice {
 }
 
 /// Runs the LAN discovery script and returns a list of devices.
-Future<List<NetworkDevice>> scanNetwork() async {
+Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}) async {
   const script = 'discover_hosts.py';
   try {
     final result = await Process.run('python', [script]);
     if (result.exitCode != 0) {
-      throw result.stderr.toString();
+      final msg = result.stderr.toString();
+      print(msg);
+      if (onError != null) onError(msg);
+      return [];
     }
     final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
     final devices = <NetworkDevice>[];
@@ -31,7 +34,9 @@ Future<List<NetworkDevice>> scanNetwork() async {
       }
     }
     return devices;
-  } catch (_) {
+  } catch (e) {
+    print(e);
+    if (onError != null) onError(e.toString());
     return [];
   }
 }

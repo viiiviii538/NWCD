@@ -50,7 +50,12 @@ class _HomePageState extends State<HomePage> {
       _output = '診断中...\n';
     });
 
-    final devices = await net.scanNetwork();
+    final devices = await net.scanNetwork(onError: (msg) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('LANスキャン失敗: $msg')));
+      }
+    });
     setState(() {
       _devices = devices;
     });
