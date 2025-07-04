@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import re
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Any
 import sys
 
 from discover_hosts import _get_subnet
