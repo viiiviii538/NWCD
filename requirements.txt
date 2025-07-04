@@ -2,3 +2,5 @@ geoip2
 psutil
 pdfkit
 weasyprint
+
+speedtest-cli
