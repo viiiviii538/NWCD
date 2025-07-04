@@ -11,20 +11,22 @@ from urllib.request import urlopen
 
 def _get_subnet():
     if os.name == 'nt':
+        # Windows - parse output of ipconfig for IPv4 address and subnet mask.
         try:
             proc = subprocess.run(['ipconfig'], capture_output=True, text=True)
             if proc.returncode == 0:
                 ip = None
                 mask = None
                 for line in proc.stdout.splitlines():
-                    if 'IPv4 Address' in line or line.strip().startswith('IPv4'):
-                        parts = line.split(':')
-                        if len(parts) > 1:
-                            ip = parts[1].strip()
-                    elif 'Subnet Mask' in line:
-                        parts = line.split(':')
-                        if len(parts) > 1:
-                            mask = parts[1].strip()
+                    line = line.strip()
+                    if not ip:
+                        m = re.search(r'IPv4[^:]*:\s*(\d+\.\d+\.\d+\.\d+)', line)
+                        if m:
+                            ip = m.group(1)
+                    if not mask:
+                        m = re.search(r'Subnet[^:]*Mask[^:]*:\s*(\d+\.\d+\.\d+\.\d+)', line)
+                        if m:
+                            mask = m.group(1)
                     if ip and mask:
                         break
                 if ip and mask:
@@ -73,6 +75,8 @@ def _run_arp_scan():
     raise RuntimeError('arp-scan failed')
 
 def _run_nmap_scan(subnet):
+    if not subnet:
+        raise ValueError('subnet is required for nmap scan')
     cmd = ['nmap', '-sn', subnet, '-oX', '-']
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
