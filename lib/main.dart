@@ -9,6 +9,7 @@ import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/file_utils.dart' as utils;
+import 'package:nwc_densetsu/progress_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'NWC Densetsu',
+      title: 'NWCD',
       home: HomePage(),
     );
   }
@@ -39,6 +40,8 @@ class _HomePageState extends State<HomePage> {
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
   bool _lanScanning = false;
+  final Map<String, int> _progress = {};
+  static const int _taskCount = 3; // port, SSL, SPF
 
 
   Future<void> _runLanScan() async {
@@ -48,6 +51,7 @@ class _HomePageState extends State<HomePage> {
       _scanResults = [];
       _reports = [];
       _output = '診断中...\n';
+      _progress.clear();
     });
 
     final devices = await net.scanNetwork(onError: (msg) {
@@ -58,6 +62,9 @@ class _HomePageState extends State<HomePage> {
     });
     setState(() {
       _devices = devices;
+      for (final d in devices) {
+        _progress[d.ip] = 0;
+      }
     });
 
     final buffer = StringBuffer();
@@ -67,16 +74,31 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final summary = await diag.scanPorts(ip);
+      final portFuture = diag.scanPorts(ip).then((value) {
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+        return value;
+      });
+      final sslFuture = diag.checkSslCertificate(ip).then((value) {
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+        return value;
+      });
+      final spfFuture = diag.checkSpfRecord(ip).then((value) {
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+        return value;
+      });
+
+      final results = await Future.wait([portFuture, sslFuture, spfFuture]);
+
+      final summary = results[0] as PortScanSummary;
+      final sslRes = results[1] as SslResult;
+      final spfRes = results[2] as String;
+
       _scanResults.add(summary);
       for (final r in summary.results) {
         buffer.writeln('Port ${r.port}: ${r.state} ${r.service}');
       }
 
-      final sslRes = await diag.checkSslCertificate(ip);
       buffer.writeln(sslRes.message);
-
-      final spfRes = await diag.checkSpfRecord(ip);
       buffer.writeln(spfRes);
 
       final report = await diag.runSecurityReport(
@@ -96,6 +118,8 @@ class _HomePageState extends State<HomePage> {
       if (report.score <= 5) {
         buffer.writeln('UTM導入を推奨します');
       }
+
+      setState(() => _progress.remove(ip));
     }
 
     setState(() {
@@ -123,7 +147,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NWC Densetsu')),
+      appBar: AppBar(title: const Text('NWCD')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -138,6 +162,10 @@ class _HomePageState extends State<HomePage> {
             if (_lanScanning) ...[
               const SizedBox(height: 8),
               const CircularProgressIndicator(),
+              ScanningProgressList(
+                progress: _progress,
+                taskCount: _taskCount,
+              ),
             ],
             const SizedBox(height: 8),
             ElevatedButton(

@@ -1,6 +1,6 @@
 {
-    "name": "nwc_densetsu",
-    "short_name": "nwc_densetsu",
+    "name": "NWCD",
+    "short_name": "NWCD",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
