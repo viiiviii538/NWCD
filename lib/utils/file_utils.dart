@@ -8,7 +8,12 @@ import 'dart:io';
 /// to the user in the dialog.
 Future<String?> getSavePath({String suggestedName = 'report.txt'}) async {
   try {
-    final loc = await fs.getSaveLocation(suggestedName: suggestedName);
+    final loc = await fs.getSaveLocation(
+      suggestedName: suggestedName,
+      acceptedTypeGroups: const [
+        fs.XTypeGroup(label: 'text', extensions: ['txt'])
+      ],
+    );
     return loc?.path;
   } catch (e) {
     return null;
