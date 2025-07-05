@@ -11,6 +11,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/file_utils.dart' as utils;
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
+import 'package:nwc_densetsu/result_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -146,6 +147,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _openResultPage() {
+    final items = [
+      const DiagnosticItem(
+        name: 'ポート開放',
+        description: '不要なポートが開いています',
+        status: 'warning',
+      ),
+      const DiagnosticItem(
+        name: 'SSL 証明書',
+        description: '証明書の有効期限切れ',
+        status: 'danger',
+      ),
+    ];
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DiagnosticResultPage(
+          securityScore: 7,
+          riskScore: 4,
+          items: items,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,6 +198,11 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: _saveReportFile,
               child: const Text('レポート保存'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _openResultPage,
+              child: const Text('診断結果ページ'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
