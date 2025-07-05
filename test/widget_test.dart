@@ -15,7 +15,7 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     // Verify that the main title and LAN scan button are present.
-    expect(find.text('NWC Densetsu'), findsOneWidget);
+    expect(find.text('NWCD'), findsOneWidget);
     expect(find.text('LANスキャン'), findsOneWidget);
     expect(find.text('レポート保存'), findsOneWidget);
   });

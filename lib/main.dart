@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'NWC Densetsu',
+      title: 'NWCD',
       home: HomePage(),
     );
   }
@@ -147,7 +147,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NWC Densetsu')),
+      appBar: AppBar(title: const Text('NWCD')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
