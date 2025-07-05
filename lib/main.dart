@@ -9,6 +9,7 @@ import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/file_utils.dart' as utils;
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 
 void main() {
@@ -131,16 +132,17 @@ class _HomePageState extends State<HomePage> {
 
 
   Future<void> _saveReportFile() async {
-    final now = DateTime.now();
-    final stamp =
-        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}';
-    final path = await utils.getSavePath(suggestedName: 'report_$stamp.txt');
-    if (path == null) return;
-    final file = File(path);
-    await file.writeAsString(_output);
-    if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('保存完了')));
+    try {
+      await report_utils.savePdfReport(_reports);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('保存完了')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('保存失敗: $e')));
+      }
     }
   }
 
