@@ -9,8 +9,21 @@ import html
 from pathlib import Path
 from typing import Any, Dict, List
 
-from risk_score import calc_risk_score_v2
-from report_utils import calc_utm_items
+from risk_score import calc_risk_score
+from common_constants import DANGER_COUNTRIES
+try:
+    from generate_csv_report import calc_utm_items
+except Exception:  # pragma: no cover - fallback if script renamed
+
+    def calc_utm_items(score: int, open_ports: Iterable[str], countries: Iterable[str]) -> List[str]:
+        items = set()
+        if list(open_ports):
+            items.add("firewall")
+        if any(str(c).upper() in DANGER_COUNTRIES for c in countries):
+            items.add("web_filter")
+        if score >= 5:
+            items.add("ips")
+        return sorted(items)
 
 try:
     import pdfkit  # type: ignore
@@ -91,7 +104,7 @@ def generate_html(data: Any) -> str:
         ip = dev.get("ip") or dev.get("device") or ""
         ports = [str(p) for p in dev.get("open_ports", [])]
         countries = _collect_countries(dev)
-        score, _ = calc_risk_score_v2(ports, countries)
+        score, _ = calc_risk_score(ports, countries)
         utm = calc_utm_items(score, ports, countries)
         all_utm.update(utm)
         cls = ""
