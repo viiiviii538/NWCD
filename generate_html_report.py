@@ -7,23 +7,10 @@ import argparse
 import json
 import html
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 from risk_score import calc_risk_score_v2
-from common_constants import DANGER_COUNTRIES
-try:
-    from generate_csv_report import calc_utm_items
-except Exception:  # pragma: no cover - fallback if script renamed
-
-    def calc_utm_items(score: int, open_ports: Iterable[str], countries: Iterable[str]) -> List[str]:
-        items = set()
-        if list(open_ports):
-            items.add("firewall")
-        if any(str(c).upper() in DANGER_COUNTRIES for c in countries):
-            items.add("web_filter")
-        if score >= 5:
-            items.add("ips")
-        return sorted(items)
+from report_utils import calc_utm_items
 
 try:
     import pdfkit  # type: ignore
