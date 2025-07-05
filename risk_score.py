@@ -6,9 +6,6 @@ import sys
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
 
-# Weight factor for converting raw country points to the 0--4 range.
-COUNTRY_SCORE_WEIGHT = 1 / 12.5
-
 # Score added when encountering an unknown port.
 # Unknown services still add a small amount of risk.
 UNKNOWN_PORT_POINTS = 0.5
