@@ -56,11 +56,13 @@ pip install -r requirements.txt
 
 
 `port_scan.py` スクリプトでは `nmap` を利用して指定したポート、またはポート指定が
-ない場合は全ポート (`-p-`) を自動的にスキャンし、結果を JSON 形式で出力します。LAN
-スキャン機能で各ホストの診断に使われるほか、次のように単体でも実行できます。
+ない場合は全ポート (`-p-`) をスキャンし、結果を JSON 形式で出力します。`-sV` による
+サービスバージョン検出や `-O` による OS 推定、さらに任意の NSE スクリプトを指定でき
+るようになりました。LAN スキャン機能で各ホストの診断に使われるほか、次のように単体
+でも実行できます。
 
 ```bash
-python port_scan.py <host> [port_list]
+python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 ```
 
 ## LAN デバイス一覧取得
@@ -83,7 +85,7 @@ nmap -V # または arp-scan --version
 `lan_port_scan.py` は上記 2 つの機能を組み合わせ、LAN 内の各ホストを自動で検出した後、指定したポート (未指定時は主要ポート) をスキャンします。次のように実行します。
 
 ```bash
-python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80
+python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 ```
 
 出力例:

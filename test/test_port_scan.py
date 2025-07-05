@@ -12,5 +12,14 @@ class PortScanScriptTest(unittest.TestCase):
                 'nmap', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
 
+    def test_run_scan_with_options(self):
+        xml = "<nmaprun></nmaprun>"
+        with patch('subprocess.run') as m:
+            m.return_value = MagicMock(returncode=0, stdout=xml)
+            port_scan.run_scan('1.1.1.1', [], service=True, os_detect=True, scripts=['vuln'])
+            m.assert_called_with([
+                'nmap', '-sV', '-O', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
+            ], capture_output=True, text=True)
+
 if __name__ == '__main__':
     unittest.main()
