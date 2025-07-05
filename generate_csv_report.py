@@ -6,18 +6,7 @@ import csv
 from typing import List, Dict
 
 from risk_score import calc_risk_score_v2
-from common_constants import DANGER_COUNTRIES
-
-
-def calc_utm_items(score: int, open_ports: List[str], countries: List[str]) -> List[str]:
-    items = set()
-    if open_ports:
-        items.add("firewall")
-    if any(c.upper() in DANGER_COUNTRIES for c in countries):
-        items.add("web_filter")
-    if score >= 5:
-        items.add("ips")
-    return sorted(items)
+from report_utils import calc_utm_items
 
 
 def generate_report(devices: List[Dict]) -> List[List[str]]:
