@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
-    show PortScanSummary, SecurityReport;
+    show PortScanSummary, SecurityReport, SslResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
 import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
