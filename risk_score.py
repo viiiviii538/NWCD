@@ -13,7 +13,7 @@ UNKNOWN_PORT_POINTS = 0.5
 PORT_SCORE_CAP = 6.0
 COUNTRY_SCORE_CAP = 4.0
 
-__all__ = ["calc_risk", "calc_risk_score_v2"]
+__all__ = ["calc_risk_score", "calc_risk_score_v2"]
 
 PORT_SCORES = {
     "3389": 4.0,  # RDP
@@ -29,29 +29,8 @@ PORT_SCORES = {
 RED = "\033[31m"
 RESET = "\033[0m"
 
-def calc_risk(open_ports, countries):
-    score = 0
-    warnings = []
-    for p in open_ports:
-        if p in PORT_SCORES:
-            score += PORT_SCORES[p]
-            if p == "3389":
-                warnings.append(f"{RED}RDP port open (3389){RESET}")
-        else:
-            score += 5
-    for c in countries:
-        if c in DANGER_COUNTRIES:
-            score += 50
-            warnings.append(f"{RED}Communicating with {c}{RESET}")
-        elif c not in SAFE_COUNTRIES and c:
-            score += 10
-    if score > 100:
-        score = 100
-    return score, warnings
 
-
-
-def calc_risk_score_v2(
+def calc_risk_score(
     open_ports: list[str],
     countries: list[str],
     has_utm: bool = False,
@@ -86,6 +65,10 @@ def calc_risk_score_v2(
     score = max(0.0, min(10.0, score))
     return round(score, 1), warnings
 
+
+# Backwards compatibility
+calc_risk_score_v2 = calc_risk_score
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: risk_score.py <input.json>", file=sys.stderr)
@@ -97,7 +80,7 @@ def main():
         name = dev.get("device") or dev.get("ip") or "unknown"
         ports = dev.get("open_ports", [])
         countries = dev.get("countries", [])
-        score, warns = calc_risk_score_v2([str(p) for p in ports], [c.upper() for c in countries])
+        score, warns = calc_risk_score([str(p) for p in ports], [c.upper() for c in countries])
         warn_text = "; ".join(warns) if warns else ""
         print(f"{name}\tScore: {score}\t{warn_text}")
 
