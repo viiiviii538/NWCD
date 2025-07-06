@@ -7,7 +7,7 @@ import argparse
 import json
 import html
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Iterable
 
 from risk_score import calc_risk_score
 from common_constants import DANGER_COUNTRIES
