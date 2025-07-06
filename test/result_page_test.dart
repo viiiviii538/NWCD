@@ -35,4 +35,42 @@ void main() {
 
     expect(find.byType(Card), findsNWidgets(2));
   });
+
+  testWidgets('DiagnosticResultPage shows items in a DataTable', (tester) async {
+    const items = [
+      DiagnosticItem(
+        name: 'ポート開放',
+        description: '説明1',
+        status: 'warning',
+        action: '閉じる',
+      ),
+      DiagnosticItem(
+        name: 'SSL 証明書',
+        description: '説明2',
+        status: 'danger',
+        action: '更新する',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 3,
+          items: items,
+        ),
+      ),
+    );
+
+    final tableFinder = find.byType(DataTable);
+    expect(tableFinder, findsOneWidget);
+    final dataTable = tester.widget<DataTable>(tableFinder);
+    expect(dataTable.columns.length, 4);
+    expect(find.text('項目名'), findsOneWidget);
+    expect(find.text('説明'), findsOneWidget);
+    expect(find.text('現状'), findsOneWidget);
+    expect(find.text('推奨対策'), findsOneWidget);
+    expect(find.text('ポート開放'), findsOneWidget);
+    expect(find.text('閉じる'), findsOneWidget);
+  });
 }
