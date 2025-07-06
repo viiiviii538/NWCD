@@ -6,11 +6,13 @@ class DiagnosticItem {
   final String name;
   final String description;
   final String status;
+  final String action;
 
   const DiagnosticItem({
     required this.name,
     required this.description,
     required this.status,
+    required this.action,
   });
 }
 
@@ -105,6 +107,8 @@ class DiagnosticResultPage extends StatelessWidget {
                           Text(item.description),
                           const SizedBox(height: 4),
                           Text('現状: ${item.status}'),
+                          const SizedBox(height: 4),
+                          Text('推奨対策: ${item.action}'),
                         ],
                       ),
                     ),
