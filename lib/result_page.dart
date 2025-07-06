@@ -38,6 +38,32 @@ class DiagnosticResultPage extends StatelessWidget {
     return '危険な状態です';
   }
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'safe':
+        return Colors.green;
+      case 'warning':
+        return Colors.orange;
+      case 'danger':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'safe':
+        return Icons.check_circle;
+      case 'warning':
+        return Icons.warning;
+      case 'danger':
+        return Icons.error;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -104,7 +130,20 @@ class DiagnosticResultPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
-                          Text('現状: ${item.status}'),
+                          Row(
+                            children: [
+                              const Text('現状: '),
+                              Icon(
+                                _statusIcon(item.status),
+                                color: _statusColor(item.status),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                item.status,
+                                style: TextStyle(color: _statusColor(item.status)),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
