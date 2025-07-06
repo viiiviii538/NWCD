@@ -6,11 +6,13 @@ class DiagnosticItem {
   final String name;
   final String description;
   final String status;
+  final String action;
 
   const DiagnosticItem({
     required this.name,
     required this.description,
     required this.status,
+    required this.action,
   });
 }
 
@@ -113,42 +115,25 @@ class DiagnosticResultPage extends StatelessWidget {
             Text(_scoreMessage(riskScore)),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text(item.description),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Text('現状: '),
-                              Icon(
-                                _statusIcon(item.status),
-                                color: _statusColor(item.status),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                item.status,
-                                style: TextStyle(color: _statusColor(item.status)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('項目名')),
+                    DataColumn(label: Text('説明')),
+                    DataColumn(label: Text('現状')),
+                    DataColumn(label: Text('推奨対策')),
+                  ],
+                  rows: [
+                    for (final item in items)
+                      DataRow(cells: [
+                        DataCell(Text(item.name)),
+                        DataCell(Text(item.description)),
+                        DataCell(Text(item.status)),
+                        DataCell(Text(item.action)),
+                      ]),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
