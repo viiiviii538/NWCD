@@ -40,30 +40,43 @@ class DiagnosticResultPage extends StatelessWidget {
     return '危険な状態です';
   }
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'safe':
-        return Colors.green;
-      case 'warning':
-        return Colors.orange;
-      case 'danger':
-        return Colors.red;
-      default:
-        return Colors.grey;
+  Widget _scoreSection(String label, int score) {
+    final color = _scoreColor(score);
+    IconData icon;
+    if (score >= 8) {
+      icon = Icons.check_circle;
+    } else if (score >= 5) {
+      icon = Icons.warning;
+    } else {
+      icon = Icons.error;
     }
-  }
-
-  IconData _statusIcon(String status) {
-    switch (status) {
-      case 'safe':
-        return Icons.check_circle;
-      case 'warning':
-        return Icons.warning;
-      case 'danger':
-        return Icons.error;
-      default:
-        return Icons.help_outline;
-    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(width: 8),
+              Text(
+                score.toString(),
+                style: TextStyle(fontSize: 48, color: color),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(_scoreMessage(score)),
+      ],
+    );
   }
 
   Future<void> _saveReport(BuildContext context) async {
@@ -96,23 +109,9 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Security Score: $securityScore',
-              style: TextStyle(
-                fontSize: 32,
-                color: _scoreColor(securityScore),
-              ),
-            ),
-            Text(_scoreMessage(securityScore)),
+            _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
-            Text(
-              'Risk Score: $riskScore',
-              style: TextStyle(
-                fontSize: 32,
-                color: _scoreColor(riskScore),
-              ),
-            ),
-            Text(_scoreMessage(riskScore)),
+            _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
