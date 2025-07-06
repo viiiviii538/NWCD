@@ -115,25 +115,31 @@ class DiagnosticResultPage extends StatelessWidget {
             Text(_scoreMessage(riskScore)),
             const SizedBox(height: 16),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('項目名')),
-                    DataColumn(label: Text('説明')),
-                    DataColumn(label: Text('現状')),
-                    DataColumn(label: Text('推奨対策')),
-                  ],
-                  rows: [
-                    for (final item in items)
-                      DataRow(cells: [
-                        DataCell(Text(item.name)),
-                        DataCell(Text(item.description)),
-                        DataCell(Text(item.status)),
-                        DataCell(Text(item.action)),
-                      ]),
-                  ],
-                ),
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(item.description),
+                          const SizedBox(height: 4),
+                          Text('現状: ${item.status}'),
+                          const SizedBox(height: 4),
+                          Text('推奨対策: ${item.action}'),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 16),

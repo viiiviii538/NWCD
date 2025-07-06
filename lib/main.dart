@@ -167,13 +167,14 @@ class _HomePageState extends State<HomePage> {
         name: 'ポート開放',
         description: '不要なポートが開いています',
         status: 'warning',
-        action: '閉じる',
+        action: '不要なポートを閉じる',
       ),
       const DiagnosticItem(
         name: 'SSL 証明書',
         description: '証明書の有効期限切れ',
         status: 'danger',
-        action: '更新する',
+        action: '証明書を更新する',
+=======
       ),
     ];
     Navigator.of(context).push(
