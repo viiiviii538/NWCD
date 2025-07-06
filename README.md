@@ -47,7 +47,7 @@ pip install -r requirements.txt
   - 代表的なポートへの接続可否
   - SSL 証明書の発行者と有効期限
   - DNS の SPF レコード
-  - ネットワーク速度測定 (download/upload/ping)
+  - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
 この最小構成を起点に、今後の機能追加を行っていきます。
@@ -191,6 +191,7 @@ Windows 以外の環境では `defender_enabled` が `null` となります。
 
 `network_speed.py` は `speedtest-cli` を利用してダウンロード速度、アップロード速度、
 および ping を計測します。
+LAN スキャン時に計測され、結果は画面にも表示されます。
 
 ```bash
 python network_speed.py

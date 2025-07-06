@@ -35,4 +35,30 @@ void main() {
 
     expect(find.byType(Card), findsNWidgets(2));
   });
+
+  testWidgets('DiagnosticResultPage shows action text', (WidgetTester tester) async {
+    const items = [
+      DiagnosticItem(
+        name: 'チェック1',
+        description: '説明',
+        status: 'ok',
+        action: '対策する',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 4,
+          items: items,
+        ),
+      ),
+    );
+
+    expect(find.text('チェック1'), findsOneWidget);
+    expect(find.text('説明'), findsOneWidget);
+    expect(find.text('現状: ok'), findsOneWidget);
+    expect(find.text('推奨対策: 対策する'), findsOneWidget);
+  });
 }
