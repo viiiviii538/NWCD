@@ -174,7 +174,6 @@ class _HomePageState extends State<HomePage> {
         description: '証明書の有効期限切れ',
         status: 'danger',
         action: '証明書を更新する',
-=======
       ),
     ];
     Navigator.of(context).push(
