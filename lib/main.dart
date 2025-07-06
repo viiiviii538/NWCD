@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage> {
   List<PortScanSummary> _scanResults = [];
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
+  diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
@@ -49,9 +50,26 @@ class _HomePageState extends State<HomePage> {
       _devices = <NetworkDevice>[];
       _scanResults = [];
       _reports = [];
+      _speed = null;
       _output = '診断中...\n';
       _progress.clear();
     });
+
+    final speed = await diag.measureNetworkSpeed();
+    setState(() => _speed = speed);
+    final buffer = StringBuffer();
+    if (speed != null) {
+      buffer.writeln('--- Network Speed ---');
+      buffer.writeln(
+          'Download: ${speed.downloadMbps.toStringAsFixed(1)} Mbps');
+      buffer.writeln(
+          'Upload: ${speed.uploadMbps.toStringAsFixed(1)} Mbps');
+      buffer.writeln('Ping: ${speed.pingMs.toStringAsFixed(1)} ms');
+      buffer.writeln();
+    } else {
+      buffer.writeln('Network speed test failed');
+      buffer.writeln();
+    }
 
     final devices = await net.scanNetwork(onError: (msg) {
       if (mounted) {
@@ -66,7 +84,6 @@ class _HomePageState extends State<HomePage> {
       }
     });
 
-    final buffer = StringBuffer();
     for (final d in devices) {
       final ip = d.ip;
       buffer.writeln('--- $ip ---');
@@ -189,6 +206,15 @@ class _HomePageState extends State<HomePage> {
               ScanningProgressList(
                 progress: _progress,
                 taskCount: _taskCount,
+              ),
+            ],
+            if (_speed != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Speed: '
+                'Down ${_speed!.downloadMbps.toStringAsFixed(1)} Mbps '
+                'Up ${_speed!.uploadMbps.toStringAsFixed(1)} Mbps '
+                'Ping ${_speed!.pingMs.toStringAsFixed(1)} ms',
               ),
             ],
             const SizedBox(height: 8),
