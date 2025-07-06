@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
     show PortScanSummary, SecurityReport, SslResult;
@@ -8,7 +6,6 @@ import 'package:nwc_densetsu/network_scan.dart' as net;
 import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
-import 'package:nwc_densetsu/utils/file_utils.dart' as utils;
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';

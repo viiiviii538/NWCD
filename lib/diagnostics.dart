@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'ssl_result.dart';
+export 'ssl_result.dart';
 import 'network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
