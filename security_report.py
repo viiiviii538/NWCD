@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import json
-from typing import List, Tuple
 
 from risk_score import calc_risk_score
 from report_utils import calc_utm_items
