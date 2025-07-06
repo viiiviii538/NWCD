@@ -9,6 +9,7 @@
 のみで動作するため、Windows では追加のインストールは必須ではありません。
 Python (3 系) といずれかのコマンドがインストールされていることを確認して
 ください。
+ネットワーク速度計測には `speedtest-cli` を使用します。
 
 また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
 があります。次のように入力して認識されるか確認してください。
@@ -19,6 +20,27 @@ nmap -V  # または Windows では where nmap
 
 コマンドが見つからない場合は、インストール先のディレクトリを `PATH` に追加して
 ください。
+
+### 主要ツールのインストール例
+
+以下は `nmap`, `arp-scan`, `speedtest-cli` を導入する際の主なコマンド例です。
+
+```bash
+# Debian/Ubuntu
+sudo apt install nmap arp-scan speedtest-cli
+
+# Fedora
+sudo dnf install nmap arp-scan speedtest-cli
+
+# macOS (Homebrew)
+brew install nmap arp-scan speedtest-cli
+
+# Windows
+winget install -e --id Nmap.Nmap   # nmap
+pip install speedtest-cli          # speedtest-cli
+# arp-scan は Windows 版が存在しないため省略
+```
+
 
 ## 開発の始め方
 
