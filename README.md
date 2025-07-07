@@ -237,6 +237,16 @@ python lan_security_check.py  # 自動検出されたサブネットを使用
 python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 ```
 
+## Network Topology
+
+`generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
+
+```bash
+python generate_topology.py scan_results.json -o topology.png
+```
+
+`-o` には `.png`, `.svg`, `.dot` のいずれかを指定します。
+
 ## スキャン実行時の注意
 
 本ツールによるホスト探索やポートスキャンは、運用者が明示的な許可を得たネットワークでのみ実行してください。許可なく他者のネットワークをスキャンすると、不正アクセス禁止法などの法令に抵触し、民事・刑事上の責任を問われる可能性があります。
