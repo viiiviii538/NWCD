@@ -2,6 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:xml/xml.dart' as xml;
+
+class _SvgNode {
+  final String label;
+  final Rect rect;
+  _SvgNode(this.label, this.rect);
+}
 
 class DiagnosticItem {
   final String name;
@@ -82,6 +90,34 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Future<List<_SvgNode>> _parseSvgNodes(String path) async {
+    final svgStr = await File(path).readAsString();
+    final document = xml.XmlDocument.parse(svgStr);
+    final nodes = <_SvgNode>[];
+    for (final g in document.findAllElements('g')) {
+      if (g.getAttribute('class') == 'node') {
+        final title = g.getElement('title')?.innerText ?? '';
+        final ellipse = g.getElement('ellipse');
+        if (ellipse != null) {
+          final cx = double.tryParse(ellipse.getAttribute('cx') ?? '');
+          final cy = double.tryParse(ellipse.getAttribute('cy') ?? '');
+          final rx = double.tryParse(ellipse.getAttribute('rx') ?? '');
+          final ry = double.tryParse(ellipse.getAttribute('ry') ?? '');
+          if (cx != null && cy != null && rx != null && ry != null) {
+            nodes.add(
+              _SvgNode(
+                title,
+                Rect.fromCenter(
+                    center: Offset(cx, cy), width: rx * 2, height: ry * 2),
+              ),
+            );
+          }
+        }
+      }
+    }
+    return nodes;
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -108,9 +144,40 @@ class DiagnosticResultPage extends StatelessWidget {
       final generator = onGenerateTopology;
       final path = await (generator ?? report_utils.generateTopologyDiagram)();
       if (!context.mounted) return;
+
+      final nodes = await _parseSvgNodes(path);
+      final controller = TransformationController();
+
       await showDialog(
         context: context,
-        builder: (_) => AlertDialog(content: Image.file(File(path))),
+        builder: (_) => Dialog(
+          child: SizedBox(
+            width: 400,
+            height: 400,
+            child: GestureDetector(
+              onTapUp: (details) {
+                final scenePoint = controller.toScene(details.localPosition);
+                for (final node in nodes) {
+                  if (node.rect.contains(scenePoint)) {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(content: Text(node.label)),
+                    );
+                    break;
+                  }
+                }
+              },
+              child: InteractiveViewer(
+                transformationController: controller,
+                child: Stack(
+                  children: [
+                    SvgPicture.file(File(path)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       );
     } catch (e) {
       if (context.mounted) {

@@ -11,6 +11,8 @@ dependencies:
   path: any
   http: ^1.4.0
   fl_chart: ^0.63.0
+  flutter_svg: ^2.2.0
+  xml: ^6.6.0
 
 
 dev_dependencies:
