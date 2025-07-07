@@ -44,7 +44,7 @@ class ExternalCommCountTest(unittest.TestCase):
     @patch('lan_security_check.geoip2', None)
     @patch('lan_security_check.geoip_country')
     @patch('lan_security_check.get_external_connections')
-    def test_country_counts(self, mock_get_conns, mock_geoip_country, _):
+    def test_country_counts(self, mock_get_conns, mock_geoip_country):
         mock_get_conns.return_value = [
             ('1.1.1.1', 80),
             ('2.2.2.2', 443),
