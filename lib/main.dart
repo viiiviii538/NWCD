@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'package:nwc_densetsu/port_constants.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,8 +41,20 @@ class _HomePageState extends State<HomePage> {
   List<SecurityReport> _reports = [];
   diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
+  String _portPreset = 'default';
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
+
+  List<int> get _selectedPorts {
+    switch (_portPreset) {
+      case 'quick':
+        return quickPorts;
+      case 'full':
+        return fullPorts;
+      default:
+        return defaultPortList;
+    }
+  }
 
 
   Future<void> _runLanScan() async {
@@ -90,7 +103,7 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag.scanPorts(ip).then((value) {
+      final portFuture = diag.scanPorts(ip, _selectedPorts).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
@@ -222,6 +235,19 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            DropdownButton<String>(
+              value: _portPreset,
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _portPreset = val);
+                }
+              },
+              items: const [
+                DropdownMenuItem(value: 'default', child: Text('Default')),
+                DropdownMenuItem(value: 'quick', child: Text('Quick')),
+                DropdownMenuItem(value: 'full', child: Text('Full')),
+              ],
+            ),
             Tooltip(
               message: 'LAN 内のデバイスをスキャンして診断を実行します',
               child: ElevatedButton(
