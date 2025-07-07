@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
-import 'package:nwc_densetsu/utils/report_utils.dart'
-    show generateTopologyDiagram;
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -219,7 +218,7 @@ class DiagnosticResultPage extends StatelessWidget {
   Future<void> _showTopology(BuildContext context) async {
     try {
       final generator = onGenerateTopology;
-      final path = await (generator ?? generateTopologyDiagram)();
+      final path = await (generator ?? report_utils.generateTopologyDiagram)();
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
