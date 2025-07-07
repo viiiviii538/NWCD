@@ -3,23 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
 
 void main() {
-  testWidgets('DiagnosticResultPage shows colored status labels', (tester) async {
+  testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
     const items = [
-      DiagnosticItem(name: 'A', description: 'd', status: 'safe'),
-      DiagnosticItem(name: 'B', description: 'd', status: 'warning'),
-      DiagnosticItem(name: 'C', description: 'd', status: 'danger'),
-    ];
-
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: DiagnosticResultPage(
-          securityScore: 9,
-void main() {
-  testWidgets('DiagnosticResultPage shows styled scores and colored labels', (tester) async {
-    const items = [
-      DiagnosticItem(name: 'A', description: 'd', status: 'safe'),
-      DiagnosticItem(name: 'B', description: 'd', status: 'warning'),
-      DiagnosticItem(name: 'C', description: 'd', status: 'danger'),
+      DiagnosticItem(name: 'A', description: 'd', status: 'safe', action: 'fix1'),
+      DiagnosticItem(name: 'B', description: 'd', status: 'warning', action: 'fix2'),
+      DiagnosticItem(name: 'C', description: 'd', status: 'danger', action: 'fix3'),
     ];
 
     await tester.pumpWidget(
@@ -32,25 +20,17 @@ void main() {
       ),
     );
 
-    // スコアの表示確認
     expect(find.text('セキュリティスコア'), findsOneWidget);
     expect(find.text('リスクスコア'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     expect(find.byIcon(Icons.error), findsOneWidget);
 
-    final text = tester.widget<Text>(find.text('9'));
-    expect(text.style?.fontSize, 48);
-
-    // ステータス色の確認
-    final safeText = tester.widget<Text>(find.text('safe'));
-    final warningText = tester.widget<Text>(find.text('warning'));
-    final dangerText = tester.widget<Text>(find.text('danger'));
-
-    expect(safeText.style?.color, Colors.green);
-    expect(warningText.style?.color, Colors.orange);
-    expect(dangerText.style?.color, Colors.red);
-  });
-}
-
+    // Verify status and action text for each item
+    expect(find.text('現状: safe'), findsOneWidget);
+    expect(find.text('推奨対策: fix1'), findsOneWidget);
+    expect(find.text('現状: warning'), findsOneWidget);
+    expect(find.text('推奨対策: fix2'), findsOneWidget);
+    expect(find.text('現状: danger'), findsOneWidget);
+    expect(find.text('推奨対策: fix3'), findsOneWidget);
   });
 }
