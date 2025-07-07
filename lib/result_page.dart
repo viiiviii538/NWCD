@@ -315,7 +315,7 @@ class ResultPage extends StatelessWidget {
             rows: [
               for (final r in reports)
                 DataRow(
-                  color: WidgetStateProperty.all(
+                  color: MaterialStateProperty.all(
                     _scoreColor(r.score),
                   ),
                   cells: [
