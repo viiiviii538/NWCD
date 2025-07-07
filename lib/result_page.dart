@@ -1,10 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
-import 'package:nwc_densetsu/utils/report_utils.dart'
-    show generateTopologyDiagram;
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
+
+const Map<int, String> _dangerPortNotes = {
+  3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
+  22: 'SSH 接続に使われ、ブルートフォース攻撃の標的となる恐れがあります',
+  23: 'Telnet 用ポートは平文通信のため非常に危険です',
+  445: 'ファイル共有(SMB)に利用され、マルウェア侵入経路となりえます',
+};
 
 class _SvgNode {
   final String label;
@@ -30,6 +36,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final int securityScore;
   final int riskScore;
   final List<DiagnosticItem> items;
+  final List<PortScanSummary> portSummaries;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -37,6 +44,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.securityScore,
     required this.riskScore,
     required this.items,
+    this.portSummaries = const [],
     this.onGenerateTopology,
   });
 
@@ -146,6 +154,47 @@ class DiagnosticResultPage extends StatelessWidget {
     return nodes;
   }
 
+  Widget _portStatusSection() {
+    if (portSummaries.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ポート開放状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
+        for (final s in portSummaries) ...[
+          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Column(
+            children: [
+              for (final r in s.results)
+                Card(
+                  color: r.state == 'open'
+                      ? (_dangerPortNotes.containsKey(r.port)
+                          ? Colors.redAccent.withOpacity(0.2)
+                          : Colors.green.withOpacity(0.2))
+                      : Colors.grey.withOpacity(0.2),
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  child: ListTile(
+                    title: Text(
+                      "${r.port} (${r.service})：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}",
+                    ),
+                    subtitle: _dangerPortNotes[r.port] != null
+                        ? Text(_dangerPortNotes[r.port]!)
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -170,7 +219,7 @@ class DiagnosticResultPage extends StatelessWidget {
   Future<void> _showTopology(BuildContext context) async {
     try {
       final generator = onGenerateTopology;
-      final path = await (generator ?? generateTopologyDiagram)();
+      final path = await (generator ?? report_utils.generateTopologyDiagram)();
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
@@ -227,6 +276,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
             _scoreSection('リスクスコア', riskScore),
+            const SizedBox(height: 16),
+            _portStatusSection(),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
