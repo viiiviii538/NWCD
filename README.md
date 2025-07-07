@@ -241,6 +241,22 @@ python lan_security_check.py  # 自動検出されたサブネットを使用
 python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 ```
 
+## 外部通信の暗号化状況
+
+`external_ip_report.py` を実行すると、現在の外部接続を確認し、HTTP や SMTP など暗号化されていない通信も含めて一覧表示できます。危険な通信は赤字で強調されます。
+
+```bash
+python external_ip_report.py
+```
+
+出力例:
+
+```
+宛先ドメイン\t通信プロトコル\t暗号化状況\t状態\tコメント
+example.com\tHTTPS\t暗号化\t安全\t
+mail.example\tSMTP\t非暗号化\t危険\t平文通信のため情報漏洩のリスクがあります
+```
+
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
