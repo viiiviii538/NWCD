@@ -72,6 +72,10 @@ pip install -r requirements.txt
   - DNS の SPF レコード
     - 診断結果ページでは各ドメインの SPF レコードを表形式で表示します。
       未設定 (danger) は赤色、取得エラー (warning) は黄色でハイライトされます。
+    - ネットワークからの取得ができない場合は、BIND ゾーンファイルや
+      `dig` の出力を保存したテキストを `--zone-file` に指定して
+      オフラインで参照できます。各行は `example.com. IN TXT "v=spf1 +mx -all"`
+      のように TXT レコードを記述してください。
   - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
@@ -103,6 +107,12 @@ nmap -V # または arp-scan --version
 ```
 
 表示されない場合はインストール先を PATH に追加してください。
+
+## DNS TXT レコードをファイルから取得する
+
+オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
+SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
+`dig example.com TXT` を保存したテキストを指定してください。
 
 
 ## LAN + Port Scan
@@ -255,6 +265,38 @@ python external_ip_report.py
 宛先ドメイン\t通信プロトコル\t暗号化状況\t状態\tコメント
 example.com\tHTTPS\t暗号化\t安全\t
 mail.example\tSMTP\t非暗号化\t危険\t平文通信のため情報漏洩のリスクがあります
+```
+
+## ドメイン送信者認証チェック
+
+`verify_domain_sender.py` を使うと、指定したドメインの SPF レコードを取得して
+送信者認証が正しく設定されているか確認できます。オンライン環境では `nslookup`
+を利用し、オフライン時は `--offline` オプションで保存済みの DNS レコードを参照
+します。
+
+```bash
+python verify_domain_sender.py example.com
+```
+
+出力例:
+
+```json
+{"domain": "example.com", "record": "v=spf1 include:_spf.example.com ~all", "status": "safe", "comment": ""}
+```
+
+オフライン利用の例:
+
+```bash
+python verify_domain_sender.py example.com --offline offline_spf_records.json
+```
+
+`offline_spf_records.json` は次のようにドメインと SPF レコードの対応を記述します。
+
+```json
+{
+  "example.com": "v=spf1 include:_spf.example.com ~all",
+  "mail.test": "v=spf1 ip4:192.0.2.0/24 -all"
+}
 ```
 
 ## Network Topology

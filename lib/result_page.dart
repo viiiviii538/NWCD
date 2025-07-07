@@ -39,6 +39,8 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
   final List<SpfResult> spfResults;
+  final bool? defenderEnabled;
+  final bool? firewallEnabled;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -48,6 +50,8 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.items,
     this.portSummaries = const [],
     this.spfResults = const [],
+    this.defenderEnabled,
+    this.firewallEnabled,
     this.onGenerateTopology,
   });
 
@@ -245,6 +249,70 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _defenseSection() {
+    if (defenderEnabled == null && firewallEnabled == null) {
+      return const SizedBox.shrink();
+    }
+    DataRow row(String name, bool? enabled, String comment) {
+      Color? color;
+      TextStyle? style;
+      String state;
+      if (enabled == null) {
+        state = '不明';
+      } else if (enabled) {
+        state = '有効';
+        color = Colors.green.withOpacity(0.2);
+        style = const TextStyle(color: Colors.green);
+      } else {
+        state = '無効';
+        color = Colors.redAccent.withOpacity(0.2);
+        style = const TextStyle(color: Colors.red, fontWeight: FontWeight.bold);
+      }
+      return DataRow(
+        color: color != null ? MaterialStateProperty.all(color) : null,
+        cells: [
+          DataCell(Text(name)),
+          DataCell(Text(state, style: style)),
+          DataCell(Text(comment)),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('端末の防御機能の有効性チェック',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+            'リアルタイム保護やファイアウォールが無効な状態では、マルウェア感染や外部からの侵入を防ぐことができず、端末が極めて無防備になります。基本的なセキュリティ機能が適切に動作しているかを確認してください。'),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('保護機能名')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              row(
+                'リアルタイム保護（Defender）',
+                defenderEnabled,
+                'ウイルスやマルウェアを常時監視し、感染を未然に防ぎます。無効化すると新たな脅威を検知できません。',
+              ),
+              row(
+                '外部アクセス遮断（Firewall）',
+                firewallEnabled,
+                '不正アクセスをブロックします。無効にすると外部からの侵入に対して無防備になります。',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -330,6 +398,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _portStatusSection(),
             const SizedBox(height: 16),
             _spfSection(),
+            const SizedBox(height: 16),
+            _defenseSection(),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(

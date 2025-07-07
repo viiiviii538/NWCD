@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   List<SecurityReport> _reports = [];
   List<SpfResult> _spfResults = [];
   diag.NetworkSpeed? _speed;
+  diag.DefenseStatus? _defense;
   bool _lanScanning = false;
   String _portPreset = 'default';
   final Map<String, int> _progress = {};
@@ -86,6 +87,8 @@ class _HomePageState extends State<HomePage> {
 
     final speed = await diag.measureNetworkSpeed();
     setState(() => _speed = speed);
+    final defense = await diag.checkDefenseStatus();
+    setState(() => _defense = defense);
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -139,7 +142,9 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final spfFuture = diag.checkSpfRecord(ip).then((value) {
+      final spfFuture = diag
+          .checkSpfRecord(d.name.isNotEmpty ? d.name : ip)
+          .then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
@@ -295,6 +300,8 @@ class _HomePageState extends State<HomePage> {
           items: items,
           portSummaries: _scanResults,
           spfResults: _spfResults,
+          defenderEnabled: _defense?.defenderEnabled,
+          firewallEnabled: _defense?.firewallEnabled,
         ),
       ),
     );
