@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'dart:io';
 
 void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {
@@ -60,5 +61,26 @@ void main() {
     expect(find.text('説明'), findsOneWidget);
     expect(find.text('現状: ok'), findsOneWidget);
     expect(find.text('推奨対策: 対策する'), findsOneWidget);
+  });
+
+  testWidgets('Topology button shows image dialog', (tester) async {
+    final imgFile = File('${Directory.systemTemp.path}/dummy.png');
+    await imgFile.writeAsBytes(List.filled(10, 0));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 4,
+          items: const [],
+          onGenerateTopology: () async => imgFile.path,
+        ),
+      ),
+    );
+
+    expect(find.text('トポロジ表示'), findsOneWidget);
+    await tester.tap(find.text('トポロジ表示'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Image), findsOneWidget);
   });
 }

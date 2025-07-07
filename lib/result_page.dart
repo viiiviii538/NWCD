@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/utils/report_utils.dart';
 
 class DiagnosticItem {
   final String name;
@@ -20,12 +21,14 @@ class DiagnosticResultPage extends StatelessWidget {
   final int securityScore;
   final int riskScore;
   final List<DiagnosticItem> items;
+  final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
     super.key,
     required this.securityScore,
     required this.riskScore,
     required this.items,
+    this.onGenerateTopology,
   });
 
   Color _scoreColor(int score) {
@@ -100,6 +103,23 @@ class DiagnosticResultPage extends StatelessWidget {
     }
   }
 
+  Future<void> _showTopology(BuildContext context) async {
+    try {
+      final generator = onGenerateTopology;
+      final path = await (generator ?? generateTopologyDiagram)();
+      if (!context.mounted) return;
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(content: Image.file(File(path))),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('生成失敗: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,9 +164,18 @@ class DiagnosticResultPage extends StatelessWidget {
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () => _saveReport(context),
-                child: const Text('レポート保存'),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _saveReport(context),
+                    child: const Text('レポート保存'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () => _showTopology(context),
+                    child: const Text('トポロジ表示'),
+                  ),
+                ],
               ),
             ),
           ],

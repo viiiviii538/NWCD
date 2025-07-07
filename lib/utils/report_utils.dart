@@ -52,3 +52,22 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     }
   }
 }
+
+/// Runs `generate_topology.py` and returns the path to the generated diagram.
+Future<String> generateTopologyDiagram() async {
+  final tempDir = await Directory.systemTemp.createTemp('nwcd_topology');
+  final imgPath = p.join(tempDir.path, 'topology.png');
+  try {
+    final result = await Process.run('python', [
+      'generate_topology.py',
+      '--output',
+      imgPath,
+    ]);
+    if (result.exitCode != 0) {
+      throw Exception(result.stderr.toString());
+    }
+    return imgPath;
+  } catch (e) {
+    rethrow;
+  }
+}
