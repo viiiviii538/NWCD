@@ -52,3 +52,22 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     }
   }
 }
+
+/// Generates a network topology SVG using the bundled Python script.
+///
+/// The diagram is created from the sample JSON data included with the
+/// application and returned as a path to the generated file.
+Future<String> generateTopologyDiagram() async {
+  final tempDir = await Directory.systemTemp.createTemp('nwcd_topo');
+  final outputPath = p.join(tempDir.path, 'topology.svg');
+  final result = await Process.run('python', [
+    'generate_topology.py',
+    'sample_devices.json',
+    '-o',
+    outputPath,
+  ]);
+  if (result.exitCode != 0) {
+    throw Exception(result.stderr.toString());
+  }
+  return outputPath;
+}
