@@ -47,11 +47,12 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: DiagnosticResultPage(
           securityScore: 5,
           riskScore: 4,
           items: items,
+          portSummaries: const [],
         ),
       ),
     );
@@ -72,6 +73,7 @@ void main() {
           securityScore: 5,
           riskScore: 4,
           items: const [],
+          portSummaries: const [],
           onGenerateTopology: () async => imgFile.path,
         ),
       ),
