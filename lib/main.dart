@@ -10,7 +10,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
-import 'package:nwc_densetsu/geoip_result_page.dart';
+import 'package:nwc_densetsu/device_list_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -268,6 +268,17 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _openDeviceListPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DeviceListPage(
+          devices: _devices,
+          reports: _reports,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -326,8 +337,10 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 8),
             ElevatedButton(
-              onPressed: _openGeoipPage,
-              child: const Text('GeoIP解析ページ'),
+              onPressed: _devices.isEmpty && _reports.isEmpty
+                  ? null
+                  : _openDeviceListPage,
+              child: const Text('LAN内デバイス一覧'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
