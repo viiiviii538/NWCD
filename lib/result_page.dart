@@ -112,6 +112,33 @@ class DiagnosticResultPage extends StatelessWidget {
               ),
             );
           }
+        } else {
+          final polygon = g.getElement('polygon');
+          final pointsStr = polygon?.getAttribute('points');
+          if (pointsStr != null && pointsStr.isNotEmpty) {
+            final points = pointsStr
+                .trim()
+                .split(RegExp(r'\s+'))
+                .map((p) => p.split(','))
+                .where((pair) => pair.length == 2)
+                .map((pair) => Offset(
+                      double.tryParse(pair[0]) ?? 0,
+                      double.tryParse(pair[1]) ?? 0,
+                    ))
+                .toList();
+            if (points.isNotEmpty) {
+              final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+              final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+              final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+              final maxY = points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+              nodes.add(
+                _SvgNode(
+                  title,
+                  Rect.fromLTRB(minX, minY, maxX, maxY),
+                ),
+              );
+            }
+          }
         }
       }
     }
