@@ -17,5 +17,27 @@ class NetworkSpeedTest(unittest.TestCase):
         self.assertAlmostEqual(result['upload'], 20.0)
         self.assertEqual(result['ping'], 15.0)
 
+    @patch.object(network_speed, 'speedtest')
+    def test_measure_speed_config_error(self, mock_speedtest):
+        class DummyErr(Exception):
+            pass
+        mock_speedtest.ConfigRetrievalError = DummyErr
+        inst = MagicMock()
+        inst.get_best_server.side_effect = DummyErr('err')
+        mock_speedtest.Speedtest.return_value = inst
+        result = network_speed.measure_speed()
+        self.assertIsNone(result)
+
+    @patch.object(network_speed, 'speedtest')
+    def test_measure_speed_generic_error(self, mock_speedtest):
+        class DummyErr(Exception):
+            pass
+        mock_speedtest.ConfigRetrievalError = DummyErr
+        inst = MagicMock()
+        inst.get_best_server.side_effect = Exception('fail')
+        mock_speedtest.Speedtest.return_value = inst
+        result = network_speed.measure_speed()
+        self.assertIsNone(result)
+
 if __name__ == '__main__':
     unittest.main()
