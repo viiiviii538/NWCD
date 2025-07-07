@@ -47,7 +47,7 @@ def save_graph(graph: Graph, output: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create network topology diagram")
     parser.add_argument("input", help="JSON from discover_hosts.py or lan_port_scan.py")
-    parser.add_argument("-o", "--output", default="topology.png", help="Output file (.png/.svg/.dot)")
+    parser.add_argument("-o", "--output", default="topology.svg", help="Output file (.png/.svg/.dot)")
     args = parser.parse_args()
 
     with open(args.input, "r", encoding="utf-8") as f:
