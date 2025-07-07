@@ -72,6 +72,10 @@ pip install -r requirements.txt
   - DNS の SPF レコード
     - 診断結果ページでは各ドメインの SPF レコードを表形式で表示します。
       未設定 (danger) は赤色、取得エラー (warning) は黄色でハイライトされます。
+    - ネットワークからの取得ができない場合は、BIND ゾーンファイルや
+      `dig` の出力を保存したテキストを `--zone-file` に指定して
+      オフラインで参照できます。各行は `example.com. IN TXT "v=spf1 +mx -all"`
+      のように TXT レコードを記述してください。
   - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
@@ -103,6 +107,12 @@ nmap -V # または arp-scan --version
 ```
 
 表示されない場合はインストール先を PATH に追加してください。
+
+## DNS TXT レコードをファイルから取得する
+
+オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
+SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
+`dig example.com TXT` を保存したテキストを指定してください。
 
 
 ## LAN + Port Scan
