@@ -57,17 +57,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<int> get _selectedPorts {
-    switch (_portPreset) {
-      case 'quick':
-        return quickPorts;
-      case 'full':
-        return fullPorts;
-      default:
-        return defaultPortList;
-    }
-  }
-
 
   Future<void> _runLanScan() async {
     setState(() {
@@ -118,7 +107,7 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag.scanPorts(ip).then((value) {
+      final portFuture = diag.scanPorts(ip, _selectedPorts).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
