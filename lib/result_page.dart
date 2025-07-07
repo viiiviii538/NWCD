@@ -218,6 +218,8 @@ class DiagnosticResultPage extends StatelessWidget {
             columns: const [
               DataColumn(label: Text('ドメイン')),
               DataColumn(label: Text('SPFレコード')),
+              DataColumn(label: Text('DKIM')),
+              DataColumn(label: Text('DMARC')),
               DataColumn(label: Text('状態')),
               DataColumn(label: Text('コメント')),
             ],
@@ -234,6 +236,8 @@ class DiagnosticResultPage extends StatelessWidget {
                   cells: [
                     DataCell(Text(r.domain)),
                     DataCell(Text(r.record)),
+                    DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
+                    DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
                     DataCell(Text(r.status)),
                     DataCell(Text(r.comment)),
                   ],

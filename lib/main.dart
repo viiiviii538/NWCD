@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
   bool _lanScanning = false;
   String _portPreset = 'default';
   final Map<String, int> _progress = {};
-  static const int _taskCount = 3; // port, SSL, SPF
+  static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
 
   void _openGeoipPage() {
@@ -153,15 +153,43 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
+      final dkimFuture = diag.checkDkimRecord(ip).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
+      final dmarcFuture = diag.checkDmarcRecord(ip).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
 
-      final results = await Future.wait([portFuture, sslFuture, spfFuture]);
+      final results = await Future.wait([portFuture, sslFuture, spfFuture, dkimFuture, dmarcFuture]);
 
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
       final spfRes = results[2] as SpfResult;
+      final dkimValid = results[3] as bool;
+      final dmarcValid = results[4] as bool;
+      final spfResWithOthers = SpfResult(
+        spfRes.domain,
+        spfRes.record,
+        spfRes.status,
+        spfRes.comment,
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
+      );
 
       _scanResults.add(summary);
-      _spfResults.add(spfRes);
+      _spfResults.add(spfResWithOthers);
       for (final r in summary.results) {
         buffer.writeln('Port ${r.port}: ${r.state} ${r.service}');
       }
@@ -172,6 +200,8 @@ class _HomePageState extends State<HomePage> {
       } else {
         buffer.writeln(spfRes.comment);
       }
+      buffer.writeln('DKIM: ${dkimValid ? 'valid' : 'missing'}');
+      buffer.writeln('DMARC: ${dmarcValid ? 'valid' : 'missing'}');
 
       final report = await diag.runSecurityReport(
         ip: ip,
@@ -181,6 +211,8 @@ class _HomePageState extends State<HomePage> {
         ],
         sslValid: sslRes.valid,
         spfValid: spfRes.status == 'safe',
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
       );
       _reports.add(report);
       buffer.writeln('Score: ${report.score}');
@@ -445,6 +477,8 @@ class _HomePageState extends State<HomePage> {
                   columns: const [
                     DataColumn(label: Text('ドメイン')),
                     DataColumn(label: Text('SPFレコード')),
+                    DataColumn(label: Text('DKIM')),
+                    DataColumn(label: Text('DMARC')),
                     DataColumn(label: Text('状態')),
                     DataColumn(label: Text('コメント')),
                   ],
@@ -461,6 +495,8 @@ class _HomePageState extends State<HomePage> {
                         cells: [
                           DataCell(Text(r.domain)),
                           DataCell(Text(r.record)),
+                          DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
+                          DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
                           DataCell(Text(r.status)),
                           DataCell(Text(r.comment)),
                         ],
