@@ -267,6 +267,38 @@ example.com\tHTTPS\t暗号化\t安全\t
 mail.example\tSMTP\t非暗号化\t危険\t平文通信のため情報漏洩のリスクがあります
 ```
 
+## ドメイン送信者認証チェック
+
+`verify_domain_sender.py` を使うと、指定したドメインの SPF レコードを取得して
+送信者認証が正しく設定されているか確認できます。オンライン環境では `nslookup`
+を利用し、オフライン時は `--offline` オプションで保存済みの DNS レコードを参照
+します。
+
+```bash
+python verify_domain_sender.py example.com
+```
+
+出力例:
+
+```json
+{"domain": "example.com", "record": "v=spf1 include:_spf.example.com ~all", "status": "safe", "comment": ""}
+```
+
+オフライン利用の例:
+
+```bash
+python verify_domain_sender.py example.com --offline offline_spf_records.json
+```
+
+`offline_spf_records.json` は次のようにドメインと SPF レコードの対応を記述します。
+
+```json
+{
+  "example.com": "v=spf1 include:_spf.example.com ~all",
+  "mail.test": "v=spf1 ip4:192.0.2.0/24 -all"
+}
+```
+
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
