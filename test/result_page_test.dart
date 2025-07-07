@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 
 void main() {
@@ -79,6 +80,6 @@ void main() {
     expect(find.text('トポロジ表示'), findsOneWidget);
     await tester.tap(find.text('トポロジ表示'));
     await tester.pumpAndSettle();
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
   });
 }
