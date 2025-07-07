@@ -231,7 +231,8 @@ python network_speed.py
 `lan_security_check.py` を実行すると、ARPスプーフィングやUPnP有効機器の有無、
 複数DHCPサーバなど LAN 内のリスクを確認できます。ローカルサブネットは自動検出
 されますが、引数で `192.168.0.0/24` など任意の範囲を指定することもできます。結果
-は JSON 形式で出力され、UTMで防御可能な項目も一覧化されます。
+は JSON 形式で出力され、UTMで防御可能な項目も一覧化されます。さらに、外部通信
+先の国別件数が `country_counts` フィールドに含まれます。
 
 ```bash
 python lan_security_check.py  # 自動検出されたサブネットを使用
