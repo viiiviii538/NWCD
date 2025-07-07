@@ -73,6 +73,13 @@ class NetworkSpeed {
   const NetworkSpeed(this.downloadMbps, this.uploadMbps, this.pingMs);
 }
 
+class DefenseStatus {
+  final bool? defenderEnabled;
+  final bool? firewallEnabled;
+
+  const DefenseStatus({this.defenderEnabled, this.firewallEnabled});
+}
+
 /// Runs the system ping command.
 Future<String> runPing([String host = 'google.com']) async {
   final args = Platform.isWindows ? ['-n', '4', host] : ['-c', '4', host];
@@ -99,6 +106,32 @@ Future<NetworkSpeed?> measureNetworkSpeed() async {
     return NetworkSpeed(down, up, ping);
   } catch (_) {
     return null;
+  }
+}
+
+/// Checks Defender and firewall status using `firewall_check.py`.
+Future<DefenseStatus> checkDefenseStatus() async {
+  const script = 'firewall_check.py';
+  try {
+    final result = await Process.run('python', [script]);
+    if (result.exitCode != 0) {
+      return const DefenseStatus();
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    bool? _parse(dynamic v) {
+      if (v == null) return null;
+      if (v is bool) return v;
+      final s = v.toString().toLowerCase();
+      if (['true', '1', 'yes'].contains(s)) return true;
+      if (['false', '0', 'no'].contains(s)) return false;
+      return null;
+    }
+    return DefenseStatus(
+      defenderEnabled: _parse(data['defender_enabled']),
+      firewallEnabled: _parse(data['firewall_enabled']),
+    );
+  } catch (_) {
+    return const DefenseStatus();
   }
 }
 
