@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
-    show PortScanSummary, SecurityReport, SslResult;
+    show PortScanSummary, SecurityReport, SslResult, SpfResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
 import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
@@ -39,6 +39,7 @@ class _HomePageState extends State<HomePage> {
   List<PortScanSummary> _scanResults = [];
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
+  List<SpfResult> _spfResults = [];
   diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
   String _portPreset = 'default';
@@ -64,6 +65,7 @@ class _HomePageState extends State<HomePage> {
       _devices = <NetworkDevice>[];
       _scanResults = [];
       _reports = [];
+      _spfResults = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -139,15 +141,20 @@ class _HomePageState extends State<HomePage> {
 
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
-      final spfRes = results[2] as String;
+      final spfRes = results[2] as SpfResult;
 
       _scanResults.add(summary);
+      _spfResults.add(spfRes);
       for (final r in summary.results) {
         buffer.writeln('Port ${r.port}: ${r.state} ${r.service}');
       }
 
       buffer.writeln(sslRes.message);
-      buffer.writeln(spfRes);
+      if (spfRes.record.isNotEmpty) {
+        buffer.writeln('SPF record: ${spfRes.record}');
+      } else {
+        buffer.writeln(spfRes.comment);
+      }
 
       final report = await diag.runSecurityReport(
         ip: ip,
@@ -156,7 +163,7 @@ class _HomePageState extends State<HomePage> {
             if (r.state == 'open') r.port
         ],
         sslValid: sslRes.valid,
-        spfValid: spfRes.startsWith('SPF record'),
+        spfValid: spfRes.status == 'safe',
       );
       _reports.add(report);
       buffer.writeln('Score: ${report.score}');
@@ -243,6 +250,7 @@ class _HomePageState extends State<HomePage> {
           riskScore: riskScore,
           items: items,
           portSummaries: _scanResults,
+          spfResults: _spfResults,
         ),
       ),
     );
@@ -385,6 +393,42 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_spfResults.isNotEmpty) ...[
+              const Text('SPFレコードの設定状況',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text('メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('ドメイン')),
+                    DataColumn(label: Text('SPFレコード')),
+                    DataColumn(label: Text('状態')),
+                    DataColumn(label: Text('コメント')),
+                  ],
+                  rows: [
+                    for (final r in _spfResults)
+                      DataRow(
+                        color: MaterialStateProperty.all(
+                          r.status == 'danger'
+                              ? Colors.redAccent.withOpacity(0.2)
+                              : r.status == 'warning'
+                                  ? Colors.yellowAccent.withOpacity(0.2)
+                                  : Colors.green.withOpacity(0.2),
+                        ),
+                        cells: [
+                          DataCell(Text(r.domain)),
+                          DataCell(Text(r.record)),
+                          DataCell(Text(r.status)),
+                          DataCell(Text(r.comment)),
+                        ],
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
