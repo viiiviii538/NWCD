@@ -53,6 +53,8 @@ class SecurityReport {
   final String path;
   final List<int> openPorts;
   final String geoip;
+  final bool dkimValid;
+  final bool dmarcValid;
 
   const SecurityReport(
     this.ip,
@@ -62,6 +64,8 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
+    this.dkimValid = false,
+    this.dmarcValid = false,
   });
 }
 
@@ -222,11 +226,56 @@ Future<SpfResult> checkSpfRecord(String domain) async {
   }
 }
 
+/// Checks DKIM TXT record either via `nslookup` or from a local file.
+Future<bool> checkDkimRecord(String domain, {String? filePath}) async {
+  try {
+    String output;
+    if (filePath != null) {
+      output = await File(filePath).readAsString();
+    } else {
+      final result = await Process.run('nslookup', ['-type=txt', domain]);
+      output = result.stdout.toString();
+    }
+    for (final line in output.split('\n')) {
+      if (line.toLowerCase().contains('v=dkim1')) {
+        return true;
+      }
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Checks DMARC TXT record either via `nslookup` or from a local file.
+Future<bool> checkDmarcRecord(String domain, {String? filePath}) async {
+  final dmarcDomain = domain.startsWith('_dmarc.') ? domain : '_dmarc.$domain';
+  try {
+    String output;
+    if (filePath != null) {
+      output = await File(filePath).readAsString();
+    } else {
+      final result = await Process.run('nslookup', ['-type=txt', dmarcDomain]);
+      output = result.stdout.toString();
+    }
+    for (final line in output.split('\n')) {
+      if (line.toLowerCase().contains('v=dmarc1')) {
+        return true;
+      }
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<SecurityReport> runSecurityReport({
   required String ip,
   required List<int> openPorts,
   required bool sslValid,
   required bool spfValid,
+  required bool dkimValid,
+  required bool dmarcValid,
   String geoip = 'JP',
 }) async {
   const script = 'security_report.py';
@@ -237,6 +286,8 @@ Future<SecurityReport> runSecurityReport({
       openPorts.join(','),
       sslValid ? 'true' : 'false',
       spfValid ? 'true' : 'false',
+      dkimValid ? 'true' : 'false',
+      dmarcValid ? 'true' : 'false',
       geoip,
     ]);
     final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
@@ -269,6 +320,10 @@ Future<SecurityReport> runSecurityReport({
       }
     }
     final country = data['geoip']?.toString() ?? '';
+    final dkim = data['dkim_valid'] == true ||
+        data['dkim_valid']?.toString().toLowerCase() == 'true';
+    final dmarc = data['dmarc_valid'] == true ||
+        data['dmarc_valid']?.toString().toLowerCase() == 'true';
     return SecurityReport(
       data['ip']?.toString() ?? ip,
       data['score'] is int
@@ -279,6 +334,8 @@ Future<SecurityReport> runSecurityReport({
       data['path']?.toString() ?? '',
       openPorts: ports,
       geoip: country,
+      dkimValid: dkim,
+      dmarcValid: dmarc,
     );
   } catch (e) {
     return SecurityReport(
@@ -289,6 +346,8 @@ Future<SecurityReport> runSecurityReport({
       '',
       openPorts: [],
       geoip: '',
+      dkimValid: false,
+      dmarcValid: false,
     );
   }
 }
@@ -298,12 +357,16 @@ Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
   final spfRes = await checkSpfRecord(ip);
+  final dkimValid = await checkDkimRecord(ip);
+  final dmarcValid = await checkDmarcRecord(ip);
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)
       if (p.state == 'open') p.port],
     sslValid: sslRes.valid,
     spfValid: spfRes.status == 'safe',
+    dkimValid: dkimValid,
+    dmarcValid: dmarcValid,
   );
   return report;
 }
