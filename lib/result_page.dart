@@ -180,7 +180,8 @@ class DiagnosticResultPage extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(vertical: 2),
                   child: ListTile(
                     title: Text(
-                        "${r.port}：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}"),
+                      "${r.port} (${r.service})：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}",
+                    ),
                     subtitle: _dangerPortNotes[r.port] != null
                         ? Text(_dangerPortNotes[r.port]!)
                         : null,
