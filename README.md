@@ -257,11 +257,14 @@ python generate_topology.py scan_results.json -o topology.svg
 ## テスト
 
 Python スクリプトのユニットテストは `test` ディレクトリにあります。すべて実行する
-場合は以下のコマンドを使用します。
+場合は `pytest` を利用します。
 
 ```bash
-python -m unittest discover -s test
+pytest
 ```
+
+`test` ディレクトリで `pytest` を実行しても動作するよう、`conftest.py` で
+`PYTHONPATH` を調整しています。
 
 Flutter ウィジェットテストを実行するには次のコマンドを利用します。
 
