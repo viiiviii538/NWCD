@@ -242,10 +242,11 @@ python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
 
 ```bash
-python generate_topology.py scan_results.json -o topology.png
+python generate_topology.py scan_results.json -o topology.svg
 ```
 
-`-o` には `.png`, `.svg`, `.dot` のいずれかを指定します。
+`-o` には `.png`, `.svg`, `.dot` のいずれかを指定します。何も指定しない場合は `topology.svg` が生成されます。
+生成した SVG はアプリ内で拡大・縮小できるインタラクティブビューアーで閲覧できます。
 
 ## スキャン実行時の注意
 
