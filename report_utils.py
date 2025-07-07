@@ -1,6 +1,6 @@
 from typing import Iterable, List
 
-from risk_score import DANGER_COUNTRIES
+from common_constants import DANGER_COUNTRIES
 
 
 def calc_utm_items(score: int, open_ports: Iterable[str], countries: Iterable[str]) -> List[str]:

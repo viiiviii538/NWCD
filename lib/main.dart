@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   String _portPreset = 'default';
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
+  double _overallProgress = 0.0;
 
   List<int> get _selectedPorts {
     switch (_portPreset) {
@@ -66,6 +67,7 @@ class _HomePageState extends State<HomePage> {
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
+      _overallProgress = 0.0;
     });
 
     final speed = await diag.measureNetworkSpeed();
@@ -96,6 +98,8 @@ class _HomePageState extends State<HomePage> {
         _progress[d.ip] = 0;
       }
     });
+    final totalTasks = devices.length * _taskCount;
+    var completedTasks = 0;
 
     for (final d in devices) {
       final ip = d.ip;
@@ -103,16 +107,31 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag.scanPorts(ip, _selectedPorts).then((value) {
-        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+      final portFuture = diag.scanPorts(ip).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
         return value;
       });
       final sslFuture = diag.checkSslCertificate(ip).then((value) {
-        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
         return value;
       });
       final spfFuture = diag.checkSpfRecord(ip).then((value) {
-        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
         return value;
       });
 
@@ -155,6 +174,7 @@ class _HomePageState extends State<HomePage> {
       _output = buffer.toString();
       _lanScanning = false;
       _devices = devices;
+      _overallProgress = 1.0;
     });
   }
 
@@ -261,6 +281,7 @@ class _HomePageState extends State<HomePage> {
               ScanningProgressList(
                 progress: _progress,
                 taskCount: _taskCount,
+                overallProgress: _overallProgress,
               ),
             ],
             if (_speed != null) ...[

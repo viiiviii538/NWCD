@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class ScanningProgressList extends StatelessWidget {
   final Map<String, int> progress;
   final int taskCount;
+  final double overallProgress;
 
   const ScanningProgressList({
     super.key,
     required this.progress,
     required this.taskCount,
+    required this.overallProgress,
   });
 
   @override
@@ -17,6 +19,8 @@ class ScanningProgressList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        LinearProgressIndicator(value: overallProgress),
+        const SizedBox(height: 8),
         for (final e in progress.entries) ...[
           Text('Scanning ${e.key}'),
           LinearProgressIndicator(value: e.value / taskCount),
