@@ -90,14 +90,18 @@ def _run_nmap_scan(subnet):
         ip = None
         mac = ''
         vendor = ''
+        name = ''
         for addr in host.findall('address'):
             if addr.get('addrtype') == 'ipv4':
                 ip = addr.get('addr')
             elif addr.get('addrtype') == 'mac':
                 mac = addr.get('addr')
                 vendor = addr.get('vendor', '')
+        hn = host.find('hostnames/hostname')
+        if hn is not None:
+            name = hn.get('name', '')
         if ip:
-            results.append({'ip': ip, 'mac': mac, 'vendor': vendor})
+            results.append({'ip': ip, 'mac': mac, 'vendor': vendor, 'name': name})
     return results
 
 def _lookup_vendor(mac):

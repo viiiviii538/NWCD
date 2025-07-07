@@ -7,8 +7,9 @@ class NetworkDevice {
   final String ip;
   final String mac;
   final String vendor;
+  final String name;
 
-  const NetworkDevice(this.ip, this.mac, this.vendor);
+  const NetworkDevice(this.ip, this.mac, this.vendor, [this.name = '']);
 }
 
 /// Runs the LAN discovery script and returns a list of devices.
@@ -32,6 +33,7 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
           item['ip'] ?? '',
           item['mac'] ?? '',
           item['vendor'] ?? '',
+          item['name'] ?? item['hostname'] ?? '',
         ));
       }
     }
