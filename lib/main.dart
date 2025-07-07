@@ -161,26 +161,53 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  List<DiagnosticItem> _buildDiagnosticItems() {
+    final items = <DiagnosticItem>[];
+
+    if (_speed != null) {
+      final s = _speed!;
+      items.add(DiagnosticItem(
+        name: 'ネットワーク速度',
+        description:
+            'Down ${s.downloadMbps.toStringAsFixed(1)} Mbps '
+            'Up ${s.uploadMbps.toStringAsFixed(1)} Mbps '
+            'Ping ${s.pingMs.toStringAsFixed(1)} ms',
+        status: 'info',
+        action: '',
+      ));
+    }
+
+    for (final report in _reports) {
+      final level = report.score >= 8
+          ? 'danger'
+          : report.score >= 5
+              ? 'warning'
+              : 'safe';
+      for (final r in report.risks) {
+        items.add(DiagnosticItem(
+          name: 'ホスト ${report.ip}',
+          description: r.description,
+          status: level,
+          action: r.countermeasure,
+        ));
+      }
+    }
+    return items;
+  }
+
   void _openResultPage() {
-    final items = [
-      const DiagnosticItem(
-        name: 'ポート開放',
-        description: '不要なポートが開いています',
-        status: 'warning',
-        action: '不要なポートを閉じる',
-      ),
-      const DiagnosticItem(
-        name: 'SSL 証明書',
-        description: '証明書の有効期限切れ',
-        status: 'danger',
-        action: '証明書を更新する',
-      ),
-    ];
+    final items = _buildDiagnosticItems();
+    final risk = _reports.isNotEmpty
+        ? _reports.map((e) => e.score).reduce((a, b) => a + b) /
+            _reports.length
+        : 0.0;
+    final securityScore = (10 - risk).round();
+    final riskScore = risk.round();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DiagnosticResultPage(
-          securityScore: 7,
-          riskScore: 4,
+          securityScore: securityScore,
+          riskScore: riskScore,
           items: items,
         ),
       ),
