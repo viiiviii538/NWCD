@@ -58,8 +58,13 @@ Future<String> generateTopologyDiagram() async {
   final tempDir = await Directory.systemTemp.createTemp('nwcd_topology');
   final imgPath = p.join(tempDir.path, 'topology.svg');
   try {
+    // Use existing scan output for the topology input. For now rely on the
+    // bundled sample data which mirrors the JSON produced by the scan scripts.
+    const jsonInput = 'sample_devices.json';
+
     final result = await Process.run('python', [
       'generate_topology.py',
+      jsonInput,
       '--output',
       imgPath,
     ]);
