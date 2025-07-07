@@ -294,10 +294,26 @@ Future<SecurityReport> runSecurityReport({
 }
 
 /// Performs diagnostics for [ip] and returns a [SecurityReport].
-Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
+Future<SecurityReport> analyzeHost(
+  String ip, {
+  List<int>? ports,
+  String? domain,
+}) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(ip);
+  var targetDomain = domain;
+  if (targetDomain == null || targetDomain.isEmpty) {
+    try {
+      final addr = InternetAddress(ip);
+      final reversed = await addr.reverse();
+      if (reversed.host.isNotEmpty && reversed.host != ip) {
+        targetDomain = reversed.host;
+      }
+    } catch (_) {
+      // ignore reverse lookup errors
+    }
+  }
+  final spfRes = await checkSpfRecord(targetDomain ?? ip);
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)
