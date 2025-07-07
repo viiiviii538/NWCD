@@ -57,6 +57,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  List<int> get _selectedPorts {
+    switch (_portPreset) {
+      case 'quick':
+        return quickPorts;
+      case 'full':
+        return fullPorts;
+      default:
+        return defaultPortList;
+    }
+  }
+
 
   Future<void> _runLanScan() async {
     setState(() {
