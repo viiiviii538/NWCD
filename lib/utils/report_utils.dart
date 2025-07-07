@@ -36,7 +36,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
       throw Exception(result.stderr.toString());
     }
 
-    final pdfPath = p.withoutExtension(htmlPath) + '.pdf';
+    final pdfPath = '${p.withoutExtension(htmlPath)}.pdf';
     final savePath = await getSavePath(suggestedName: 'report.pdf');
     if (savePath != null) {
       final pdfFile = File(pdfPath);
@@ -50,29 +50,5 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     } catch (_) {
       // ignore cleanup errors
     }
-  }
-}
-
-/// Runs `generate_topology.py` and returns the path to the generated diagram.
-Future<String> generateTopologyDiagram() async {
-  final tempDir = await Directory.systemTemp.createTemp('nwcd_topology');
-  final imgPath = p.join(tempDir.path, 'topology.svg');
-  try {
-    // Use existing scan output for the topology input. For now rely on the
-    // bundled sample data which mirrors the JSON produced by the scan scripts.
-    const jsonInput = 'sample_devices.json';
-
-    final result = await Process.run('python', [
-      'generate_topology.py',
-      jsonInput,
-      '--output',
-      imgPath,
-    ]);
-    if (result.exitCode != 0) {
-      throw Exception(result.stderr.toString());
-    }
-    return imgPath;
-  } catch (e) {
-    rethrow;
   }
 }
