@@ -148,19 +148,23 @@ def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, An
         except Exception:
             reader = None
     suspicious = []
+    country_counts: Dict[str, int] = {}
     for ip, _ in conns:
         country = geoip_country(reader, ip)
+        if country:
+            country_counts[country] = country_counts.get(country, 0) + 1
         if country in DANGER_COUNTRIES:
             suspicious.append({"ip": ip, "country": country})
     if reader:
         reader.close()
+    result: Dict[str, Any] = {"status": "ok", "country_counts": country_counts}
     if suspicious:
-        return {
+        result.update({
             "status": "warning",
             "connections": suspicious,
             "utm": ["web_filter"],
-        }
-    return {"status": "ok"}
+        })
+    return result
 
 def main() -> None:
     subnet = sys.argv[1] if len(sys.argv) > 1 else _SUBNET

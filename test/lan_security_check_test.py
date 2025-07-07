@@ -1,10 +1,12 @@
 import unittest
+from unittest.mock import patch
 from lan_security_check import (
     parse_arp_table,
     parse_dhcp_output,
     parse_upnp_output,
     parse_netbios_output,
     parse_smb_protocol_output,
+    check_external_comm,
 )
 
 
@@ -36,6 +38,32 @@ class LanSecurityParseTest(unittest.TestCase):
     def test_parse_smb_protocol_output(self):
         sample = "| smb-protocols:\n|   dialects:\n|     NT LM 0.12 (SMBv1) [dangerous!]\n"
         self.assertTrue(parse_smb_protocol_output(sample))
+
+
+class ExternalCommCountTest(unittest.TestCase):
+    @patch('lan_security_check.geoip2', None)
+    @patch('lan_security_check.geoip_country')
+    @patch('lan_security_check.get_external_connections')
+    def test_country_counts(self, mock_get_conns, mock_geoip_country, _):
+        mock_get_conns.return_value = [
+            ('1.1.1.1', 80),
+            ('2.2.2.2', 443),
+            ('3.3.3.3', 22),
+        ]
+
+        def side_effect(reader, ip):
+            return {
+                '1.1.1.1': 'US',
+                '2.2.2.2': 'CN',
+                '3.3.3.3': 'CN',
+            }[ip]
+
+        mock_geoip_country.side_effect = side_effect
+
+        res = check_external_comm()
+        self.assertEqual(res['country_counts'], {'US': 1, 'CN': 2})
+        self.assertEqual(res['status'], 'warning')
+        self.assertEqual(len(res['connections']), 2)
 
 
 if __name__ == "__main__":
