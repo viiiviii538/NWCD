@@ -70,6 +70,8 @@ pip install -r requirements.txt
   - ドロップダウンから Quick / Full などのポートプリセットを選択可能
   - SSL 証明書の発行者と有効期限
   - DNS の SPF レコード
+    - 診断結果ページでは各ドメインの SPF レコードを表形式で表示します。
+      未設定 (danger) は赤色、取得エラー (warning) は黄色でハイライトされます。
   - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
