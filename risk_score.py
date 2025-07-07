@@ -70,6 +70,12 @@ def calc_risk_score(
 calc_risk_score_v2 = calc_risk_score
 
 def main():
+    """Read device data from a JSON file and print each device's risk score.
+
+    The path to the JSON file is expected as the first command line argument.
+    The file should contain a list of device dictionaries with ``open_ports`` and
+    ``countries`` fields. Scores and any warnings are printed to ``stdout``.
+    """
     if len(sys.argv) < 2:
         print("Usage: risk_score.py <input.json>", file=sys.stderr)
         sys.exit(1)
