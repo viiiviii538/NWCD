@@ -18,5 +18,6 @@ void main() {
     expect(find.text('NWCD'), findsOneWidget);
     expect(find.text('LANスキャン'), findsOneWidget);
     expect(find.text('レポート保存'), findsOneWidget);
+    expect(find.byType(DropdownButton<String>), findsOneWidget);
   });
 }
