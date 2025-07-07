@@ -8,11 +8,16 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ScanningProgressList(progress: progress, taskCount: 3),
+          body: ScanningProgressList(
+            progress: progress,
+            taskCount: 3,
+            overallProgress: 0.5,
+          ),
         ),
       ),
     );
-    expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+    // One overall indicator plus one per host
+    expect(find.byType(LinearProgressIndicator), findsNWidgets(3));
     expect(find.textContaining('Scanning'), findsNWidgets(2));
   });
 }
