@@ -21,7 +21,9 @@ def build_graph(data: Any) -> Graph:
     """Build a graphviz Graph from parsed scan data."""
     hosts = list(_extract_hosts(data))
     g = Graph("Network")
-    g.attr("node", shape="box")
+    # Use ellipse shapes so that SVG nodes contain <ellipse> elements which can
+    # be tapped in the Flutter UI.
+    g.attr("node", shape="ellipse")
     g.node("LAN")
     for host in hosts:
         ip = host.get("ip") or host.get("device") or "unknown"
