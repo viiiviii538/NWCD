@@ -4,3 +4,4 @@ pdfkit
 weasyprint
 
 speedtest-cli
+graphviz
