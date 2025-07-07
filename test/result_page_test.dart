@@ -27,11 +27,9 @@ void main() {
     expect(find.text('risk2'), findsOneWidget);
     expect(find.text('レポート保存'), findsOneWidget);
 
-    final table = tester.widget<DataTable>(find.byType(DataTable).first);
-    final row1Color = table.rows[0].color?.resolve({});
-    final row2Color = table.rows[1].color?.resolve({});
-    expect(row1Color, Colors.green);
-    expect(row2Color, Colors.redAccent);
+    // Verify that the generated risk texts include the status labels.
+    expect(find.text('安全 → risk1 → fix1'), findsOneWidget);
+    expect(find.text('危険 → risk2 → fix2'), findsOneWidget);
 
     expect(find.byType(Card), findsNWidgets(2));
   });
