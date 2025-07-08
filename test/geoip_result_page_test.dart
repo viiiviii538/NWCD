@@ -9,7 +9,7 @@ void main() {
   testWidgets('GeoipResultPage shows entries and chart correctly', (tester) async {
     final entries = [
       GeoipEntry('1.1.1.1', 'example.com', 'CN'),
-      GeoipEntry('2.2.2.2', 'example.org', 'US'),
+      GeoipEntry('2.2.2.2', 'mal.example', 'US'),
     ];
 
     await tester.pumpWidget(
@@ -25,6 +25,7 @@ void main() {
 
     // ドメイン・IP確認
     expect(find.text('example.com'), findsOneWidget);
+    expect(find.text('mal.example'), findsOneWidget);
     expect(find.textContaining('1.1.1.1'), findsOneWidget);
     expect(find.textContaining('2.2.2.2'), findsOneWidget);
 
