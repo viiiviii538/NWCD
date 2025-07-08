@@ -226,6 +226,18 @@ python network_speed.py
 {"download": 100.0, "upload": 20.0, "ping": 15.0}
 ```
 
+## 外部通信レポート
+
+`external_ip_report.py` は現在の外部接続を列挙し、ドメイン名と国情報を表示します。
+ネットワーク接続情報を取得するため `psutil` の `net_connections()` を利用しており、
+環境によっては管理者権限（`sudo`）での実行が必要になる場合があります。
+
+```bash
+python external_ip_report.py
+```
+
+GeoIP データベースを指定する場合は `--geoip-db` オプションを利用してください。
+
 ## LANセキュリティ診断
 
 `lan_security_check.py` を実行すると、ARPスプーフィングやUPnP有効機器の有無、
