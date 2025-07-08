@@ -3,6 +3,9 @@ import json
 from pathlib import Path
 import tempfile
 
+import pytest
+pytest.importorskip("graphviz")
+
 from report_utils import generate_topology_diagram, generateTopologyDiagram
 
 
