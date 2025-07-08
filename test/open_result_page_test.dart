@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/main.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
