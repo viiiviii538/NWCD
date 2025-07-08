@@ -272,6 +272,19 @@ Flutter ウィジェットテストを実行するには次のコマンドを利
 flutter test
 ```
 
+## リリースバンドルに含めるファイル
+
+デスクトップ版を配布する際は、以下の Python スクリプトを実行ファイルと同じ
+ディレクトリに配置してください。`flutter build windows` や `flutter build linux`
+で作成したバンドルにこれらを含めないと、アプリから外部スクリプトを呼び出せなく
+なります。
+
+- `discover_hosts.py`
+- `port_scan.py`
+- `lan_port_scan.py`
+- `network_speed.py`
+- `security_report.py`
+
 ## 貢献
 
 詳しい貢献方法は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
