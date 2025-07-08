@@ -181,7 +181,7 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => DiagnosticResultPage(
           securityScore: 4,
           items: items,
-          portSummaries: const [],
+          portSummaries: _scanResults,
         ),
       ),
     );
