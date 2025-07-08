@@ -41,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
   List<SpfResult> _spfResults = [];
+  List<diag.ExternalCommEntry> _externalComms = [];
   diag.NetworkSpeed? _speed;
   diag.DefenseStatus? _defense;
   bool _lanScanning = false;
@@ -79,6 +80,7 @@ class _HomePageState extends State<HomePage> {
       _scanResults = [];
       _reports = [];
       _spfResults = [];
+      _externalComms = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -89,6 +91,8 @@ class _HomePageState extends State<HomePage> {
     setState(() => _speed = speed);
     final defense = await diag.checkDefenseStatus();
     setState(() => _defense = defense);
+    final comms = await diag.runExternalCommReport();
+    setState(() => _externalComms = comms);
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -300,6 +304,7 @@ class _HomePageState extends State<HomePage> {
           items: items,
           portSummaries: _scanResults,
           spfResults: _spfResults,
+          externalComms: _externalComms,
           devices: _devices,
           reports: _reports,
           defenderEnabled: _defense?.defenderEnabled,
