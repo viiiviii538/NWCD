@@ -4,14 +4,7 @@ import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
-import 'package:nwc_densetsu/utils/python_utils.dart';
 
-const Map<int, String> _dangerPortNotes = {
-  3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
-  22: 'SSH 接続に使われ、ブルートフォース攻撃の標的となる恐れがあります',
-  23: 'Telnet 用ポートは平文通信のため非常に危険です',
-  445: 'ファイル共有(SMB)に利用され、マルウェア侵入経路となりえます',
-};
 
 class _SvgNode {
   final String label;
@@ -36,8 +29,8 @@ class DiagnosticItem {
 class DiagnosticResultPage extends StatelessWidget {
   final double securityScore;
   final double riskScore;
-  final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
+  final List<DiagnosticItem> items;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -45,23 +38,23 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.securityScore,
     required this.riskScore,
     required this.items,
-    this.portSummaries = const [],
-    this.onGenerateTopology,
+    required this.portSummaries,
+    this.onGenerateTopology, 
   });
 
-  Color _scoreColor(double score) {
+  Color _scoreColor(int score) {
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
   }
 
-  String _scoreMessage(double score) {
+  String _scoreMessage(int score) {
     if (score >= 8) return '社内ネットワークは安全です';
     if (score >= 5) return '注意が必要です';
     return '危険な状態です';
   }
 
-  Widget _scoreSection(String label, double score) {
+  Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
     if (score >= 8) {
@@ -79,6 +72,7 @@ class DiagnosticResultPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
+            // ignore: deprecated_member_use
             color: color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -155,51 +149,10 @@ class DiagnosticResultPage extends StatelessWidget {
     return nodes;
   }
 
-  Widget _portStatusSection() {
-    if (portSummaries.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('ポート開放状況',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        const Text(
-          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
-        ),
-        const SizedBox(height: 8),
-        for (final s in portSummaries) ...[
-          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Column(
-            children: [
-              for (final r in s.results)
-                Card(
-                  color: r.state == 'open'
-                      ? (_dangerPortNotes.containsKey(r.port)
-                          ? Colors.redAccent.withOpacity(0.2)
-                          : Colors.green.withOpacity(0.2))
-                      : Colors.grey.withOpacity(0.2),
-                  margin: const EdgeInsets.symmetric(vertical: 2),
-                  child: ListTile(
-                    title: Text(
-                      "${r.port} (${r.service})：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}",
-                    ),
-                    subtitle: _dangerPortNotes[r.port] != null
-                        ? Text(_dangerPortNotes[r.port]!)
-                        : null,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-      ],
-    );
-  }
-
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
-        pythonExecutable,
+        'python',
         ['generate_html_report.py', 'sample_devices.json', '--pdf'],
       );
       final out = result.stdout.toString();
@@ -227,6 +180,7 @@ class DiagnosticResultPage extends StatelessWidget {
       final controller = TransformationController();
 
       await showDialog(
+        // ignore: use_build_context_synchronously
         context: context,
         builder: (_) => Dialog(
           child: SizedBox(
@@ -274,11 +228,9 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _scoreSection('セキュリティスコア', securityScore),
+            _scoreSection('セキュリティスコア', securityScore as int),
             const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore),
-            const SizedBox(height: 16),
-            _portStatusSection(),
+            _scoreSection('リスクスコア', riskScore as int),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
@@ -338,13 +290,13 @@ class ResultPage extends StatelessWidget {
 
   const ResultPage({super.key, required this.reports, required this.onSave});
 
-  Color _scoreColor(double score) {
+  Color _scoreColor(int score) {
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
   }
 
-  String _riskState(double score) {
+  String _riskState(int score) {
     if (score >= 8) return '安全';
     if (score >= 5) return '注意';
     return '危険';
@@ -368,8 +320,8 @@ class ResultPage extends StatelessWidget {
             rows: [
               for (final r in reports)
                 DataRow(
-                  color: MaterialStateProperty.all(
-                    _scoreColor(r.score),
+                  color: WidgetStateProperty.all(
+                    _scoreColor(r.score as int),
                   ),
                   cells: [
                     DataCell(Text(r.ip)),
@@ -394,7 +346,7 @@ class ResultPage extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Text(
-                          '${_riskState(r.score)} → '
+                          '${_riskState(r.score as int)} → '
                           '${risk.description} → ${risk.countermeasure}',
                         ),
                       ),
