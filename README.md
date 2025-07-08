@@ -38,7 +38,7 @@ brew install nmap arp-scan speedtest-cli
 
 # Windows
 winget install -e --id Nmap.Nmap   # nmap
-pip install speedtest-cli          # speedtest-cli
+pip install speedtest-cli==2.1.3   # speedtest-cli
 # arp-scan は Windows 版が存在しないため省略
 ```
 
