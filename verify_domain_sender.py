@@ -15,9 +15,17 @@ from dns_records import (
 
 
 def lookup_spf(domain: str) -> str:
-    """Fallback SPF lookup using ``nslookup`` via :func:`dns_records.get_spf_record`."""
-
-    return dns_records.get_spf_record(domain)
+    """Lookup SPF record using nslookup. Returns empty string on failure."""
+    try:
+        result = subprocess.run(
+            ["nslookup", "-type=txt", domain], capture_output=True, text=True
+        )
+        for line in result.stdout.splitlines():
+            if "v=spf1" in line:
+                return line.strip()
+    except Exception:
+        pass
+    return ""
 
 def check_domain(domain: str, offline: str | None = None, zone_file: str | None = None) -> dict:
     record = ''

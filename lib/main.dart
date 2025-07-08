@@ -11,6 +11,7 @@ import 'package:nwc_densetsu/port_constants.dart';
 import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/device_list_page.dart';
 import 'package:nwc_densetsu/geoip_result_page.dart';
+import 'package:nwc_densetsu/geoip_entry.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   List<SslCheckEntry> _sslEntries = [];
   List<SpfResult> _spfResults = [];
   List<diag.ExternalCommEntry> _externalComms = [];
+  List<GeoipEntry> _geoipEntries = [];
   diag.NetworkSpeed? _speed;
   diag.DefenseStatus? _defense;
   bool _lanScanning = false;
@@ -51,11 +53,30 @@ class _HomePageState extends State<HomePage> {
   static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
 
-  Future<void> _openGeoipPage() async {
-    final entries = await diag.runGeoipReport();
-    if (!mounted) return;
+void _openGeoipPageWithExistingData() {
+  if (_geoipEntries.isEmpty) return;
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => GeoipResultPage(entries: _geoipEntries),
+    ),
+  );
+}
+
+Future<void> _openGeoipPageWithFreshScan() async {
+  final entries = await diag.runGeoipReport();
+  if (!mounted) return;
+  setState(() => _geoipEntries = entries);
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => GeoipResultPage(entries: entries),
+    ),
+  );
+}
+
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: entries)),
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
     );
   }
 
@@ -91,7 +112,14 @@ class _HomePageState extends State<HomePage> {
     final defense = await diag.checkDefenseStatus();
     setState(() => _defense = defense);
     final comms = await diag.runExternalCommReport();
-    setState(() => _externalComms = comms);
+    setState(() {
+      _externalComms = comms;
+      _geoipEntries = [
+        for (final c in comms)
+          if (c.country.isNotEmpty)
+            GeoipEntry(c.ip, c.domain, c.country)
+      ];
+    });
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -255,6 +283,9 @@ class _HomePageState extends State<HomePage> {
       _devices = devices;
       _overallProgress = 1.0;
     });
+    if (mounted) {
+      _openGeoipPage();
+    }
   }
 
 
