@@ -37,6 +37,27 @@ class LanPortDevice {
   const LanPortDevice(this.ip, this.mac, this.vendor, this.ports);
 }
 
+class ExternalCommEntry {
+  final String dest;
+  final String protocol;
+  final String encryption;
+  final String state;
+  final String comment;
+
+  const ExternalCommEntry(
+      this.dest, this.protocol, this.encryption, this.state, this.comment);
+
+  factory ExternalCommEntry.fromJson(Map<String, dynamic> json) {
+    return ExternalCommEntry(
+      json['dest']?.toString() ?? '',
+      json['protocol']?.toString() ?? '',
+      json['encryption']?.toString() ?? '',
+      json['state']?.toString() ?? '',
+      json['comment']?.toString() ?? '',
+    );
+  }
+}
+
 
 class RiskItem {
   final String description;
@@ -219,6 +240,24 @@ Future<List<LanPortDevice>> scanLanWithPorts({
   }
 }
 
+/// Runs external_ip_report.py and returns parsed entries.
+Future<List<ExternalCommEntry>> runExternalCommReport() async {
+  const script = 'external_ip_report.py';
+  try {
+    final result = await Process.run('python', [script, '--json']);
+    if (result.exitCode != 0) {
+      return [];
+    }
+    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    return [
+      for (final item in data)
+        ExternalCommEntry.fromJson(item as Map<String, dynamic>)
+    ];
+  } catch (_) {
+    return [];
+  }
+}
+
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
@@ -242,18 +281,25 @@ Future<SslResult> checkSslCertificate(String host) async {
   }
 }
 
-/// Retrieves the SPF record for the given domain using `nslookup`.
-Future<SpfResult> checkSpfRecord(String domain) async {
+/// Retrieves the SPF record for the given domain. When [recordsFile] is
+/// supplied, the TXT record is looked up offline via `dns_records.py`.
+Future<SpfResult> checkSpfRecord(String domain, {String? recordsFile}) async {
+  const script = 'dns_records.py';
+  final args = <String>[script, domain];
+  if (recordsFile != null) {
+    args.addAll(['--zone-file', recordsFile]);
+  }
   try {
-    final result = await Process.run('nslookup', ['-type=txt', domain]);
-    final output = result.stdout.toString();
-    final lines = output.split('\n');
-    for (final line in lines) {
-      if (line.contains('v=spf1')) {
-        return SpfResult(domain, line.trim(), 'safe', '');
-      }
+    final result = await Process.run('python', args);
+    if (result.exitCode != 0) {
+      throw result.stderr.toString();
     }
-    return SpfResult(domain, '', 'danger', 'No SPF record found');
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final record = data['spf']?.toString() ?? '';
+    if (record.isEmpty) {
+      return SpfResult(domain, '', 'danger', 'No SPF record found');
+    }
+    return SpfResult(domain, record, 'safe', '');
   } catch (e) {
     return SpfResult(domain, '', 'warning', 'Failed to check SPF record: $e');
   }
@@ -307,23 +353,22 @@ Future<bool> checkDkimRecord(
   }
 }
 
-/// Checks DMARC TXT record either via `nslookup` or from a local file.
-Future<bool> checkDmarcRecord(String domain, {String? filePath}) async {
-  final dmarcDomain = domain.startsWith('_dmarc.') ? domain : '_dmarc.$domain';
+/// Checks DMARC TXT record either online or from a zone file using
+/// `dns_records.py`.
+Future<bool> checkDmarcRecord(String domain, {String? recordsFile}) async {
+  const script = 'dns_records.py';
+  final args = <String>[script, domain];
+  if (recordsFile != null) {
+    args.addAll(['--zone-file', recordsFile]);
+  }
   try {
-    String output;
-    if (filePath != null) {
-      output = await File(filePath).readAsString();
-    } else {
-      final result = await Process.run('nslookup', ['-type=txt', dmarcDomain]);
-      output = result.stdout.toString();
+    final result = await Process.run('python', args);
+    if (result.exitCode != 0) {
+      throw result.stderr.toString();
     }
-    for (final line in output.split('\n')) {
-      if (line.toLowerCase().contains('v=dmarc1')) {
-        return true;
-      }
-    }
-    return false;
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final record = data['dmarc']?.toString() ?? '';
+    return record.toLowerCase().contains('v=dmarc1');
   } catch (_) {
     return false;
   }
@@ -416,13 +461,13 @@ Future<SecurityReport> runSecurityReport({
 Future<SecurityReport> analyzeHost(
   String ip, {
   List<int>? ports,
-  String? domain,
+  required String domain,
 }) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(ip);
-  final dkimValid = await checkDkimRecord(ip);
-  final dmarcValid = await checkDmarcRecord(ip);
+  final spfRes = await checkSpfRecord(domain);
+  final dkimValid = await checkDkimRecord(domain);
+  final dmarcValid = await checkDmarcRecord(domain);
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)

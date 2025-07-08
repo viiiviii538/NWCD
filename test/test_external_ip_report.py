@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import external_ip_report
+import json
 
 class ExternalIPReportTest(unittest.TestCase):
     def test_classify_port_encrypted(self):
@@ -36,6 +37,21 @@ class ExternalIPReportTest(unittest.TestCase):
         reader = MagicMock()
         reader.country.side_effect = Exception()
         self.assertEqual(external_ip_report.geoip_country(reader, '1.1.1.1'), '')
+
+    @patch('external_ip_report.get_external_connections')
+    @patch('external_ip_report.reverse_dns', return_value='dns.google')
+    def test_json_output(self, mock_rdns, mock_get):
+        mock_get.return_value = [('8.8.8.8', 80)]
+        with patch('external_ip_report.geoip2', None):
+            with patch('sys.argv', ['external_ip_report.py', '--json']):
+                with patch('sys.stdout') as mock_out:
+                    external_ip_report.main()
+                    output = ''.join(call.args[0] for call in mock_out.write.call_args_list)
+        data = json.loads(output)
+        self.assertEqual(data[0]['dest'], 'dns.google')
+        self.assertEqual(data[0]['protocol'], 'HTTP')
+        self.assertEqual(data[0]['encryption'], '\u975e\u6697\u53f7\u5316')
+        self.assertEqual(data[0]['state'], '危険')
 
 if __name__ == '__main__':
     unittest.main()
