@@ -9,7 +9,7 @@ import html
 from pathlib import Path
 from typing import Any, Dict, List
 
-from risk_score import calc_risk_score
+from security_score import calc_security_score
 from report_utils import calc_utm_items
 
 try:
@@ -85,13 +85,13 @@ def generate_html(data: Any) -> str:
         else:
             parts.append("<p>None</p>")
 
-    parts.append("<h2>Risk Scores</h2><table><tr><th>IP</th><th>Score</th></tr>")
+    parts.append("<h2>Security Scores</h2><table><tr><th>IP</th><th>Score</th></tr>")
     all_utm = set()
     for dev in devices:
         ip = dev.get("ip") or dev.get("device") or ""
         ports = [str(p) for p in dev.get("open_ports", [])]
         countries = _collect_countries(dev)
-        score, _ = calc_risk_score(ports, countries)
+        score, _ = calc_security_score(ports, countries)
         utm = calc_utm_items(score, ports, countries)
         all_utm.update(utm)
         cls = ""

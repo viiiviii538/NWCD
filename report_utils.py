@@ -14,7 +14,7 @@ def calc_utm_items(score: float, open_ports: Iterable[str], countries: Iterable[
     Parameters
     ----------
     score : float
-        Overall risk score from :func:`calc_risk_score`.
+        Overall security score from :func:`calc_security_score`.
     open_ports : Iterable[str]
         Detected open ports for the host.
     countries : Iterable[str]
