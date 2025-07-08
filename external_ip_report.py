@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""List active external connections with domain and country information.
+
+`psutil.net_connections()` may require administrator privileges to access
+network connection details. Run this script with `sudo` if no results are
+shown.
+"""
+
 import argparse
 import socket
 import ipaddress

@@ -7,8 +7,9 @@
 本ツールは内部で Python スクリプトを呼び出し、LAN 内デバイスの探索には
 `arp-scan` または `nmap` を利用します。`arp-scan` が無い環境では `nmap`
 のみで動作するため、Windows では追加のインストールは必須ではありません。
-Python (3 系) といずれかのコマンドがインストールされていることを確認して
-ください。
+Python **3.10 以上** といずれかのコマンドがインストールされていることを確認して
+ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
+解釈できず、付属スクリプトが実行できません。
 ネットワーク速度計測には `speedtest-cli` を使用します。
 LAN セキュリティ診断 (`lan_security_check.py`) では `arp`, `nmap`, `upnpc` など
 複数の外部コマンドを利用します。Linux でファイアウォール状態を確認する際は
@@ -31,17 +32,19 @@ nmap -V  # または Windows では where nmap
 
 ```bash
 # Debian/Ubuntu
-sudo apt install nmap arp-scan speedtest-cli
+sudo apt install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # Fedora
-sudo dnf install nmap arp-scan speedtest-cli
+sudo dnf install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # macOS (Homebrew)
-brew install nmap arp-scan speedtest-cli
+brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # Windows
-winget install -e --id Nmap.Nmap   # nmap
-pip install speedtest-cli          # speedtest-cli
+winget install -e --id Nmap.Nmap      # nmap
+winget install -e --id Graphviz.Graphviz  # graphviz
+winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
+pip install speedtest-cli      
 # arp-scan は Windows 版が存在しないため省略
 ```
 
@@ -54,9 +57,9 @@ pip install speedtest-cli          # speedtest-cli
 
 ## Python ライブラリのインストール / Dependency Setup
 
-付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
-モジュールが必要です。リポジトリのルートで次のコマンドを実行し、必要なライブラリ
-をまとめてインストールしてください:
+付属の Python スクリプトには `geoip2`, `psutil`, `graphviz`, `pdfkit`, `weasyprint`
+などのモジュールが必要です。リポジトリのルートで次のコマンドを実行し、必要な
+ライブラリをまとめてインストールしてください:
 
 ```bash
 pip install -r requirements.txt
@@ -175,7 +178,9 @@ print(score, warnings)
 ## HTML レポート生成
 
 
-`generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。`--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+`generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。
+`--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+PDF 出力には `wkhtmltopdf` (pdfkit) もしくは `weasyprint` をインストールしておく必要があります。
 
 実行例:
 
@@ -233,6 +238,18 @@ python network_speed.py
 {"download": 100.0, "upload": 20.0, "ping": 15.0}
 ```
 
+## 外部通信レポート
+
+`external_ip_report.py` は現在の外部接続を列挙し、ドメイン名と国情報を表示します。
+ネットワーク接続情報を取得するため `psutil` の `net_connections()` を利用しており、
+環境によっては管理者権限（`sudo`）での実行が必要になる場合があります。
+
+```bash
+python external_ip_report.py
+```
+
+GeoIP データベースを指定する場合は `--geoip-db` オプションを利用してください。
+
 ## LANセキュリティ診断
 
 `lan_security_check.py` を実行すると、ARPスプーフィングやUPnP有効機器の有無、
@@ -249,6 +266,7 @@ python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
+この機能を利用するには Graphviz の実行ファイルが必要です。`sudo apt install graphviz` などでインストールしてください。
 
 ```bash
 python generate_topology.py scan_results.json -o topology.svg
