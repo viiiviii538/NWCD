@@ -2,7 +2,7 @@
 import sys
 import json
 
-from risk_score import calc_risk_score
+from security_score import calc_security_score
 from report_utils import calc_utm_items
 
 
@@ -56,7 +56,7 @@ def calc_score(open_ports, ssl_valid, spf_valid, geoip):
             }
         )
 
-    score, _warns = calc_risk_score(open_ports, [geoip] if geoip else [])
+    score, _warns = calc_security_score(open_ports, [geoip] if geoip else [])
     utm_items = calc_utm_items(score, open_ports, [geoip])
     return score, risks, utm_items
 
