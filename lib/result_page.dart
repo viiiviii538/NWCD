@@ -4,6 +4,7 @@ import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
+import 'package:nwc_densetsu/utils/python_utils.dart';
 
 const Map<int, String> _dangerPortNotes = {
   3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
@@ -198,7 +199,7 @@ class DiagnosticResultPage extends StatelessWidget {
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
-        'python',
+        pythonExecutable,
         ['generate_html_report.py', 'sample_devices.json', '--pdf'],
       );
       final out = result.stdout.toString();

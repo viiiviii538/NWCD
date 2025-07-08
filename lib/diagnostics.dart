@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'utils/python_utils.dart';
+
 import 'ssl_result.dart';
 export 'ssl_result.dart';
 import 'network_scan.dart' as net;
@@ -92,7 +94,7 @@ Future<String> runPing([String host = 'google.com']) async {
 Future<NetworkSpeed?> measureNetworkSpeed() async {
   const script = 'network_speed.py';
   try {
-    final result = await Process.run('python', [script]);
+    final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       return null;
     }
@@ -119,7 +121,7 @@ Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
     if (ports != null && ports.isNotEmpty) {
       args.add(ports.join(','));
     }
-    final result = await Process.run('python', args);
+    final result = await Process.run(pythonExecutable, args);
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
@@ -164,7 +166,7 @@ Future<List<LanPortDevice>> scanLanWithPorts({
     args.addAll(['--ports', ports.join(',')]);
   }
   try {
-    final result = await Process.run('python', [script, ...args]);
+    final result = await Process.run(pythonExecutable, [script, ...args]);
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
@@ -248,7 +250,7 @@ Future<SecurityReport> runSecurityReport({
 }) async {
   const script = 'security_report.py';
   try {
-    final result = await processRunner('python', [
+    final result = await processRunner(pythonExecutable, [
       script,
       ip,
       openPorts.join(','),
