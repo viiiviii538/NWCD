@@ -9,7 +9,7 @@ void main() {
         'google._domainkey.example.com. IN TXT "v=DKIM1; k=rsa"');
     final ok = await diag.checkDkimRecord(
       'example.com',
-      filePath: file.path,
+      recordsFile: file.path,
       selectors: ['default', 'google'],
     );
     expect(ok, isTrue);
@@ -19,7 +19,7 @@ void main() {
   test('checkDmarcRecord detects absence', () async {
     final file = File('${Directory.systemTemp.path}/dmarc.txt');
     await file.writeAsString('no record');
-    final ok = await diag.checkDmarcRecord('example.com', filePath: file.path);
+    final ok = await diag.checkDmarcRecord('example.com', recordsFile: file.path);
     expect(ok, isFalse);
     await file.delete();
   });
