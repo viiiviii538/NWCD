@@ -13,7 +13,7 @@ UNKNOWN_PORT_POINTS = 0.5
 PORT_SCORE_CAP = 6.0
 COUNTRY_SCORE_CAP = 4.0
 
-__all__ = ["calc_risk_score", "calc_risk_score_v2"]
+__all__ = ["calc_risk_score"]
 
 PORT_SCORES = {
     "3389": 4.0,  # RDP
@@ -66,8 +66,6 @@ def calc_risk_score(
     return round(score, 1), warnings
 
 
-# Backwards compatibility
-calc_risk_score_v2 = calc_risk_score
 
 def main():
     """Read device data from a JSON file and print each device's risk score.
