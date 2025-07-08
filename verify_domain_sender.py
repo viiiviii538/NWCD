@@ -12,6 +12,17 @@ from dns_records import (
     get_dmarc_record,
 )
 
+
+def lookup_spf(domain: str) -> str:
+    """Fallback SPF lookup using nslookup."""
+    result = subprocess.run(
+        ["nslookup", "-type=txt", domain], capture_output=True, text=True
+    )
+    for line in result.stdout.splitlines():
+        if "v=spf1" in line:
+            return line.strip()
+    return ""
+
 def check_domain(domain: str, offline: str | None = None, zone_file: str | None = None) -> dict:
     record = ''
     comment = ''
