@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'python_utils.dart';
+
 import 'package:path/path.dart' as p;
 
 import '../diagnostics.dart' show SecurityReport;
@@ -24,7 +26,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     await File(jsonPath).writeAsString(jsonEncode(jsonList));
 
     final htmlPath = p.join(tempDir.path, 'report.html');
-    final result = await Process.run('python', [
+    final result = await Process.run(pythonExecutable, [
       'generate_html_report.py',
       jsonPath,
       '-o',
@@ -60,7 +62,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
 Future<String> generateTopologyDiagram() async {
   final tempDir = await Directory.systemTemp.createTemp('nwcd_topo');
   final outputPath = p.join(tempDir.path, 'topology.svg');
-  final result = await Process.run('python', [
+  final result = await Process.run(pythonExecutable, [
     'generate_topology.py',
     'sample_devices.json',
     '-o',

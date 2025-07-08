@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'utils/python_utils.dart';
+
 /// Represents a discovered network device.
 class NetworkDevice {
   final String ip;
@@ -15,7 +17,7 @@ class NetworkDevice {
 Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}) async {
   const script = 'discover_hosts.py';
   try {
-    final result = await Process.run('python', [script]);
+    final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
       stderr.writeln(msg.isEmpty
