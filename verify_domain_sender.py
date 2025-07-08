@@ -2,6 +2,9 @@
 import argparse
 import json
 import subprocess
+from typing import List
+
+import dns_records
 
 def lookup_spf(domain: str) -> str:
     result = subprocess.run(['nslookup', '-type=txt', domain], capture_output=True, text=True)
@@ -10,41 +13,60 @@ def lookup_spf(domain: str) -> str:
             return line.strip()
     return ''
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description='Verify domain SPF record')
-    parser.add_argument('domain', help='Domain name to check')
-    parser.add_argument('--offline', help='Path to offline SPF record JSON file')
-    args = parser.parse_args()
-
+def check_domain(domain: str, offline: str | None = None, zone_file: str | None = None) -> dict:
     record = ''
     comment = ''
 
-    if args.offline:
+    if offline:
         try:
-            with open(args.offline, 'r', encoding='utf-8') as f:
+            with open(offline, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            record = data.get(args.domain, '')
+            record = data.get(domain, '')
             if record:
                 comment = 'offline record'
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - file error edge case
             comment = f'failed to read offline file: {e}'
 
     if not record:
         try:
-            record = lookup_spf(args.domain)
-            if not record:
+            record = dns_records.get_spf_record(domain, records_file=zone_file) or lookup_spf(domain)
+            if not record and not comment:
                 comment = 'No SPF record found'
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - subprocess error
             comment = f'Failed to check SPF record: {e}'
 
-    status = 'safe' if record else 'danger'
-    result = {
-        'domain': args.domain,
-        'record': record,
+    dkim = dns_records.get_dkim_record(domain, records_file=zone_file)
+    dmarc = dns_records.get_dmarc_record(domain, records_file=zone_file)
+    status = 'safe' if record and dkim and dmarc else 'danger'
+    return {
+        'domain': domain,
+        'spf': record,
+        'dkim': dkim,
+        'dmarc': dmarc,
         'status': status,
         'comment': comment,
     }
-    print(json.dumps(result, ensure_ascii=False))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description='Verify domain sender records')
+    parser.add_argument('pos_domains', nargs='*', help='Domain name(s) to check')
+    parser.add_argument('--domains', nargs='+', help='Domain name(s) to check')
+    parser.add_argument('--offline', help='Path to offline SPF record JSON file')
+    parser.add_argument('--zone-file', help='Path to DNS zone file')
+    args = parser.parse_args()
+
+    domains: List[str] = []
+    if args.domains:
+        domains.extend(args.domains)
+    if args.pos_domains:
+        domains.extend(args.pos_domains)
+    if not domains:
+        parser.error('No domain specified')
+
+    for d in domains:
+        res = check_domain(d, offline=args.offline, zone_file=args.zone_file)
+        print(json.dumps(res, ensure_ascii=False))
 
 if __name__ == '__main__':
     main()
