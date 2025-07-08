@@ -20,7 +20,6 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 9.0,
           riskScore: 2.0,
           items: items,
           portSummaries: summaries,
@@ -28,9 +27,7 @@ void main() {
       ),
     );
 
-    expect(find.text('セキュリティスコア'), findsOneWidget);
     expect(find.text('リスクスコア'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle), findsOneWidget);
     expect(find.byIcon(Icons.error), findsOneWidget);
 
     // Verify status and action text for each item

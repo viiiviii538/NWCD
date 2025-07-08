@@ -49,7 +49,6 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 5,
           riskScore: 4,
           items: items,
           portSummaries: [],
@@ -70,7 +69,6 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 5,
           riskScore: 4,
           items: const [],
           portSummaries: const [],

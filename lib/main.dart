@@ -179,9 +179,9 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DiagnosticResultPage(
-          securityScore: 7,
           riskScore: 4,
-          items: items, portSummaries: const [],
+          items: items,
+          portSummaries: const [],
         ),
       ),
     );
