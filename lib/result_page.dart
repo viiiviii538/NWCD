@@ -48,19 +48,19 @@ class DiagnosticResultPage extends StatelessWidget {
     this.onGenerateTopology,
   });
 
-  Color _scoreColor(int score) {
+  Color _scoreColor(double score) {
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
   }
 
-  String _scoreMessage(int score) {
+  String _scoreMessage(double score) {
     if (score >= 8) return '社内ネットワークは安全です';
     if (score >= 5) return '注意が必要です';
     return '危険な状態です';
   }
 
-  Widget _scoreSection(String label, int score) {
+  Widget _scoreSection(String label, double score) {
     final color = _scoreColor(score);
     IconData icon;
     if (score >= 8) {
@@ -273,9 +273,9 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _scoreSection('セキュリティスコア', securityScore),
+            _scoreSection('セキュリティスコア', securityScore.toDouble()),
             const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore),
+            _scoreSection('リスクスコア', riskScore.toDouble()),
             const SizedBox(height: 16),
             _portStatusSection(),
             const SizedBox(height: 16),

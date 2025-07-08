@@ -8,6 +8,12 @@ import 'network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
 
+typedef ProcessRunner = Future<ProcessResult> Function(
+    String executable, List<String> arguments);
+
+Future<ProcessResult> _defaultRunner(String exe, List<String> args) =>
+    Process.run(exe, args);
+
 class PortStatus {
   final int port;
   final String state;
@@ -238,10 +244,11 @@ Future<SecurityReport> runSecurityReport({
   required bool sslValid,
   required bool spfValid,
   String geoip = 'JP',
+  ProcessRunner processRunner = _defaultRunner,
 }) async {
   const script = 'security_report.py';
   try {
-    final result = await Process.run('python', [
+    final result = await processRunner('python', [
       script,
       ip,
       openPorts.join(','),

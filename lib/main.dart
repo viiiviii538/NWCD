@@ -242,7 +242,7 @@ class _HomePageState extends State<HomePage> {
           securityScore: securityScore,
           riskScore: riskScore,
           items: items,
-          portSummaries: const [],
+          portSummaries: _scanResults,
         ),
       ),
     );
