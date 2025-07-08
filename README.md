@@ -114,6 +114,19 @@ nmap -V # または arp-scan --version
 SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
 `dig example.com TXT` を保存したテキストを指定してください。
 
+### ゾーンファイル形式
+
+`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。1 行に 1
+レコードを記述し、TXT レコードのみを対象とします。
+
+```
+example.com.                     IN TXT "v=spf1 +mx -all"
+default._domainkey.example.com.  IN TXT "v=DKIM1; k=rsa; p=abcd"
+_dmarc.example.com.              IN TXT "v=DMARC1; p=none"
+```
+
+先頭のドメイン名、`IN TXT`, 値という順番で記載してください。その他の行は無視されます。
+
 
 ## LAN + Port Scan
 
