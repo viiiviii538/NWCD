@@ -369,8 +369,15 @@ python generate_topology.py scan_results.json -o topology.svg
 
 ## テスト
 
-Python スクリプトのユニットテストは `test` ディレクトリにあります。すべて実行する
-場合は以下のコマンドを使用します。
+Python スクリプトのユニットテストは `test` ディレクトリにあります。実行する前に
+`requirements.txt` に記載された依存ライブラリ (例: `graphviz`) をインストールして
+ください。以下のコマンド、または `scripts/setup_test_env.sh` を使って準備できます。
+
+```bash
+pip install -r requirements.txt
+```
+
+すべてのテストを実行する場合は次のコマンドを利用します。
 
 ```bash
 python -m unittest discover -s test
