@@ -298,11 +298,11 @@ Future<SecurityReport> runSecurityReport({
       }
     }
     final country = data['geoip']?.toString() ?? '';
-    int parsedScore() {
+    double parsedScore() {
       final value = data['score'];
-      if (value is num) return value.round();
+      if (value is num) return value.toDouble();
       final d = double.tryParse(value.toString());
-      return d?.round() ?? 0;
+      return d ?? 0.0;
     }
     return SecurityReport(
       data['ip']?.toString() ?? ip,
