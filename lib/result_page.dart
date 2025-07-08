@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
+import 'extended_results.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -31,6 +32,13 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
   final Future<String> Function()? onGenerateTopology;
+  final List<SslCheck> sslChecks;
+  final List<SpfCheck> spfChecks;
+  final List<DomainAuthCheck> domainAuths;
+  final List<GeoIpStat> geoipStats;
+  final List<LanDeviceRisk> lanDevices;
+  final List<ExternalCommInfo> externalComms;
+  final List<DefenseFeatureStatus> defenseStatus;
 
   const DiagnosticResultPage({
     super.key,
@@ -38,6 +46,13 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.items,
     required this.portSummaries,
     this.onGenerateTopology,
+    this.sslChecks = const [],
+    this.spfChecks = const [],
+    this.domainAuths = const [],
+    this.geoipStats = const [],
+    this.lanDevices = const [],
+    this.externalComms = const [],
+    this.defenseStatus = const [],
   });
 
   Color _scoreColor(int score) {
@@ -145,6 +160,219 @@ class DiagnosticResultPage extends StatelessWidget {
       }
     }
     return nodes;
+  }
+
+  Widget _portSection() {
+    if (portSummaries.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ポート開放状況'),
+        const SizedBox(height: 4),
+        for (final s in portSummaries)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.host),
+              DataTable(columns: const [
+                DataColumn(label: Text('Port')),
+                DataColumn(label: Text('State')),
+                DataColumn(label: Text('Service')),
+              ], rows: [
+                for (final p in s.results)
+                  DataRow(cells: [
+                    DataCell(Text(p.port.toString())),
+                    DataCell(Text(p.state)),
+                    DataCell(Text(p.service)),
+                  ]),
+              ]),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _sslSection() {
+    if (sslChecks.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SSL証明書の安全性チェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('発行者')),
+          DataColumn(label: Text('有効期限')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in sslChecks)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.issuer)),
+              DataCell(Text(c.expiry)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _spfSection() {
+    if (spfChecks.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SPFレコードの設定状況'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('SPF')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in spfChecks)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.spf)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _domainAuthSection() {
+    if (domainAuths.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ドメインの送信元検証設定'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('SPF')),
+          DataColumn(label: Text('DKIM')),
+          DataColumn(label: Text('DMARC')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in domainAuths)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.spf ? '✅' : '❌')),
+              DataCell(Text(c.dkim ? '✅' : '❌')),
+              DataCell(Text(c.dmarc ? '✅' : '❌')),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _geoipSection() {
+    if (geoipStats.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('GeoIP解析：通信先の国別リスクチェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('国名')),
+          DataColumn(label: Text('通信数')),
+          DataColumn(label: Text('状態')),
+        ], rows: [
+          for (final g in geoipStats)
+            DataRow(cells: [
+              DataCell(Text(g.country)),
+              DataCell(Text(g.count.toString())),
+              DataCell(Text(g.status)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _lanSection() {
+    if (lanDevices.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('LAN内デバイス一覧とリスクチェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('IPアドレス')),
+          DataColumn(label: Text('MACアドレス')),
+          DataColumn(label: Text('ベンダー名')),
+          DataColumn(label: Text('機器名')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final d in lanDevices)
+            DataRow(cells: [
+              DataCell(Text(d.ip)),
+              DataCell(Text(d.mac)),
+              DataCell(Text(d.vendor)),
+              DataCell(Text(d.name)),
+              DataCell(Text(d.status)),
+              DataCell(Text(d.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _externalCommSection() {
+    if (externalComms.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('外部通信の暗号化状況'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('宛先ドメイン')),
+          DataColumn(label: Text('通信プロトコル')),
+          DataColumn(label: Text('暗号化状況')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in externalComms)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.protocol)),
+              DataCell(Text(c.encryption)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _defenseSection() {
+    if (defenseStatus.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('端末の防御機能の有効性チェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('保護機能')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final d in defenseStatus)
+            DataRow(cells: [
+              DataCell(Text(d.feature)),
+              DataCell(Text(d.status)),
+              DataCell(Text(d.comment)),
+            ]),
+        ]),
+      ],
+    );
   }
 
   Future<void> _saveReport(BuildContext context) async {
@@ -256,6 +484,22 @@ class DiagnosticResultPage extends StatelessWidget {
                 },
               ),
             ),
+            const SizedBox(height: 16),
+            _portSection(),
+            const SizedBox(height: 16),
+            _sslSection(),
+            const SizedBox(height: 16),
+            _spfSection(),
+            const SizedBox(height: 16),
+            _domainAuthSection(),
+            const SizedBox(height: 16),
+            _geoipSection(),
+            const SizedBox(height: 16),
+            _lanSection(),
+            const SizedBox(height: 16),
+            _externalCommSection(),
+            const SizedBox(height: 16),
+            _defenseSection(),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.center,
