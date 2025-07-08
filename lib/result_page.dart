@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,6 +31,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final int securityScore;
   final int riskScore;
   final List<DiagnosticItem> items;
+  final List<SslCheckEntry> sslEntries;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -37,6 +39,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.securityScore,
     required this.riskScore,
     required this.items,
+    this.sslEntries = const [],
     this.onGenerateTopology,
   });
 
@@ -226,11 +229,15 @@ class DiagnosticResultPage extends StatelessWidget {
           children: [
             _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore),
+          _scoreSection('リスクスコア', riskScore),
+          const SizedBox(height: 16),
+          if (sslEntries.isNotEmpty) ...[
+            SslCheckSection(results: sslEntries),
             const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: items.length,
+          ],
+          Expanded(
+            child: ListView.builder(
+              itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return Card(

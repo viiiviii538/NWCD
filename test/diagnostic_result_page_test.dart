@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
@@ -16,6 +17,7 @@ void main() {
           securityScore: 9,
           riskScore: 2,
           items: items,
+          sslEntries: const [],
         ),
       ),
     );
@@ -32,5 +34,31 @@ void main() {
     expect(find.text('推奨対策: fix2'), findsOneWidget);
     expect(find.text('現状: danger'), findsOneWidget);
     expect(find.text('推奨対策: fix3'), findsOneWidget);
+  });
+
+  testWidgets('DiagnosticResultPage displays SSL table', (tester) async {
+    const sslItems = [
+      SslCheckEntry(
+        domain: 'example.com',
+        issuer: 'CA',
+        expiry: '2025-01-01',
+        safe: true,
+        comment: '',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 8,
+          riskScore: 1,
+          items: [],
+          sslEntries: sslItems,
+        ),
+      ),
+    );
+
+    expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
   });
 }

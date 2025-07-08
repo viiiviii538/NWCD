@@ -10,6 +10,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   List<PortScanSummary> _scanResults = [];
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
+  List<SslCheckEntry> _sslEntries = [];
   diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
   String _portPreset = 'default';
@@ -64,6 +66,7 @@ class _HomePageState extends State<HomePage> {
       _devices = <NetworkDevice>[];
       _scanResults = [];
       _reports = [];
+      _sslEntries = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -140,6 +143,26 @@ class _HomePageState extends State<HomePage> {
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
       final spfRes = results[2] as String;
+
+      // Parse SSL certificate details
+      var issuer = '';
+      var expiry = '';
+      var comment = '';
+      final m =
+          RegExp(r'SSL cert expires on (.*?), issued by (.*)').firstMatch(sslRes.message);
+      if (m != null) {
+        expiry = m.group(1) ?? '';
+        issuer = m.group(2) ?? '';
+      } else {
+        comment = sslRes.message;
+      }
+      _sslEntries.add(SslCheckEntry(
+        domain: ip,
+        issuer: issuer,
+        expiry: expiry,
+        safe: sslRes.valid,
+        comment: comment,
+      ));
 
       _scanResults.add(summary);
       for (final r in summary.results) {
@@ -242,6 +265,7 @@ class _HomePageState extends State<HomePage> {
           securityScore: securityScore,
           riskScore: riskScore,
           items: items,
+          sslEntries: _sslEntries,
         ),
       ),
     );
