@@ -457,7 +457,8 @@ Future<SecurityReport> runSecurityReport({
   }
 }
 
-/// Performs diagnostics for [ip] and returns a [SecurityReport].
+/// Performs diagnostics for [ip] using the given [domain] for DNS based
+/// checks and returns a [SecurityReport].
 Future<SecurityReport> analyzeHost(
   String ip, {
   List<int>? ports,
