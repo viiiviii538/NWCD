@@ -7,8 +7,9 @@
 本ツールは内部で Python スクリプトを呼び出し、LAN 内デバイスの探索には
 `arp-scan` または `nmap` を利用します。`arp-scan` が無い環境では `nmap`
 のみで動作するため、Windows では追加のインストールは必須ではありません。
-Python (3 系) といずれかのコマンドがインストールされていることを確認して
-ください。
+Python **3.10 以上** といずれかのコマンドがインストールされていることを確認して
+ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
+解釈できず、付属スクリプトが実行できません。
 ネットワーク速度計測には `speedtest-cli` を使用します。
 
 また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
@@ -39,7 +40,7 @@ brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 winget install -e --id Nmap.Nmap      # nmap
 winget install -e --id Graphviz.Graphviz  # graphviz
 winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
-pip install speedtest-cli             # speedtest-cli
+pip install speedtest-cli      
 # arp-scan は Windows 版が存在しないため省略
 ```
 
@@ -59,6 +60,8 @@ pip install speedtest-cli             # speedtest-cli
 ```bash
 pip install -r requirements.txt
 ```
+Python のバージョン要件を満たしているか確認するための `check_python_version.py`
+スクリプトも用意しています。
 
 ネットワーク図生成には `graphviz` の実行ファイル (dot など) が必要です。
 Debian/Ubuntu では `sudo apt install graphviz`、macOS では `brew install graphviz`
