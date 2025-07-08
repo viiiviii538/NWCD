@@ -51,7 +51,7 @@ class RiskItem {
 
 class SecurityReport {
   final String ip;
-  final int score;
+  final double score;
   final List<RiskItem> risks;
   final List<String> utmItems;
   final String path;
@@ -260,7 +260,7 @@ Future<SecurityReport> runSecurityReport({
     if (output.trim().isEmpty) {
       return SecurityReport(
         ip,
-        0,
+        0.0,
         [const RiskItem('error', 'No output from security_report.py')],
         [],
         '',
@@ -316,7 +316,7 @@ Future<SecurityReport> runSecurityReport({
   } catch (e) {
     return SecurityReport(
       ip,
-      0,
+      0.0,
       [RiskItem('error', e.toString())],
       [],
       '',

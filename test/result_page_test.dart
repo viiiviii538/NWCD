@@ -8,9 +8,9 @@ import 'dart:io';
 void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {
     const reports = [
-      SecurityReport('1.1.1.1', 9, [RiskItem('risk1', 'fix1')], [], '',
+      SecurityReport('1.1.1.1', 9.0, [RiskItem('risk1', 'fix1')], [], '',
           openPorts: [80], geoip: 'US'),
-      SecurityReport('2.2.2.2', 4, [RiskItem('risk2', 'fix2')], [], '',
+      SecurityReport('2.2.2.2', 4.0, [RiskItem('risk2', 'fix2')], [], '',
           openPorts: [22], geoip: 'JP'),
     ];
 
@@ -23,8 +23,8 @@ void main() {
     expect(find.text('Scores'), findsOneWidget);
     expect(find.text('1.1.1.1'), findsOneWidget);
     expect(find.text('2.2.2.2'), findsOneWidget);
-    expect(find.text('9'), findsOneWidget);
-    expect(find.text('4'), findsOneWidget);
+    expect(find.text('9.0'), findsOneWidget);
+    expect(find.text('4.0'), findsOneWidget);
     expect(find.text('risk1'), findsOneWidget);
     expect(find.text('risk2'), findsOneWidget);
     expect(find.text('レポート保存'), findsOneWidget);
