@@ -146,9 +146,8 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final spfFuture = diag
-          .checkSpfRecord(d.name.isNotEmpty ? d.name : ip)
-          .then((value) {
+      final domain = d.name.isNotEmpty ? d.name : ip;
+      final spfFuture = diag.checkSpfRecord(domain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
@@ -157,7 +156,7 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final dkimFuture = diag.checkDkimRecord(ip).then((value) {
+      final dkimFuture = diag.checkDkimRecord(domain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
@@ -166,7 +165,8 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final dmarcFuture = diag.checkDmarcRecord(ip).then((value) {
+      final dmarcDomain = domain.startsWith('_dmarc.') ? domain : '_dmarc.$domain';
+      final dmarcFuture = diag.checkDmarcRecord(dmarcDomain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
