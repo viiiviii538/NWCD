@@ -18,8 +18,10 @@ from external_ip_report import (
 
 from common_constants import DANGER_COUNTRIES
 
-# Detect local subnet once to reuse in all checks
-_SUBNET = _get_subnet() or "192.168.1.0/24"
+
+def _default_subnet() -> str:
+    """Return detected subnet or a reasonable default."""
+    return _get_subnet() or "192.168.1.0/24"
 
 def parse_arp_table(output: str) -> Dict[str, List[str]]:
     table: Dict[str, List[str]] = {}
@@ -167,7 +169,7 @@ def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, An
     return result
 
 def main() -> None:
-    subnet = sys.argv[1] if len(sys.argv) > 1 else _SUBNET
+    subnet = sys.argv[1] if len(sys.argv) > 1 else _default_subnet()
     results = {
         "arp_spoofing": check_arp_spoofing(),
         "upnp": check_upnp(subnet),
