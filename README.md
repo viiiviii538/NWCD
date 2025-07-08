@@ -7,8 +7,9 @@
 本ツールは内部で Python スクリプトを呼び出し、LAN 内デバイスの探索には
 `arp-scan` または `nmap` を利用します。`arp-scan` が無い環境では `nmap`
 のみで動作するため、Windows では追加のインストールは必須ではありません。
-Python (3 系) といずれかのコマンドがインストールされていることを確認して
-ください。
+Python **3.10 以上** といずれかのコマンドがインストールされていることを確認して
+ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
+解釈できず、付属スクリプトが実行できません。
 ネットワーク速度計測には `speedtest-cli` を使用します。
 
 また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
@@ -50,13 +51,15 @@ pip install speedtest-cli==2.1.3   # speedtest-cli
 
 ## Python ライブラリのインストール / Dependency Setup
 
-付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
-モジュールが必要です。`requirements.txt` では動作確認済みのバージョンを明記して
-いるため、リポジトリのルートで次のコマンドを実行すると同じ環境を再現できます:
+付属の Python スクリプトは Python 3.10 以降を前提としています。`geoip2`,
+`psutil`, `pdfkit`, `weasyprint` などのモジュールが必要なため、リポジトリの
+ルートで次のコマンドを実行し、必要なライブラリをまとめてインストールしてください:
 
 ```bash
 pip install -r requirements.txt
 ```
+Python のバージョン要件を満たしているか確認するための `check_python_version.py`
+スクリプトも用意しています。
 
 ## できること
 - **LANスキャン** ボタンを押すと `arp-scan` または `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
