@@ -90,7 +90,11 @@ Future<NetworkSpeed?> measureNetworkSpeed() async {
     if (result.exitCode != 0) {
       return null;
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return null;
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final down = (data['download'] as num).toDouble();
     final up = (data['upload'] as num).toDouble();
     final ping = (data['ping'] as num).toDouble();
@@ -113,7 +117,11 @@ Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return PortScanSummary(host, []);
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final portList = <PortStatus>[];
     if (data.containsKey('ports')) {
       for (final item in data['ports']) {
@@ -154,7 +162,11 @@ Future<List<LanPortDevice>> scanLanWithPorts({
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
-    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return [];
+    }
+    final data = jsonDecode(output) as List<dynamic>;
     final devices = <LanPortDevice>[];
     for (final item in data) {
       final portList = <PortStatus>[];
@@ -237,7 +249,19 @@ Future<SecurityReport> runSecurityReport({
       spfValid ? 'true' : 'false',
       geoip,
     ]);
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return SecurityReport(
+        ip,
+        0,
+        [const RiskItem('error', 'No output from security_report.py')],
+        [],
+        '',
+        openPorts: [],
+        geoip: '',
+      );
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final risks = <RiskItem>[];
     if (data['risks'] is List) {
       for (final r in data['risks']) {
