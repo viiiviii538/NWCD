@@ -20,8 +20,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 9,
-          riskScore: 2,
+          securityScore: 9.0,
+          riskScore: 2.0,
           items: items,
           portSummaries: summaries,
         ),
