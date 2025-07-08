@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
-const dangerCountries = {'CN', 'RU', 'KP'};
-const safeCountries = {'JP', 'US', 'GB', 'DE', 'FR', 'CA', 'AU'};
+import 'geoip_entry.dart';
 
 Color _statusColor(String status) {
   switch (status) {
@@ -15,44 +13,14 @@ Color _statusColor(String status) {
   }
 }
 
-String _judgeStatus(String country) {
-  final code = country.toUpperCase();
-  if (dangerCountries.contains(code)) {
-    return 'danger';
-  }
-  if (safeCountries.contains(code)) {
-    return 'safe';
-  }
-  return 'warning';
-}
 
-class GeoipEntry {
-  final String ip;
-  final String domain;
-  final String country;
-
-  GeoipEntry(this.ip, this.domain, this.country);
-
-  String get status => _judgeStatus(country);
-
-  String get comment {
-    switch (status) {
-      case 'danger':
-        return '危険国との通信';
-      case 'warning':
-        return '未知の国への通信';
-      default:
-        return '';
-    }
-  }
-}
 
 class CountryCount {
   final String country;
   final int count;
   CountryCount(this.country, this.count);
 
-  String get status => _judgeStatus(country);
+  String get status => judgeGeoipStatus(country);
 }
 
 class CountryCountChart extends StatelessWidget {

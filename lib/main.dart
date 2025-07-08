@@ -12,6 +12,8 @@ import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
 import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/device_list_page.dart';
+import 'package:nwc_densetsu/geoip_result_page.dart';
+import 'package:nwc_densetsu/geoip_entry.dart';
 
 void main() {
   runApp(const MyApp());
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   List<SslCheckEntry> _sslEntries = [];
   List<SpfResult> _spfResults = [];
   List<diag.ExternalCommEntry> _externalComms = [];
+  List<GeoipEntry> _geoipEntries = [];
   diag.NetworkSpeed? _speed;
   diag.DefenseStatus? _defense;
   bool _lanScanning = false;
@@ -53,13 +56,9 @@ class _HomePageState extends State<HomePage> {
   double _overallProgress = 0.0;
 
   void _openGeoipPage() {
-    final entries = [
-      GeoipEntry('93.184.216.34', 'example.com', 'US'),
-      GeoipEntry('203.0.113.1', 'mal.example', 'CN'),
-      GeoipEntry('198.51.100.2', '', 'RU'),
-    ];
+    if (_geoipEntries.isEmpty) return;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: entries)),
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
     );
   }
 
@@ -95,7 +94,14 @@ class _HomePageState extends State<HomePage> {
     final defense = await diag.checkDefenseStatus();
     setState(() => _defense = defense);
     final comms = await diag.runExternalCommReport();
-    setState(() => _externalComms = comms);
+    setState(() {
+      _externalComms = comms;
+      _geoipEntries = [
+        for (final c in comms)
+          if (c.country.isNotEmpty)
+            GeoipEntry(c.ip, c.domain, c.country)
+      ];
+    });
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -259,6 +265,9 @@ class _HomePageState extends State<HomePage> {
       _devices = devices;
       _overallProgress = 1.0;
     });
+    if (mounted) {
+      _openGeoipPage();
+    }
   }
 
 

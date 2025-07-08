@@ -52,6 +52,9 @@ class ExternalIPReportTest(unittest.TestCase):
         self.assertEqual(data[0]['protocol'], 'HTTP')
         self.assertEqual(data[0]['encryption'], '\u975e\u6697\u53f7\u5316')
         self.assertEqual(data[0]['state'], '危険')
+        self.assertEqual(data[0]['ip'], '8.8.8.8')
+        self.assertEqual(data[0]['domain'], 'dns.google')
+        self.assertEqual(data[0]['country'], '')
 
 if __name__ == '__main__':
     unittest.main()
