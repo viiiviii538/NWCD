@@ -11,6 +11,10 @@ Python **3.10 以上** といずれかのコマンドがインストールされ
 ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
 解釈できず、付属スクリプトが実行できません。
 ネットワーク速度計測には `speedtest-cli` を使用します。
+LAN セキュリティ診断 (`lan_security_check.py`) では `arp`, `nmap`, `upnpc` など
+複数の外部コマンドを利用します。Linux でファイアウォール状態を確認する際は
+`ufw` を呼び出します。これらのユーティリティが存在しない場合、該当する
+チェックは自動的にスキップされます。
 
 また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
 があります。次のように入力して認識されるか確認してください。
@@ -60,14 +64,9 @@ pip install speedtest-cli
 ```bash
 pip install -r requirements.txt
 ```
-Python のバージョン要件を満たしているか確認するための `check_python_version.py`
-スクリプトも用意しています。
-
-ネットワーク図生成には `graphviz` の実行ファイル (dot など) が必要です。
-Debian/Ubuntu では `sudo apt install graphviz`、macOS では `brew install graphviz`
-などでインストールできます。
-PDF 出力を行う場合は `wkhtmltopdf` (pdfkit 使用時) または `weasyprint` を別途
-インストールしてください。
+PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または `weasyprint` の
+いずれかがシステムにインストールされている必要があります。どちらも存在しない
+環境では `--pdf` オプションを指定しても PDF 出力はスキップされます。
 
 ## できること
 - **LANスキャン** ボタンを押すと `arp-scan` または `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
