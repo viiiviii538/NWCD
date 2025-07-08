@@ -306,7 +306,7 @@ Future<SecurityReport> runSecurityReport({
       final d = double.tryParse(value.toString());
       return d ?? 0.0;
     }
-    final double score = parsedScore();
+    final score = parsedScore();
     return SecurityReport(
       data['ip']?.toString() ?? ip,
       score,
