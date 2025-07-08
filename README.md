@@ -353,6 +353,36 @@ python verify_domain_sender.py example.com --selector google --zone-file sample_
 
 DKIM では `default` や `google`, `selector1` などの selector 名が一般的に利用されます。
 
+## verify_domain_sender.py 実行ガイド (オンライン・オフライン)
+
+改良版 `verify_domain_sender.py` は SPF、DKIM、DMARC をまとめて検証できます。オンライン環境では DNS を直接参照して次のように実行します。
+
+```bash
+python verify_domain_sender.py example.com
+```
+
+オフラインの場合は `--zone-file` で TXT レコードを格納したファイルを指定し、必要に応じて `--selector` で DKIM セレクタを与えます。
+
+```bash
+python verify_domain_sender.py example.com --selector google --zone-file sample_zone.txt
+```
+
+出力される JSON は次の構造です。
+
+```json
+{
+  "domain": "example.com",
+  "spf": "v=spf1 include:_spf.example.com ~all",
+  "dkim": "v=DKIM1; k=rsa; p=abcd",
+  "dmarc": "v=DMARC1; p=none",
+  "spf_status": "safe",
+  "dkim_status": "safe",
+  "dmarc_status": "safe"
+}
+```
+
+DKIM セレクタには `default`, `google`, `selector1` などがよく用いられます。
+
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
