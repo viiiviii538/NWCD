@@ -48,6 +48,18 @@ pip install speedtest-cli          # speedtest-cli
 2. リポジトリをクローン後、`flutter pub get` を実行します。
 3. `flutter run -d windows` などデスクトップターゲットで起動します。
 
+## ソースからの実行 (Developer Mode)
+
+`flutter pub get` の後、以下のコマンドでデバッグビルドを起動できます。ホットリロ
+ードが有効になるため、コード変更を即座に確認可能です。
+
+```bash
+flutter run --debug
+```
+
+Python スクリプトを個別に実行したい場合は、`python foo.py` のように各スクリプトを
+直接呼び出してください。
+
 ## Python ライブラリのインストール / Dependency Setup
 
 付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
