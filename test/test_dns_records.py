@@ -1,7 +1,12 @@
 import unittest
 import json
 import subprocess
-from dns_records import get_spf_record, get_dkim_record, get_dmarc_record
+from dns_records import (
+    get_spf_record,
+    get_dkim_record,
+    get_dmarc_record,
+    check_dkim_record,
+)
 
 class DnsRecordFileTest(unittest.TestCase):
     def setUp(self):
@@ -14,6 +19,21 @@ class DnsRecordFileTest(unittest.TestCase):
     def test_dkim_from_file(self):
         rec = get_dkim_record('example.com', selector='default', records_file=self.zone)
         self.assertEqual(rec, 'v=DKIM1; k=rsa; p=abcd')
+
+    def test_check_dkim_record_selectors(self):
+        ok = check_dkim_record(
+            'example.com',
+            selectors=['google', 'default'],
+            records_file=self.zone,
+        )
+        self.assertTrue(ok)
+
+        ng = check_dkim_record(
+            'example.com',
+            selectors=['google'],
+            records_file=self.zone,
+        )
+        self.assertFalse(ng)
 
     def test_dmarc_from_file(self):
         rec = get_dmarc_record('example.com', records_file=self.zone)

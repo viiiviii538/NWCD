@@ -3,8 +3,6 @@ import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
     show PortScanSummary, SecurityReport, SslResult, SpfResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
-import 'package:nwc_densetsu/network_scan.dart'
-    show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
@@ -40,7 +38,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _output = '';
   List<PortScanSummary> _scanResults = [];
-  List<NetworkDevice> _devices = <NetworkDevice>[];
+  List<net.NetworkDevice> _devices = <net.NetworkDevice>[];
   List<SecurityReport> _reports = [];
   List<SslCheckEntry> _sslEntries = [];
   List<SpfResult> _spfResults = [];
@@ -76,7 +74,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _runLanScan() async {
     setState(() {
       _lanScanning = true;
-      _devices = <NetworkDevice>[];
+      _devices = <net.NetworkDevice>[];
       _scanResults = [];
       _reports = [];
       _sslEntries = [];
@@ -147,7 +145,7 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final domain = d.name.isNotEmpty ? d.name : ip;
+      final domain = d.name;
       final spfFuture = diag.checkSpfRecord(domain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
@@ -551,7 +549,7 @@ class _HomePageState extends State<HomePage> {
                     DataColumn(label: Text('Vendor')),
                   ],
                   rows: [
-                    for (final NetworkDevice d in _devices)
+                    for (final net.NetworkDevice d in _devices)
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
@@ -577,7 +575,7 @@ class _HomePageState extends State<HomePage> {
                           DataColumn(label: Text('Vendor')),
                         ],
                         rows: _devices
-                            .map((NetworkDevice? d) => DataRow(cells: [
+                            .map((net.NetworkDevice? d) => DataRow(cells: [
                                   DataCell(Text(d?.ip ?? '')),
                                   DataCell(Text(d?.mac ?? '')),
                                   DataCell(Text(d?.vendor ?? '')),

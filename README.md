@@ -125,11 +125,12 @@ nmap -V # または arp-scan --version
 オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
 SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
 `dig example.com TXT` を保存したテキストを指定してください。
+ゾーンファイルでは 1 行につき 1 レコードを記述し、TXT レコードのみを対象とします。
 
 ### ゾーンファイル形式
 
-`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。1 行に 1
-レコードを記述し、TXT レコードのみを対象とします。
+`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。各行は
+`<name> IN TXT "value"` の形式で、末尾のピリオドや引用符を含めて記述します。
 
 ```
 example.com.                     IN TXT "v=spf1 +mx -all"
@@ -352,6 +353,36 @@ python verify_domain_sender.py example.com --selector google --zone-file sample_
 
 DKIM では `default` や `google`, `selector1` などの selector 名が一般的に利用されます。
 
+## verify_domain_sender.py 実行ガイド (オンライン・オフライン)
+
+改良版 `verify_domain_sender.py` は SPF、DKIM、DMARC をまとめて検証できます。オンライン環境では DNS を直接参照して次のように実行します。
+
+```bash
+python verify_domain_sender.py example.com
+```
+
+オフラインの場合は `--zone-file` で TXT レコードを格納したファイルを指定し、必要に応じて `--selector` で DKIM セレクタを与えます。
+
+```bash
+python verify_domain_sender.py example.com --selector google --zone-file sample_zone.txt
+```
+
+出力される JSON は次の構造です。
+
+```json
+{
+  "domain": "example.com",
+  "spf": "v=spf1 include:_spf.example.com ~all",
+  "dkim": "v=DKIM1; k=rsa; p=abcd",
+  "dmarc": "v=DMARC1; p=none",
+  "spf_status": "safe",
+  "dkim_status": "safe",
+  "dmarc_status": "safe"
+}
+```
+
+DKIM セレクタには `default`, `google`, `selector1` などがよく用いられます。
+
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
@@ -363,14 +394,34 @@ python generate_topology.py scan_results.json -o topology.svg
 `-o` には `.png`, `.svg`, `.dot` のいずれかを指定します。何も指定しない場合は `topology.svg` が生成されます。
 生成した SVG はアプリ内で拡大・縮小できるインタラクティブビューアーで閲覧できます。
 
+## GeoIP 解析画面
+
+LAN スキャンの結果ページでは、外部通信の国別統計をグラフ化した **GeoIP 解析** ボタンが表示されます。
+この画面は `external_ip_report.py` で取得した通信先一覧や、`lan_security_check.py` の
+`country_counts` 情報を利用しており、危険とされる国 (`CN`, `RU`, `KP` など) への通信は赤色で強調されます。
+棒グラフの描画には Flutter パッケージの [`fl_chart`](https://pub.dev/packages/fl_chart) を使用しているため、
+`pubspec.yaml` に同パッケージが含まれている必要があります。Python 側では `geoip2` モジュールと
+GeoLite2 データベースを用いて IP アドレスから国コードを解決します。
+
+LAN スキャンを実行すると同時にこれらのデータが収集されるため、追加操作なしで最新の GeoIP 結果を
+閲覧できます。グラフ下には各通信先の IP・ドメインと判定結果の一覧が表示され、危険度の判断材料として
+利用できます。
+
 ## スキャン実行時の注意
 
 本ツールによるホスト探索やポートスキャンは、運用者が明示的な許可を得たネットワークでのみ実行してください。許可なく他者のネットワークをスキャンすると、不正アクセス禁止法などの法令に抵触し、民事・刑事上の責任を問われる可能性があります。
 
 ## テスト
 
-Python スクリプトのユニットテストは `test` ディレクトリにあります。すべて実行する
-場合は以下のコマンドを使用します。
+Python スクリプトのユニットテストは `test` ディレクトリにあります。実行する前に
+`requirements.txt` に記載された依存ライブラリ (例: `graphviz`) をインストールして
+ください。以下のコマンド、または `scripts/setup_test_env.sh` を使って準備できます。
+
+```bash
+pip install -r requirements.txt
+```
+
+すべてのテストを実行する場合は次のコマンドを利用します。
 
 ```bash
 python -m unittest discover -s test
