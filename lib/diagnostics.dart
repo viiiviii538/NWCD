@@ -389,13 +389,13 @@ Future<SecurityReport> runSecurityReport({
 Future<SecurityReport> analyzeHost(
   String ip, {
   List<int>? ports,
-  String? domain,
+  required String domain,
 }) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(ip);
-  final dkimValid = await checkDkimRecord(ip);
-  final dmarcValid = await checkDmarcRecord(ip);
+  final spfRes = await checkSpfRecord(domain);
+  final dkimValid = await checkDkimRecord(domain);
+  final dmarcValid = await checkDmarcRecord(domain);
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)
