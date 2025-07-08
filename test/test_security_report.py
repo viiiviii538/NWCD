@@ -1,7 +1,7 @@
 import unittest
 from security_report import calc_score
 
-class CalcSecurityScoreTest(unittest.TestCase):
+class CalcScoreTest(unittest.TestCase):
     def test_all_safe(self):
         score, risks, utm = calc_score([], True, True, 'JP')
         self.assertEqual(score, 0.0)

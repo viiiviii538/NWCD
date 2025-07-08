@@ -27,7 +27,6 @@ class DiagnosticItem {
 }
 
 class DiagnosticResultPage extends StatelessWidget {
-  final double securityScore;
   final double riskScore;
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
@@ -35,11 +34,10 @@ class DiagnosticResultPage extends StatelessWidget {
 
   const DiagnosticResultPage({
     super.key,
-    required this.securityScore,
     required this.riskScore,
     required this.items,
     required this.portSummaries,
-    this.onGenerateTopology, 
+    this.onGenerateTopology,
   });
 
   Color _scoreColor(int score) {
@@ -228,8 +226,6 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _scoreSection('セキュリティスコア', securityScore as int),
-            const SizedBox(height: 16),
             _scoreSection('リスクスコア', riskScore as int),
             const SizedBox(height: 16),
             Expanded(
