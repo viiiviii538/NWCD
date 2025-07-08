@@ -46,4 +46,25 @@ void main() {
     expect(find.textContaining('3389'), findsOneWidget);
     expect(find.textContaining('危険'), findsOneWidget);
   });
+
+  testWidgets('External communication table is displayed', (tester) async {
+    final comms = [
+      const ExternalCommEntry('example.com', 'HTTP', '非暗号化', '危険', 'r')
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 5,
+          items: const [],
+          externalComms: comms,
+        ),
+      ),
+    );
+
+    expect(find.text('外部通信の暗号化状況'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
+    expect(find.text('HTTP'), findsOneWidget);
+    expect(find.text('非暗号化'), findsOneWidget);
+  });
 }

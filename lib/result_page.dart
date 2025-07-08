@@ -39,6 +39,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
   final List<SpfResult> spfResults;
+  final List<ExternalCommEntry> externalComms;
   final bool? defenderEnabled;
   final bool? firewallEnabled;
   final Future<String> Function()? onGenerateTopology;
@@ -50,6 +51,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.items,
     this.portSummaries = const [],
     this.spfResults = const [],
+    this.externalComms = const [],
     this.defenderEnabled,
     this.firewallEnabled,
     this.onGenerateTopology,
@@ -249,6 +251,54 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _externalCommSection() {
+    if (externalComms.isEmpty) return const SizedBox.shrink();
+    Color rowColor(String state) {
+      switch (state) {
+        case '危険':
+          return Colors.redAccent.withOpacity(0.2);
+        case '安全':
+          return Colors.green.withOpacity(0.2);
+        default:
+          return Colors.grey.withOpacity(0.2);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('外部通信の暗号化状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('宛先')),
+              DataColumn(label: Text('プロトコル')),
+              DataColumn(label: Text('暗号化')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              for (final e in externalComms)
+                DataRow(
+                  color: MaterialStateProperty.all(rowColor(e.state)),
+                  cells: [
+                    DataCell(Text(e.dest)),
+                    DataCell(Text(e.protocol)),
+                    DataCell(Text(e.encryption)),
+                    DataCell(Text(e.state)),
+                    DataCell(Text(e.comment)),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _defenseSection() {
     if (defenderEnabled == null && firewallEnabled == null) {
       return const SizedBox.shrink();
@@ -398,6 +448,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _portStatusSection(),
             const SizedBox(height: 16),
             _spfSection(),
+            const SizedBox(height: 16),
+            _externalCommSection(),
             const SizedBox(height: 16),
             _defenseSection(),
             const SizedBox(height: 16),

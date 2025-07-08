@@ -37,6 +37,27 @@ class LanPortDevice {
   const LanPortDevice(this.ip, this.mac, this.vendor, this.ports);
 }
 
+class ExternalCommEntry {
+  final String dest;
+  final String protocol;
+  final String encryption;
+  final String state;
+  final String comment;
+
+  const ExternalCommEntry(
+      this.dest, this.protocol, this.encryption, this.state, this.comment);
+
+  factory ExternalCommEntry.fromJson(Map<String, dynamic> json) {
+    return ExternalCommEntry(
+      json['dest']?.toString() ?? '',
+      json['protocol']?.toString() ?? '',
+      json['encryption']?.toString() ?? '',
+      json['state']?.toString() ?? '',
+      json['comment']?.toString() ?? '',
+    );
+  }
+}
+
 
 class RiskItem {
   final String description;
@@ -214,6 +235,24 @@ Future<List<LanPortDevice>> scanLanWithPorts({
       ));
     }
     return devices;
+  } catch (_) {
+    return [];
+  }
+}
+
+/// Runs external_ip_report.py and returns parsed entries.
+Future<List<ExternalCommEntry>> runExternalCommReport() async {
+  const script = 'external_ip_report.py';
+  try {
+    final result = await Process.run('python', [script, '--json']);
+    if (result.exitCode != 0) {
+      return [];
+    }
+    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    return [
+      for (final item in data)
+        ExternalCommEntry.fromJson(item as Map<String, dynamic>)
+    ];
   } catch (_) {
     return [];
   }
