@@ -2,6 +2,7 @@
 import argparse
 import json
 import subprocess
+import re
 from typing import List
 
 import dns_records
@@ -14,16 +15,18 @@ from dns_records import (
 
 
 def lookup_spf(domain: str) -> str:
-    """Return the SPF TXT record for *domain* using nslookup."""
+    """Fallback SPF lookup using nslookup."""
     try:
-        result = subprocess.run(
-            ["nslookup", "-type=txt", domain], capture_output=True, text=True
+        proc = subprocess.run(
+            ["nslookup", "-type=txt", domain], capture_output=True, text=True, timeout=5
         )
-        for line in result.stdout.split("\n"):
-            if "v=spf1" in line.lower():
-                return line.strip()
+        if proc.returncode != 0:
+            return ""
+        for line in proc.stdout.splitlines():
+            m = re.search(r'"([^"]+)"', line)
+            if m and "spf1" in m.group(1).lower():
+                return m.group(1)
     except Exception:
-        # Ignore lookup failures and return empty string
         pass
     return ""
 

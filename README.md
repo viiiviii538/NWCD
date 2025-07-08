@@ -125,11 +125,12 @@ nmap -V # または arp-scan --version
 オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
 SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
 `dig example.com TXT` を保存したテキストを指定してください。
+ゾーンファイルでは 1 行につき 1 レコードを記述し、TXT レコードのみを対象とします。
 
 ### ゾーンファイル形式
 
-`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。1 行に 1
-レコードを記述し、TXT レコードのみを対象とします。
+`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。各行は
+`<name> IN TXT "value"` の形式で、末尾のピリオドや引用符を含めて記述します。
 
 ```
 example.com.                     IN TXT "v=spf1 +mx -all"
