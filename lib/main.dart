@@ -306,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                             child: Padding(
                               padding: const EdgeInsets.all(8),
                               child: Text(
-                                '${_riskState(r.score as int)} → '
+                                '${_riskState(r.score.toInt())} → '
                                 '${risk.description} → ${risk.countermeasure}',
                               ),
                             ),
@@ -398,7 +398,7 @@ class ScoreChart extends StatelessWidget {
       final r = reports[i];
       groups.add(
         BarChartGroupData(x: i, barRods: [
-          BarChartRodData(toY: r.score.toDouble(), color: _scoreColor(r.score as int))
+          BarChartRodData(toY: r.score.toDouble(), color: _scoreColor(r.score.toInt()))
         ]),
       );
     }
