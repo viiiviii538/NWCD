@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final domain = d.name.isNotEmpty ? d.name : ip;
+      final domain = d.name;
       final spfFuture = diag.checkSpfRecord(domain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;

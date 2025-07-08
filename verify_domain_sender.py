@@ -12,6 +12,21 @@ from dns_records import (
     get_dmarc_record,
 )
 
+
+def lookup_spf(domain: str) -> str:
+    """Return the SPF TXT record for *domain* using nslookup."""
+    try:
+        result = subprocess.run(
+            ["nslookup", "-type=txt", domain], capture_output=True, text=True
+        )
+        for line in result.stdout.split("\n"):
+            if "v=spf1" in line.lower():
+                return line.strip()
+    except Exception:
+        # Ignore lookup failures and return empty string
+        pass
+    return ""
+
 def check_domain(domain: str, offline: str | None = None, zone_file: str | None = None) -> dict:
     record = ''
     comment = ''
