@@ -445,13 +445,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Color _scoreColor(int score) {
+Color _scoreColor(double score) {
   if (score >= 8) return Colors.green;
   if (score >= 5) return Colors.orange;
   return Colors.redAccent;
 }
 
-String _riskState(int score) {
+String _riskState(double score) {
   if (score >= 8) return '安全';
   if (score >= 5) return '注意';
   return '危険';
