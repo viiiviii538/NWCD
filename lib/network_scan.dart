@@ -8,6 +8,9 @@ class NetworkDevice {
   final String mac;
   final String vendor;
 
+  /// Convenience getter mirroring [vendor] for widget state bindings.
+  String get vendorWidgetStateProperty => vendor;
+
   const NetworkDevice(this.ip, this.mac, this.vendor);
 }
 
