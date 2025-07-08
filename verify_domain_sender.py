@@ -2,6 +2,7 @@
 import argparse
 import json
 import subprocess
+import re
 from typing import List
 
 import dns_records
@@ -34,7 +35,7 @@ def check_domain(domain: str, offline: str | None = None, zone_file: str | None 
 
     if not record:
         try:
-            record = dns_records.get_spf_record(domain, records_file=zone_file) or lookup_spf(domain)
+            record = dns_records.get_spf_record(domain, records_file=zone_file)
             if not record and not comment:
                 comment = 'No SPF record found'
         except Exception as e:  # pragma: no cover - subprocess error
