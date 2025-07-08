@@ -2,10 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/ssl_check_section.dart';
+import 'package:nwc_densetsu/device_list_page.dart';
+import 'package:nwc_densetsu/network_scan.dart' show NetworkDevice;
 import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
+
+const Map<int, String> _dangerPortNotes = {
+  3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
+  22: 'SSH 接続に使われ、ブルートフォース攻撃の標的となる恐れがあります',
+  23: 'Telnet 用ポートは平文通信のため非常に危険です',
+  445: 'ファイル共有(SMB)に利用され、マルウェア侵入経路となりえます',
+};
 
 class _SvgNode {
   final String label;
@@ -32,6 +41,13 @@ class DiagnosticResultPage extends StatelessWidget {
   final int riskScore;
   final List<DiagnosticItem> items;
   final List<SslCheckEntry> sslEntries;
+  final List<PortScanSummary> portSummaries;
+  final List<SpfResult> spfResults;
+  final List<ExternalCommEntry> externalComms;
+  final List<NetworkDevice> devices;
+  final List<SecurityReport> reports;
+  final bool? defenderEnabled;
+  final bool? firewallEnabled;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -40,6 +56,13 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.riskScore,
     required this.items,
     this.sslEntries = const [],
+    this.portSummaries = const [],
+    this.spfResults = const [],
+    this.externalComms = const [],
+    this.devices = const [],
+    this.reports = const [],
+    this.defenderEnabled,
+    this.firewallEnabled,
     this.onGenerateTopology,
   });
 
@@ -149,6 +172,266 @@ class DiagnosticResultPage extends StatelessWidget {
     return nodes;
   }
 
+  Widget _portStatusSection() {
+    if (portSummaries.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ポート開放状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
+        for (final s in portSummaries) ...[
+          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Column(
+            children: [
+              for (final r in s.results)
+                Card(
+                  color: r.state == 'open'
+                      ? (_dangerPortNotes.containsKey(r.port)
+                          ? Colors.redAccent.withOpacity(0.2)
+                          : Colors.green.withOpacity(0.2))
+                      : Colors.grey.withOpacity(0.2),
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  child: ListTile(
+                    title: Text(
+                        "${r.port}：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}"),
+                    subtitle: _dangerPortNotes[r.port] != null
+                        ? Text(_dangerPortNotes[r.port]!)
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  Color _deviceScoreColor(int score) {
+    if (score >= 8) return Colors.redAccent;
+    if (score >= 5) return Colors.orange;
+    return Colors.green;
+  }
+
+  String _deviceRiskState(int score) {
+    if (score >= 8) return '危険';
+    if (score >= 5) return '注意';
+    return '安全';
+  }
+
+  Widget _lanDevicesSection(BuildContext context) {
+    if (devices.isEmpty) return const SizedBox.shrink();
+    final rows = <DataRow>[];
+    for (final d in devices) {
+      final rep = reports.firstWhere((r) => r.ip == d.ip,
+          orElse: () => const SecurityReport('', 0, [], [], '',
+              openPorts: [], geoip: ''));
+      rows.add(
+        DataRow(
+          color: MaterialStateProperty.all(
+            _deviceScoreColor(rep.score).withOpacity(0.2),
+          ),
+          cells: [
+            DataCell(Text(d.ip)),
+            DataCell(Text(d.mac)),
+            DataCell(Text(d.vendor)),
+            DataCell(Text(d.name)),
+            DataCell(Text(_deviceRiskState(rep.score))),
+            DataCell(Text(rep.risks.isNotEmpty ? rep.risks.first.description : '')),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('LAN内デバイス一覧',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('IPアドレス')),
+              DataColumn(label: Text('MACアドレス')),
+              DataColumn(label: Text('ベンダー名')),
+              DataColumn(label: Text('機器名')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: rows,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _spfSection() {
+    if (spfResults.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SPFレコードの設定状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+            'メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('ドメイン')),
+              DataColumn(label: Text('SPFレコード')),
+              DataColumn(label: Text('DKIM')),
+              DataColumn(label: Text('DMARC')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              for (final r in spfResults)
+                DataRow(
+                  color: MaterialStateProperty.all(
+                    r.status == 'danger'
+                        ? Colors.redAccent.withOpacity(0.2)
+                        : r.status == 'warning'
+                            ? Colors.yellowAccent.withOpacity(0.2)
+                            : Colors.green.withOpacity(0.2),
+                  ),
+                  cells: [
+                    DataCell(Text(r.domain)),
+                    DataCell(Text(r.record)),
+                    DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
+                    DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
+                    DataCell(Text(r.status)),
+                    DataCell(Text(r.comment)),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _externalCommSection() {
+    if (externalComms.isEmpty) return const SizedBox.shrink();
+    Color rowColor(String state) {
+      switch (state) {
+        case '危険':
+          return Colors.redAccent.withOpacity(0.2);
+        case '安全':
+          return Colors.green.withOpacity(0.2);
+        default:
+          return Colors.grey.withOpacity(0.2);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('外部通信の暗号化状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('宛先')),
+              DataColumn(label: Text('プロトコル')),
+              DataColumn(label: Text('暗号化')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              for (final e in externalComms)
+                DataRow(
+                  color: MaterialStateProperty.all(rowColor(e.state)),
+                  cells: [
+                    DataCell(Text(e.dest)),
+                    DataCell(Text(e.protocol)),
+                    DataCell(Text(e.encryption)),
+                    DataCell(Text(e.state)),
+                    DataCell(Text(e.comment)),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _defenseSection() {
+    if (defenderEnabled == null && firewallEnabled == null) {
+      return const SizedBox.shrink();
+    }
+    DataRow row(String name, bool? enabled, String comment) {
+      Color? color;
+      TextStyle? style;
+      String state;
+      if (enabled == null) {
+        state = '不明';
+      } else if (enabled) {
+        state = '有効';
+        color = Colors.green.withOpacity(0.2);
+        style = const TextStyle(color: Colors.green);
+      } else {
+        state = '無効';
+        color = Colors.redAccent.withOpacity(0.2);
+        style = const TextStyle(color: Colors.red, fontWeight: FontWeight.bold);
+      }
+      return DataRow(
+        color: color != null ? MaterialStateProperty.all(color) : null,
+        cells: [
+          DataCell(Text(name)),
+          DataCell(Text(state, style: style)),
+          DataCell(Text(comment)),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('端末の防御機能の有効性チェック',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+            'リアルタイム保護やファイアウォールが無効な状態では、マルウェア感染や外部からの侵入を防ぐことができず、端末が極めて無防備になります。基本的なセキュリティ機能が適切に動作しているかを確認してください。'),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('保護機能名')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              row(
+                'リアルタイム保護（Defender）',
+                defenderEnabled,
+                'ウイルスやマルウェアを常時監視し、感染を未然に防ぎます。無効化すると新たな脅威を検知できません。',
+              ),
+              row(
+                '外部アクセス遮断（Firewall）',
+                firewallEnabled,
+                '不正アクセスをブロックします。無効にすると外部からの侵入に対して無防備になります。',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -238,6 +521,19 @@ class DiagnosticResultPage extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               itemCount: items.length,
+            _portStatusSection(),
+            const SizedBox(height: 16),
+            _lanDevicesSection(context),
+            const SizedBox(height: 16),
+            _spfSection(),
+            const SizedBox(height: 16),
+            _externalCommSection(),
+            const SizedBox(height: 16),
+            _defenseSection(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return Card(

@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'ssl_result.dart';
 export 'ssl_result.dart';
+import 'spf_result.dart';
+export 'spf_result.dart';
 import 'network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
@@ -35,6 +37,27 @@ class LanPortDevice {
   const LanPortDevice(this.ip, this.mac, this.vendor, this.ports);
 }
 
+class ExternalCommEntry {
+  final String dest;
+  final String protocol;
+  final String encryption;
+  final String state;
+  final String comment;
+
+  const ExternalCommEntry(
+      this.dest, this.protocol, this.encryption, this.state, this.comment);
+
+  factory ExternalCommEntry.fromJson(Map<String, dynamic> json) {
+    return ExternalCommEntry(
+      json['dest']?.toString() ?? '',
+      json['protocol']?.toString() ?? '',
+      json['encryption']?.toString() ?? '',
+      json['state']?.toString() ?? '',
+      json['comment']?.toString() ?? '',
+    );
+  }
+}
+
 
 class RiskItem {
   final String description;
@@ -51,6 +74,8 @@ class SecurityReport {
   final String path;
   final List<int> openPorts;
   final String geoip;
+  final bool dkimValid;
+  final bool dmarcValid;
 
   const SecurityReport(
     this.ip,
@@ -60,6 +85,8 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
+    this.dkimValid = false,
+    this.dmarcValid = false,
   });
 }
 
@@ -69,6 +96,13 @@ class NetworkSpeed {
   final double pingMs;
 
   const NetworkSpeed(this.downloadMbps, this.uploadMbps, this.pingMs);
+}
+
+class DefenseStatus {
+  final bool? defenderEnabled;
+  final bool? firewallEnabled;
+
+  const DefenseStatus({this.defenderEnabled, this.firewallEnabled});
 }
 
 /// Runs the system ping command.
@@ -97,6 +131,32 @@ Future<NetworkSpeed?> measureNetworkSpeed() async {
     return NetworkSpeed(down, up, ping);
   } catch (_) {
     return null;
+  }
+}
+
+/// Checks Defender and firewall status using `firewall_check.py`.
+Future<DefenseStatus> checkDefenseStatus() async {
+  const script = 'firewall_check.py';
+  try {
+    final result = await Process.run('python', [script]);
+    if (result.exitCode != 0) {
+      return const DefenseStatus();
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    bool? _parse(dynamic v) {
+      if (v == null) return null;
+      if (v is bool) return v;
+      final s = v.toString().toLowerCase();
+      if (['true', '1', 'yes'].contains(s)) return true;
+      if (['false', '0', 'no'].contains(s)) return false;
+      return null;
+    }
+    return DefenseStatus(
+      defenderEnabled: _parse(data['defender_enabled']),
+      firewallEnabled: _parse(data['firewall_enabled']),
+    );
+  } catch (_) {
+    return const DefenseStatus();
   }
 }
 
@@ -180,6 +240,24 @@ Future<List<LanPortDevice>> scanLanWithPorts({
   }
 }
 
+/// Runs external_ip_report.py and returns parsed entries.
+Future<List<ExternalCommEntry>> runExternalCommReport() async {
+  const script = 'external_ip_report.py';
+  try {
+    final result = await Process.run('python', [script, '--json']);
+    if (result.exitCode != 0) {
+      return [];
+    }
+    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    return [
+      for (final item in data)
+        ExternalCommEntry.fromJson(item as Map<String, dynamic>)
+    ];
+  } catch (_) {
+    return [];
+  }
+}
+
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
@@ -203,20 +281,96 @@ Future<SslResult> checkSslCertificate(String host) async {
   }
 }
 
-/// Retrieves the SPF record for the given domain using `nslookup`.
-Future<String> checkSpfRecord(String domain) async {
+/// Retrieves the SPF record for the given domain. When [recordsFile] is
+/// supplied, the TXT record is looked up offline via `dns_records.py`.
+Future<SpfResult> checkSpfRecord(String domain, {String? recordsFile}) async {
+  const script = 'dns_records.py';
+  final args = <String>[script, domain];
+  if (recordsFile != null) {
+    args.addAll(['--zone-file', recordsFile]);
+  }
   try {
-    final result = await Process.run('nslookup', ['-type=txt', domain]);
-    final output = result.stdout.toString();
-    final lines = output.split('\n');
-    for (final line in lines) {
-      if (line.contains('v=spf1')) {
-        return 'SPF record: ${line.trim()}';
+    final result = await Process.run('python', args);
+    if (result.exitCode != 0) {
+      throw result.stderr.toString();
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final record = data['spf']?.toString() ?? '';
+    if (record.isEmpty) {
+      return SpfResult(domain, '', 'danger', 'No SPF record found');
+    }
+    return SpfResult(domain, record, 'safe', '');
+  } catch (e) {
+    return SpfResult(domain, '', 'warning', 'Failed to check SPF record: $e');
+  }
+}
+
+/// Checks DKIM TXT record either via `nslookup` or from a local file.
+///
+/// [selectors] specifies the DKIM selectors to try in order. The first record
+/// containing `v=DKIM1` will result in `true` being returned.
+Future<bool> checkDkimRecord(
+  String domain, {
+  String? filePath,
+  List<String> selectors = const ['default', 'google', 'selector1'],
+}) async {
+  try {
+    final lines = <String>[];
+    if (filePath != null) {
+      final text = await File(filePath).readAsString();
+      lines.addAll(text.split('\n'));
+    }
+
+    for (final selector in selectors) {
+      final query = '$selector._domainkey.$domain';
+
+      String output;
+      if (filePath != null) {
+        // Try to find a matching line in the provided file first.
+        for (final line in lines) {
+          if (line.contains(query) &&
+              line.toLowerCase().contains('v=dkim1')) {
+            return true;
+          }
+        }
+        // Fall back to searching the whole file for v=DKIM1.
+        output = lines.join('\n');
+      } else {
+        final result = await Process.run('nslookup', ['-type=txt', query]);
+        output = result.stdout.toString();
+      }
+
+      for (final line in output.split('\n')) {
+        if (line.toLowerCase().contains('v=dkim1')) {
+          return true;
+        }
       }
     }
-    return 'No SPF record found for $domain';
-  } catch (e) {
-    return 'Failed to check SPF record: $e';
+
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Checks DMARC TXT record either online or from a zone file using
+/// `dns_records.py`.
+Future<bool> checkDmarcRecord(String domain, {String? recordsFile}) async {
+  const script = 'dns_records.py';
+  final args = <String>[script, domain];
+  if (recordsFile != null) {
+    args.addAll(['--zone-file', recordsFile]);
+  }
+  try {
+    final result = await Process.run('python', args);
+    if (result.exitCode != 0) {
+      throw result.stderr.toString();
+    }
+    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final record = data['dmarc']?.toString() ?? '';
+    return record.toLowerCase().contains('v=dmarc1');
+  } catch (_) {
+    return false;
   }
 }
 
@@ -225,6 +379,8 @@ Future<SecurityReport> runSecurityReport({
   required List<int> openPorts,
   required bool sslValid,
   required bool spfValid,
+  required bool dkimValid,
+  required bool dmarcValid,
   String geoip = 'JP',
 }) async {
   const script = 'security_report.py';
@@ -235,6 +391,8 @@ Future<SecurityReport> runSecurityReport({
       openPorts.join(','),
       sslValid ? 'true' : 'false',
       spfValid ? 'true' : 'false',
+      dkimValid ? 'true' : 'false',
+      dmarcValid ? 'true' : 'false',
       geoip,
     ]);
     final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
@@ -267,6 +425,10 @@ Future<SecurityReport> runSecurityReport({
       }
     }
     final country = data['geoip']?.toString() ?? '';
+    final dkim = data['dkim_valid'] == true ||
+        data['dkim_valid']?.toString().toLowerCase() == 'true';
+    final dmarc = data['dmarc_valid'] == true ||
+        data['dmarc_valid']?.toString().toLowerCase() == 'true';
     return SecurityReport(
       data['ip']?.toString() ?? ip,
       data['score'] is int
@@ -277,6 +439,8 @@ Future<SecurityReport> runSecurityReport({
       data['path']?.toString() ?? '',
       openPorts: ports,
       geoip: country,
+      dkimValid: dkim,
+      dmarcValid: dmarc,
     );
   } catch (e) {
     return SecurityReport(
@@ -287,22 +451,31 @@ Future<SecurityReport> runSecurityReport({
       '',
       openPorts: [],
       geoip: '',
+      dkimValid: false,
+      dmarcValid: false,
     );
   }
 }
 
 /// Performs diagnostics for [ip] and returns a [SecurityReport].
-Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
+Future<SecurityReport> analyzeHost(
+  String ip, {
+  List<int>? ports,
+  required String domain,
+}) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(ip);
-  final spfFound = spfRes.startsWith('SPF record');
+  final spfRes = await checkSpfRecord(domain);
+  final dkimValid = await checkDkimRecord(domain);
+  final dmarcValid = await checkDmarcRecord(domain);
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)
       if (p.state == 'open') p.port],
     sslValid: sslRes.valid,
-    spfValid: spfFound,
+    spfValid: spfRes.status == 'safe',
+    dkimValid: dkimValid,
+    dmarcValid: dmarcValid,
   );
   return report;
 }

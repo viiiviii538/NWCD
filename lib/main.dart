@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
-    show PortScanSummary, SecurityReport, SslResult;
+    show PortScanSummary, SecurityReport, SslResult, SpfResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
 import 'package:nwc_densetsu/network_scan.dart'
     show NetworkDevice;
@@ -11,6 +11,7 @@ import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
 import 'package:nwc_densetsu/ssl_check_section.dart';
+import 'package:nwc_densetsu/device_list_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,12 +42,26 @@ class _HomePageState extends State<HomePage> {
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
   List<SslCheckEntry> _sslEntries = [];
+  List<SpfResult> _spfResults = [];
+  List<diag.ExternalCommEntry> _externalComms = [];
   diag.NetworkSpeed? _speed;
+  diag.DefenseStatus? _defense;
   bool _lanScanning = false;
   String _portPreset = 'default';
   final Map<String, int> _progress = {};
-  static const int _taskCount = 3; // port, SSL, SPF
+  static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
+
+  void _openGeoipPage() {
+    final entries = [
+      GeoipEntry('93.184.216.34', 'example.com', 'US'),
+      GeoipEntry('203.0.113.1', 'mal.example', 'CN'),
+      GeoipEntry('198.51.100.2', '', 'RU'),
+    ];
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: entries)),
+    );
+  }
 
   List<int> get _selectedPorts {
     switch (_portPreset) {
@@ -67,6 +82,8 @@ class _HomePageState extends State<HomePage> {
       _scanResults = [];
       _reports = [];
       _sslEntries = [];
+      _spfResults = [];
+      _externalComms = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -75,6 +92,10 @@ class _HomePageState extends State<HomePage> {
 
     final speed = await diag.measureNetworkSpeed();
     setState(() => _speed = speed);
+    final defense = await diag.checkDefenseStatus();
+    setState(() => _defense = defense);
+    final comms = await diag.runExternalCommReport();
+    setState(() => _externalComms = comms);
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -128,7 +149,27 @@ class _HomePageState extends State<HomePage> {
         });
         return value;
       });
-      final spfFuture = diag.checkSpfRecord(ip).then((value) {
+      final domain = d.name.isNotEmpty ? d.name : ip;
+      final spfFuture = diag.checkSpfRecord(domain).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
+      final dkimFuture = diag.checkDkimRecord(domain).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
+      final dmarcDomain = domain.startsWith('_dmarc.') ? domain : '_dmarc.$domain';
+      final dmarcFuture = diag.checkDmarcRecord(dmarcDomain).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;
@@ -138,11 +179,21 @@ class _HomePageState extends State<HomePage> {
         return value;
       });
 
-      final results = await Future.wait([portFuture, sslFuture, spfFuture]);
+      final results = await Future.wait([portFuture, sslFuture, spfFuture, dkimFuture, dmarcFuture]);
 
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
-      final spfRes = results[2] as String;
+      final spfRes = results[2] as SpfResult;
+      final dkimValid = results[3] as bool;
+      final dmarcValid = results[4] as bool;
+      final spfResWithOthers = SpfResult(
+        spfRes.domain,
+        spfRes.record,
+        spfRes.status,
+        spfRes.comment,
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
+      );
 
       // Parse SSL certificate details
       var issuer = '';
@@ -165,12 +216,19 @@ class _HomePageState extends State<HomePage> {
       ));
 
       _scanResults.add(summary);
+      _spfResults.add(spfResWithOthers);
       for (final r in summary.results) {
         buffer.writeln('Port ${r.port}: ${r.state} ${r.service}');
       }
 
       buffer.writeln(sslRes.message);
-      buffer.writeln(spfRes);
+      if (spfRes.record.isNotEmpty) {
+        buffer.writeln('SPF record: ${spfRes.record}');
+      } else {
+        buffer.writeln(spfRes.comment);
+      }
+      buffer.writeln('DKIM: ${dkimValid ? 'valid' : 'missing'}');
+      buffer.writeln('DMARC: ${dmarcValid ? 'valid' : 'missing'}');
 
       final report = await diag.runSecurityReport(
         ip: ip,
@@ -179,7 +237,9 @@ class _HomePageState extends State<HomePage> {
             if (r.state == 'open') r.port
         ],
         sslValid: sslRes.valid,
-        spfValid: spfRes.startsWith('SPF record'),
+        spfValid: spfRes.status == 'safe',
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
       );
       _reports.add(report);
       buffer.writeln('Score: ${report.score}');
@@ -266,6 +326,24 @@ class _HomePageState extends State<HomePage> {
           riskScore: riskScore,
           items: items,
           sslEntries: _sslEntries,
+          portSummaries: _scanResults,
+          spfResults: _spfResults,
+          externalComms: _externalComms,
+          devices: _devices,
+          reports: _reports,
+          defenderEnabled: _defense?.defenderEnabled,
+          firewallEnabled: _defense?.firewallEnabled,
+        ),
+      ),
+    );
+  }
+
+  void _openDeviceListPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DeviceListPage(
+          devices: _devices,
+          reports: _reports,
         ),
       ),
     );
@@ -326,6 +404,13 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: _openResultPage,
               child: const Text('診断結果ページ'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _devices.isEmpty && _reports.isEmpty
+                  ? null
+                  : _openDeviceListPage,
+              child: const Text('LAN内デバイス一覧'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
@@ -408,6 +493,46 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_spfResults.isNotEmpty) ...[
+              const Text('SPFレコードの設定状況',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text('メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('ドメイン')),
+                    DataColumn(label: Text('SPFレコード')),
+                    DataColumn(label: Text('DKIM')),
+                    DataColumn(label: Text('DMARC')),
+                    DataColumn(label: Text('状態')),
+                    DataColumn(label: Text('コメント')),
+                  ],
+                  rows: [
+                    for (final r in _spfResults)
+                      DataRow(
+                        color: MaterialStateProperty.all(
+                          r.status == 'danger'
+                              ? Colors.redAccent.withOpacity(0.2)
+                              : r.status == 'warning'
+                                  ? Colors.yellowAccent.withOpacity(0.2)
+                                  : Colors.green.withOpacity(0.2),
+                        ),
+                        cells: [
+                          DataCell(Text(r.domain)),
+                          DataCell(Text(r.record)),
+                          DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
+                          DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
+                          DataCell(Text(r.status)),
+                          DataCell(Text(r.comment)),
+                        ],
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),

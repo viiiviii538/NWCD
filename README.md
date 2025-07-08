@@ -48,6 +48,18 @@ pip install speedtest-cli          # speedtest-cli
 2. リポジトリをクローン後、`flutter pub get` を実行します。
 3. `flutter run -d windows` などデスクトップターゲットで起動します。
 
+## ソースからの実行 (Developer Mode)
+
+`flutter pub get` の後、以下のコマンドでデバッグビルドを起動できます。ホットリロ
+ードが有効になるため、コード変更を即座に確認可能です。
+
+```bash
+flutter run --debug
+```
+
+Python スクリプトを個別に実行したい場合は、`python foo.py` のように各スクリプトを
+直接呼び出してください。
+
 ## Python ライブラリのインストール / Dependency Setup
 
 付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
@@ -70,6 +82,12 @@ pip install -r requirements.txt
   - ドロップダウンから Quick / Full などのポートプリセットを選択可能
   - SSL 証明書の発行者と有効期限
   - DNS の SPF レコード
+    - 診断結果ページでは各ドメインの SPF レコードを表形式で表示します。
+      未設定 (danger) は赤色、取得エラー (warning) は黄色でハイライトされます。
+    - ネットワークからの取得ができない場合は、BIND ゾーンファイルや
+      `dig` の出力を保存したテキストを `--zone-file` に指定して
+      オフラインで参照できます。各行は `example.com. IN TXT "v=spf1 +mx -all"`
+      のように TXT レコードを記述してください。
   - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
@@ -101,6 +119,25 @@ nmap -V # または arp-scan --version
 ```
 
 表示されない場合はインストール先を PATH に追加してください。
+
+## DNS TXT レコードをファイルから取得する
+
+オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
+SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
+`dig example.com TXT` を保存したテキストを指定してください。
+
+### ゾーンファイル形式
+
+`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。1 行に 1
+レコードを記述し、TXT レコードのみを対象とします。
+
+```
+example.com.                     IN TXT "v=spf1 +mx -all"
+default._domainkey.example.com.  IN TXT "v=DKIM1; k=rsa; p=abcd"
+_dmarc.example.com.              IN TXT "v=DMARC1; p=none"
+```
+
+先頭のドメイン名、`IN TXT`, 値という順番で記載してください。その他の行は無視されます。
 
 
 ## LAN + Port Scan
@@ -238,6 +275,82 @@ python network_speed.py
 python lan_security_check.py  # 自動検出されたサブネットを使用
 python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 ```
+
+## 外部通信の暗号化状況
+
+`external_ip_report.py` を実行すると、現在の外部接続を確認し、HTTP や SMTP など暗号化されていない通信も含めて一覧表示できます。危険な通信は赤字で強調されます。`--json` オプションを付けると結果を JSON 形式で取得できます。
+
+```bash
+python external_ip_report.py
+python external_ip_report.py --json
+```
+
+出力例:
+
+```
+宛先ドメイン\t通信プロトコル\t暗号化状況\t状態\tコメント
+example.com\tHTTPS\t暗号化\t安全\t
+mail.example\tSMTP\t非暗号化\t危険\t平文通信のため情報漏洩のリスクがあります
+```
+
+LAN スキャン後の診断結果ページでは、このレポートを取り込み「外部通信の暗号化状況」として表形式で表示されます。
+## ドメイン送信者認証チェック
+
+`verify_domain_sender.py` を使うと、指定したドメインの SPF レコードを取得して
+送信者認証が正しく設定されているか確認できます。オンライン環境では `nslookup`
+を利用し、オフライン時は `--offline` オプションで保存済みの DNS レコードを参照
+します。
+
+```bash
+python verify_domain_sender.py example.com
+```
+
+出力例:
+
+```json
+{"domain": "example.com", "record": "v=spf1 include:_spf.example.com ~all", "status": "safe", "comment": ""}
+```
+
+オフライン利用の例:
+
+```bash
+python verify_domain_sender.py example.com --offline offline_spf_records.json
+```
+
+`offline_spf_records.json` は次のようにドメインと SPF レコードの対応を記述します。
+
+```json
+{
+  "example.com": "v=spf1 include:_spf.example.com ~all",
+  "mail.test": "v=spf1 ip4:192.0.2.0/24 -all"
+}
+```
+
+## verify_domain_sender.py (改良版)
+
+`verify_domain_sender.py` を拡張し、SPF に加えて DKIM と DMARC の TXT レコードも取得できるようになりました。
+オンラインでは `nslookup` を利用し、オフライン時は `--zone-file` に BIND 形式のゾーンファイルを指定します。
+
+```bash
+python verify_domain_sender.py example.com
+python verify_domain_sender.py example.com --selector google --zone-file sample_zone.txt
+```
+
+出力される JSON 構造は次のとおりです。
+
+```json
+{
+  "domain": "example.com",
+  "spf": "v=spf1 include:_spf.example.com ~all",
+  "dkim": "v=DKIM1; k=rsa; p=abcd",
+  "dmarc": "v=DMARC1; p=none",
+  "spf_status": "safe",
+  "dkim_status": "safe",
+  "dmarc_status": "safe"
+}
+```
+
+DKIM では `default` や `google`, `selector1` などの selector 名が一般的に利用されます。
 
 ## Network Topology
 
