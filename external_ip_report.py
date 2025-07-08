@@ -2,6 +2,7 @@
 import argparse
 import socket
 import ipaddress
+import json
 
 try:
     import psutil
@@ -109,6 +110,11 @@ def main():
         default="GeoLite2-Country.mmdb",
         help="Path to GeoIP2 country database",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output JSON instead of colored text",
+    )
     args = parser.parse_args()
 
     if psutil is None:
@@ -132,6 +138,23 @@ def main():
 
     if reader:
         reader.close()
+
+    if args.json:
+        data = []
+        for ip, domain, country, port, flag in results:
+            dest = domain or ip
+            proto = protocol_name(port)
+            state = "安全" if flag == "\u6697\u53f7\u5316" else "危険" if flag == "\u975e\u6697\u53f7\u5316" else "不明"
+            comment = risk_comment(port) if flag == "\u975e\u6697\u53f7\u5316" else ""
+            data.append({
+                "dest": dest,
+                "protocol": proto,
+                "encryption": flag,
+                "state": state,
+                "comment": comment,
+            })
+        print(json.dumps(data, ensure_ascii=False))
+        return
 
     print("宛先ドメイン\t通信プロトコル\t暗号化状況\t状態\tコメント")
     for ip, domain, country, port, flag in results:

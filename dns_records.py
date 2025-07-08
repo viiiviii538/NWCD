@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 from typing import Optional
@@ -68,6 +69,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     spf = get_spf_record(args.domain, records_file=args.zone_file)
-    dkim = get_dkim_record(args.domain, selector=args.selector, records_file=args.zone_file)
+    dkim = get_dkim_record(
+        args.domain, selector=args.selector, records_file=args.zone_file
+    )
     dmarc = get_dmarc_record(args.domain, records_file=args.zone_file)
-    print({"spf": spf, "dkim": dkim, "dmarc": dmarc})
+    print(json.dumps({"spf": spf, "dkim": dkim, "dmarc": dmarc}))

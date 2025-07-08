@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/network_scan.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
@@ -17,6 +18,13 @@ void main() {
         PortStatus(3389, 'open', 'rdp'),
       ])
     ];
+    const devices = [
+      NetworkDevice('1.1.1.1', 'AA:BB', 'V1', 'host1'),
+    ];
+    const reports = [
+      SecurityReport('1.1.1.1', 9, [RiskItem('r', 'c')], [], '',
+          openPorts: [], geoip: 'US'),
+    ];
     await tester.pumpWidget(
       MaterialApp(
         home: DiagnosticResultPage(
@@ -24,6 +32,8 @@ void main() {
           riskScore: 2,
           items: items,
           portSummaries: summaries,
+          devices: devices,
+          reports: reports,
         ),
       ),
     );
@@ -45,5 +55,30 @@ void main() {
     expect(find.text('ポート開放状況'), findsOneWidget);
     expect(find.textContaining('3389'), findsOneWidget);
     expect(find.textContaining('危険'), findsOneWidget);
+
+    // LAN devices section
+    expect(find.text('host1'), findsOneWidget);
+    expect(find.byType(DataRow), findsWidgets);
+  });
+
+  testWidgets('External communication table is displayed', (tester) async {
+    final comms = [
+      const ExternalCommEntry('example.com', 'HTTP', '非暗号化', '危険', 'r')
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 5,
+          items: const [],
+          externalComms: comms,
+        ),
+      ),
+    );
+
+    expect(find.text('外部通信の暗号化状況'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
+    expect(find.text('HTTP'), findsOneWidget);
+    expect(find.text('非暗号化'), findsOneWidget);
   });
 }
