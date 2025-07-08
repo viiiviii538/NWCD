@@ -260,20 +260,47 @@ Future<SpfResult> checkSpfRecord(String domain) async {
 }
 
 /// Checks DKIM TXT record either via `nslookup` or from a local file.
-Future<bool> checkDkimRecord(String domain, {String? filePath}) async {
+///
+/// [selectors] specifies the DKIM selectors to try in order. The first record
+/// containing `v=DKIM1` will result in `true` being returned.
+Future<bool> checkDkimRecord(
+  String domain, {
+  String? filePath,
+  List<String> selectors = const ['default', 'google', 'selector1'],
+}) async {
   try {
-    String output;
+    final lines = <String>[];
     if (filePath != null) {
-      output = await File(filePath).readAsString();
-    } else {
-      final result = await Process.run('nslookup', ['-type=txt', domain]);
-      output = result.stdout.toString();
+      final text = await File(filePath).readAsString();
+      lines.addAll(text.split('\n'));
     }
-    for (final line in output.split('\n')) {
-      if (line.toLowerCase().contains('v=dkim1')) {
-        return true;
+
+    for (final selector in selectors) {
+      final query = '$selector._domainkey.$domain';
+
+      String output;
+      if (filePath != null) {
+        // Try to find a matching line in the provided file first.
+        for (final line in lines) {
+          if (line.contains(query) &&
+              line.toLowerCase().contains('v=dkim1')) {
+            return true;
+          }
+        }
+        // Fall back to searching the whole file for v=DKIM1.
+        output = lines.join('\n');
+      } else {
+        final result = await Process.run('nslookup', ['-type=txt', query]);
+        output = result.stdout.toString();
+      }
+
+      for (final line in output.split('\n')) {
+        if (line.toLowerCase().contains('v=dkim1')) {
+          return true;
+        }
       }
     }
+
     return false;
   } catch (_) {
     return false;
