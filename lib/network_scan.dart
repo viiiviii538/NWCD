@@ -27,7 +27,13 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
       if (onError != null) onError(msg);
       return [];
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      stderr.writeln('discover_hosts.py produced no output');
+      if (onError != null) onError('Empty output from discover_hosts.py');
+      return [];
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final devices = <NetworkDevice>[];
     if (data.containsKey('hosts')) {
       for (final item in data['hosts']) {
