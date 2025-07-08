@@ -28,17 +28,19 @@ nmap -V  # または Windows では where nmap
 
 ```bash
 # Debian/Ubuntu
-sudo apt install nmap arp-scan speedtest-cli
+sudo apt install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # Fedora
-sudo dnf install nmap arp-scan speedtest-cli
+sudo dnf install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # macOS (Homebrew)
-brew install nmap arp-scan speedtest-cli
+brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
 
 # Windows
-winget install -e --id Nmap.Nmap   # nmap
-pip install speedtest-cli==2.1.3   # speedtest-cli
+winget install -e --id Nmap.Nmap      # nmap
+winget install -e --id Graphviz.Graphviz  # graphviz
+winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
+pip install speedtest-cli      
 # arp-scan は Windows 版が存在しないため省略
 ```
 
@@ -51,15 +53,21 @@ pip install speedtest-cli==2.1.3   # speedtest-cli
 
 ## Python ライブラリのインストール / Dependency Setup
 
-付属の Python スクリプトは Python 3.10 以降を前提としています。`geoip2`,
-`psutil`, `pdfkit`, `weasyprint` などのモジュールが必要なため、リポジトリの
-ルートで次のコマンドを実行し、必要なライブラリをまとめてインストールしてください:
+付属の Python スクリプトには `geoip2`, `psutil`, `graphviz`, `pdfkit`, `weasyprint`
+などのモジュールが必要です。リポジトリのルートで次のコマンドを実行し、必要な
+ライブラリをまとめてインストールしてください:
 
 ```bash
 pip install -r requirements.txt
 ```
 Python のバージョン要件を満たしているか確認するための `check_python_version.py`
 スクリプトも用意しています。
+
+ネットワーク図生成には `graphviz` の実行ファイル (dot など) が必要です。
+Debian/Ubuntu では `sudo apt install graphviz`、macOS では `brew install graphviz`
+などでインストールできます。
+PDF 出力を行う場合は `wkhtmltopdf` (pdfkit 使用時) または `weasyprint` を別途
+インストールしてください。
 
 ## できること
 - **LANスキャン** ボタンを押すと `arp-scan` または `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
@@ -171,7 +179,9 @@ print(score, warnings)
 ## HTML レポート生成
 
 
-`generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。`--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+`generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。
+`--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+PDF 出力には `wkhtmltopdf` (pdfkit) もしくは `weasyprint` をインストールしておく必要があります。
 
 実行例:
 
@@ -245,6 +255,7 @@ python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
+この機能を利用するには Graphviz の実行ファイルが必要です。`sudo apt install graphviz` などでインストールしてください。
 
 ```bash
 python generate_topology.py scan_results.json -o topology.svg
