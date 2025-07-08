@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'python_utils.dart';
-
 import 'package:path/path.dart' as p;
 
 import '../diagnostics.dart' show SecurityReport;
@@ -26,7 +24,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     await File(jsonPath).writeAsString(jsonEncode(jsonList));
 
     final htmlPath = p.join(tempDir.path, 'report.html');
-    final result = await Process.run(pythonExecutable, [
+    final result = await Process.run('python', [
       'generate_html_report.py',
       jsonPath,
       '-o',
@@ -54,22 +52,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     }
   }
 }
-
-/// Generates a network topology SVG using the bundled Python script.
-///
-/// The diagram is created from the sample JSON data included with the
-/// application and returned as a path to the generated file.
 Future<String> generateTopologyDiagram() async {
-  final tempDir = await Directory.systemTemp.createTemp('nwcd_topo');
-  final outputPath = p.join(tempDir.path, 'topology.svg');
-  final result = await Process.run(pythonExecutable, [
-    'generate_topology.py',
-    'sample_devices.json',
-    '-o',
-    outputPath,
-  ]);
-  if (result.exitCode != 0) {
-    throw Exception(result.stderr.toString());
-  }
-  return outputPath;
+  // ここに本当はネットワーク構成からSVGを生成する処理が入る
+  return '<svg><!-- dummy topology diagram --></svg>';
 }
