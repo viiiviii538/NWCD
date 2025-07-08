@@ -299,6 +299,32 @@ python verify_domain_sender.py example.com --offline offline_spf_records.json
 }
 ```
 
+## verify_domain_sender.py (改良版)
+
+`verify_domain_sender.py` を拡張し、SPF に加えて DKIM と DMARC の TXT レコードも取得できるようになりました。
+オンラインでは `nslookup` を利用し、オフライン時は `--zone-file` に BIND 形式のゾーンファイルを指定します。
+
+```bash
+python verify_domain_sender.py example.com
+python verify_domain_sender.py example.com --selector google --zone-file sample_zone.txt
+```
+
+出力される JSON 構造は次のとおりです。
+
+```json
+{
+  "domain": "example.com",
+  "spf": "v=spf1 include:_spf.example.com ~all",
+  "dkim": "v=DKIM1; k=rsa; p=abcd",
+  "dmarc": "v=DMARC1; p=none",
+  "spf_status": "safe",
+  "dkim_status": "safe",
+  "dmarc_status": "safe"
+}
+```
+
+DKIM では `default` や `google`, `selector1` などの selector 名が一般的に利用されます。
+
 ## Network Topology
 
 `generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
