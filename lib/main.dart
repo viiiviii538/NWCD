@@ -9,7 +9,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
-import 'package:nwc_densetsu/port_constants.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,21 +40,8 @@ class _HomePageState extends State<HomePage> {
   List<SecurityReport> _reports = [];
   diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
-  String _portPreset = 'default';
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
-  double _overallProgress = 0.0;
-
-  List<int> get _selectedPorts {
-    switch (_portPreset) {
-      case 'quick':
-        return quickPorts;
-      case 'full':
-        return fullPorts;
-      default:
-        return defaultPortList;
-    }
-  }
 
 
   Future<void> _runLanScan() async {
@@ -67,7 +53,6 @@ class _HomePageState extends State<HomePage> {
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
-      _overallProgress = 0.0;
     });
 
     final speed = await diag.measureNetworkSpeed();
@@ -98,8 +83,6 @@ class _HomePageState extends State<HomePage> {
         _progress[d.ip] = 0;
       }
     });
-    final totalTasks = devices.length * _taskCount;
-    var completedTasks = 0;
 
     for (final d in devices) {
       final ip = d.ip;
@@ -107,31 +90,16 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag.scanPorts(ip, _selectedPorts).then((value) {
-        setState(() {
-          _progress[ip] = (_progress[ip] ?? 0) + 1;
-          completedTasks++;
-          _overallProgress =
-              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
-        });
+      final portFuture = diag.scanPorts(ip).then((value) {
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
       final sslFuture = diag.checkSslCertificate(ip).then((value) {
-        setState(() {
-          _progress[ip] = (_progress[ip] ?? 0) + 1;
-          completedTasks++;
-          _overallProgress =
-              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
-        });
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
       final spfFuture = diag.checkSpfRecord(ip).then((value) {
-        setState(() {
-          _progress[ip] = (_progress[ip] ?? 0) + 1;
-          completedTasks++;
-          _overallProgress =
-              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
-        });
+        setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
 
@@ -174,7 +142,6 @@ class _HomePageState extends State<HomePage> {
       _output = buffer.toString();
       _lanScanning = false;
       _devices = devices;
-      _overallProgress = 1.0;
     });
   }
 
@@ -194,55 +161,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<DiagnosticItem> _buildDiagnosticItems() {
-    final items = <DiagnosticItem>[];
-
-    if (_speed != null) {
-      final s = _speed!;
-      items.add(DiagnosticItem(
-        name: 'ネットワーク速度',
-        description:
-            'Down ${s.downloadMbps.toStringAsFixed(1)} Mbps '
-            'Up ${s.uploadMbps.toStringAsFixed(1)} Mbps '
-            'Ping ${s.pingMs.toStringAsFixed(1)} ms',
-        status: 'info',
-        action: '',
-      ));
-    }
-
-    for (final report in _reports) {
-      final level = report.score >= 8
-          ? 'danger'
-          : report.score >= 5
-              ? 'warning'
-              : 'safe';
-      for (final r in report.risks) {
-        items.add(DiagnosticItem(
-          name: 'ホスト ${report.ip}',
-          description: r.description,
-          status: level,
-          action: r.countermeasure,
-        ));
-      }
-    }
-    return items;
-  }
-
   void _openResultPage() {
-    final items = _buildDiagnosticItems();
-    final risk = _reports.isNotEmpty
-        ? _reports.map((e) => e.score).reduce((a, b) => a + b) /
-            _reports.length
-        : 0.0;
-    final double securityScore = 10 - risk;
-    final double riskScore = risk;
+    final items = [
+      const DiagnosticItem(
+        name: 'ポート開放',
+        description: '不要なポートが開いています',
+        status: 'warning',
+        action: '不要なポートを閉じる',
+      ),
+      const DiagnosticItem(
+        name: 'SSL 証明書',
+        description: '証明書の有効期限切れ',
+        status: 'danger',
+        action: '証明書を更新する',
+      ),
+    ];
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DiagnosticResultPage(
-          securityScore: securityScore,
-          riskScore: riskScore,
-          items: items,
-          portSummaries: _scanResults,
+          securityScore: 7,
+          riskScore: 4,
+          items: items, portSummaries: const [],
         ),
       ),
     );
@@ -256,19 +195,6 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            DropdownButton<String>(
-              value: _portPreset,
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _portPreset = val);
-                }
-              },
-              items: const [
-                DropdownMenuItem(value: 'default', child: Text('Default')),
-                DropdownMenuItem(value: 'quick', child: Text('Quick')),
-                DropdownMenuItem(value: 'full', child: Text('Full')),
-              ],
-            ),
             Tooltip(
               message: 'LAN 内のデバイスをスキャンして診断を実行します',
               child: ElevatedButton(
@@ -282,7 +208,10 @@ class _HomePageState extends State<HomePage> {
               ScanningProgressList(
                 progress: _progress,
                 taskCount: _taskCount,
-                overallProgress: _overallProgress,
+                overallProgress: _progress.isEmpty
+                    ? 1.0
+                    : _progress.values.fold(0, (a, b) => a + b) /
+                        (_progress.length * _taskCount),
               ),
             ],
             if (_speed != null) ...[
@@ -318,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                   rows: [
                     for (final r in summary.results)
                       DataRow(
-                        color: MaterialStateProperty.all(
+                        color: WidgetStateProperty.all(
                           r.state == 'open'
                               ? ([23, 445].contains(r.port)
                                   ? Colors.redAccent
@@ -351,8 +280,8 @@ class _HomePageState extends State<HomePage> {
                   rows: [
                     for (final r in _reports)
                       DataRow(
-                        color: MaterialStateProperty.all(
-                          _scoreColor(r.score),
+                        color: WidgetStateProperty.all(
+                          _scoreColor(r.score.toInt()),
                         ),
                         cells: [
                           DataCell(Text(r.ip)),
@@ -377,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                             child: Padding(
                               padding: const EdgeInsets.all(8),
                               child: Text(
-                                '${_riskState(r.score)} → '
+                                '${_riskState(r.score as int)} → '
                                 '${risk.description} → ${risk.countermeasure}',
                               ),
                             ),
@@ -404,8 +333,8 @@ class _HomePageState extends State<HomePage> {
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
-                        DataCell(Text(d.vendor)),
-                      ]),
+                          DataCell(Text(d.vendor)),
+                        ]),
                   ],
                 ),
               ),
@@ -445,13 +374,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Color _scoreColor(double score) {
+Color _scoreColor(int score) {
   if (score >= 8) return Colors.green;
   if (score >= 5) return Colors.orange;
   return Colors.redAccent;
 }
 
-String _riskState(double score) {
+String _riskState(int score) {
   if (score >= 8) return '安全';
   if (score >= 5) return '注意';
   return '危険';
@@ -469,7 +398,7 @@ class ScoreChart extends StatelessWidget {
       final r = reports[i];
       groups.add(
         BarChartGroupData(x: i, barRods: [
-          BarChartRodData(toY: r.score.toDouble(), color: _scoreColor(r.score))
+          BarChartRodData(toY: r.score.toDouble(), color: _scoreColor(r.score as int))
         ]),
       );
     }
