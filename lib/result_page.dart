@@ -518,20 +518,17 @@ class DiagnosticResultPage extends StatelessWidget {
             SslCheckSection(results: sslEntries),
             const SizedBox(height: 16),
           ],
+          _portStatusSection(),
+          const SizedBox(height: 16),
+          _lanDevicesSection(context),
+          const SizedBox(height: 16),
+          _spfSection(),
+          const SizedBox(height: 16),
+          _externalCommSection(),
+          const SizedBox(height: 16),
+          _defenseSection(),
+          const SizedBox(height: 16),
           Expanded(
-            child: ListView.builder(
-              itemCount: items.length,
-            _portStatusSection(),
-            const SizedBox(height: 16),
-            _lanDevicesSection(context),
-            const SizedBox(height: 16),
-            _spfSection(),
-            const SizedBox(height: 16),
-            _externalCommSection(),
-            const SizedBox(height: 16),
-            _defenseSection(),
-            const SizedBox(height: 16),
-            Expanded(
               child: ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, index) {
