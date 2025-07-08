@@ -10,6 +10,10 @@
 Python (3 系) といずれかのコマンドがインストールされていることを確認して
 ください。
 ネットワーク速度計測には `speedtest-cli` を使用します。
+LAN セキュリティ診断 (`lan_security_check.py`) では `arp`, `nmap`, `upnpc` など
+複数の外部コマンドを利用します。Linux でファイアウォール状態を確認する際は
+`ufw` を呼び出します。これらのユーティリティが存在しない場合、該当する
+チェックは自動的にスキップされます。
 
 また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
 があります。次のように入力して認識されるか確認してください。
@@ -57,6 +61,9 @@ pip install speedtest-cli          # speedtest-cli
 ```bash
 pip install -r requirements.txt
 ```
+PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または `weasyprint` の
+いずれかがシステムにインストールされている必要があります。どちらも存在しない
+環境では `--pdf` オプションを指定しても PDF 出力はスキップされます。
 
 ## できること
 - **LANスキャン** ボタンを押すと `arp-scan` または `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
