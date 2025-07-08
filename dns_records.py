@@ -43,12 +43,32 @@ def get_spf_record(domain: str, records_file: Optional[str] = None) -> str:
     return _query_txt(name)
 
 
-def get_dkim_record(domain: str, selector: str = "default", records_file: Optional[str] = None) -> str:
+def get_dkim_record(
+    domain: str, selector: str = "default", records_file: Optional[str] = None
+) -> str:
     """Return DKIM record for selector._domainkey.domain."""
     name = f"{selector}._domainkey.{domain}"
     if records_file:
         return _find_in_file(records_file, name)
     return _query_txt(name)
+
+
+def check_dkim_record(
+    domain: str,
+    selectors: list[str] | None = None,
+    records_file: Optional[str] = None,
+) -> bool:
+    """Return ``True`` if any selector's DKIM record contains ``v=DKIM1``."""
+
+    if selectors is None:
+        selectors = ["default", "google", "selector1"]
+
+    for sel in selectors:
+        record = get_dkim_record(domain, selector=sel, records_file=records_file)
+        if "v=dkim1" in record.lower():
+            return True
+
+    return False
 
 
 def get_dmarc_record(domain: str, records_file: Optional[str] = None) -> str:

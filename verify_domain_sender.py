@@ -12,6 +12,12 @@ from dns_records import (
     get_dmarc_record,
 )
 
+
+def lookup_spf(domain: str) -> str:
+    """Fallback SPF lookup using ``nslookup`` via :func:`dns_records.get_spf_record`."""
+
+    return dns_records.get_spf_record(domain)
+
 def check_domain(domain: str, offline: str | None = None, zone_file: str | None = None) -> dict:
     record = ''
     comment = ''
