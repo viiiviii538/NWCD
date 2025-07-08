@@ -305,6 +305,8 @@ class _HomePageState extends State<HomePage> {
           portSummaries: _scanResults,
           spfResults: _spfResults,
           externalComms: _externalComms,
+          devices: _devices,
+          reports: _reports,
           defenderEnabled: _defense?.defenderEnabled,
           firewallEnabled: _defense?.firewallEnabled,
         ),

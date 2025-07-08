@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/device_list_page.dart';
+import 'package:nwc_densetsu/network_scan.dart' show NetworkDevice;
 import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -40,6 +42,8 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<PortScanSummary> portSummaries;
   final List<SpfResult> spfResults;
   final List<ExternalCommEntry> externalComms;
+  final List<NetworkDevice> devices;
+  final List<SecurityReport> reports;
   final bool? defenderEnabled;
   final bool? firewallEnabled;
   final Future<String> Function()? onGenerateTopology;
@@ -52,6 +56,8 @@ class DiagnosticResultPage extends StatelessWidget {
     this.portSummaries = const [],
     this.spfResults = const [],
     this.externalComms = const [],
+    this.devices = const [],
+    this.reports = const [],
     this.defenderEnabled,
     this.firewallEnabled,
     this.onGenerateTopology,
@@ -199,6 +205,66 @@ class DiagnosticResultPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ],
+    );
+  }
+
+  Color _deviceScoreColor(int score) {
+    if (score >= 8) return Colors.redAccent;
+    if (score >= 5) return Colors.orange;
+    return Colors.green;
+  }
+
+  String _deviceRiskState(int score) {
+    if (score >= 8) return '危険';
+    if (score >= 5) return '注意';
+    return '安全';
+  }
+
+  Widget _lanDevicesSection(BuildContext context) {
+    if (devices.isEmpty) return const SizedBox.shrink();
+    final rows = <DataRow>[];
+    for (final d in devices) {
+      final rep = reports.firstWhere((r) => r.ip == d.ip,
+          orElse: () => const SecurityReport('', 0, [], [], '',
+              openPorts: [], geoip: ''));
+      rows.add(
+        DataRow(
+          color: MaterialStateProperty.all(
+            _deviceScoreColor(rep.score).withOpacity(0.2),
+          ),
+          cells: [
+            DataCell(Text(d.ip)),
+            DataCell(Text(d.mac)),
+            DataCell(Text(d.vendor)),
+            DataCell(Text(d.name)),
+            DataCell(Text(_deviceRiskState(rep.score))),
+            DataCell(Text(rep.risks.isNotEmpty ? rep.risks.first.description : '')),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('LAN内デバイス一覧',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('IPアドレス')),
+              DataColumn(label: Text('MACアドレス')),
+              DataColumn(label: Text('ベンダー名')),
+              DataColumn(label: Text('機器名')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: rows,
+          ),
+        ),
       ],
     );
   }
@@ -446,6 +512,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
             _portStatusSection(),
+            const SizedBox(height: 16),
+            _lanDevicesSection(context),
             const SizedBox(height: 16),
             _spfSection(),
             const SizedBox(height: 16),

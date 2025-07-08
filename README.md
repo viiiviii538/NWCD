@@ -48,6 +48,18 @@ pip install speedtest-cli          # speedtest-cli
 2. リポジトリをクローン後、`flutter pub get` を実行します。
 3. `flutter run -d windows` などデスクトップターゲットで起動します。
 
+## ソースからの実行 (Developer Mode)
+
+`flutter pub get` の後、以下のコマンドでデバッグビルドを起動できます。ホットリロ
+ードが有効になるため、コード変更を即座に確認可能です。
+
+```bash
+flutter run --debug
+```
+
+Python スクリプトを個別に実行したい場合は、`python foo.py` のように各スクリプトを
+直接呼び出してください。
+
 ## Python ライブラリのインストール / Dependency Setup
 
 付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
@@ -113,6 +125,19 @@ nmap -V # または arp-scan --version
 オフライン環境では `dns_records.py` に用意した `--zone-file` オプションを利用し、
 SPF/DKIM/DMARC の TXT レコードをゾーンファイルから読み取れます。BIND 形式や
 `dig example.com TXT` を保存したテキストを指定してください。
+
+### ゾーンファイル形式
+
+`dns_records.py` が参照するファイルは以下のような簡易 BIND 形式です。1 行に 1
+レコードを記述し、TXT レコードのみを対象とします。
+
+```
+example.com.                     IN TXT "v=spf1 +mx -all"
+default._domainkey.example.com.  IN TXT "v=DKIM1; k=rsa; p=abcd"
+_dmarc.example.com.              IN TXT "v=DMARC1; p=none"
+```
+
+先頭のドメイン名、`IN TXT`, 値という順番で記載してください。その他の行は無視されます。
 
 
 ## LAN + Port Scan
@@ -300,6 +325,32 @@ python verify_domain_sender.py example.com --offline offline_spf_records.json
   "mail.test": "v=spf1 ip4:192.0.2.0/24 -all"
 }
 ```
+
+## verify_domain_sender.py (改良版)
+
+`verify_domain_sender.py` を拡張し、SPF に加えて DKIM と DMARC の TXT レコードも取得できるようになりました。
+オンラインでは `nslookup` を利用し、オフライン時は `--zone-file` に BIND 形式のゾーンファイルを指定します。
+
+```bash
+python verify_domain_sender.py example.com
+python verify_domain_sender.py example.com --selector google --zone-file sample_zone.txt
+```
+
+出力される JSON 構造は次のとおりです。
+
+```json
+{
+  "domain": "example.com",
+  "spf": "v=spf1 include:_spf.example.com ~all",
+  "dkim": "v=DKIM1; k=rsa; p=abcd",
+  "dmarc": "v=DMARC1; p=none",
+  "spf_status": "safe",
+  "dkim_status": "safe",
+  "dmarc_status": "safe"
+}
+```
+
+DKIM では `default` や `google`, `selector1` などの selector 名が一般的に利用されます。
 
 ## Network Topology
 
