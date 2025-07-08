@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/network_scan.dart';
 
@@ -31,6 +32,7 @@ void main() {
           securityScore: 9,
           riskScore: 2,
           items: items,
+          sslEntries: const [],
           portSummaries: summaries,
           devices: devices,
           reports: reports,
@@ -80,5 +82,31 @@ void main() {
     expect(find.text('example.com'), findsOneWidget);
     expect(find.text('HTTP'), findsOneWidget);
     expect(find.text('非暗号化'), findsOneWidget);
+  });
+
+  testWidgets('DiagnosticResultPage displays SSL table', (tester) async {
+    const sslItems = [
+      SslCheckEntry(
+        domain: 'example.com',
+        issuer: 'CA',
+        expiry: '2025-01-01',
+        safe: true,
+        comment: '',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 8,
+          riskScore: 1,
+          items: [],
+          sslEntries: sslItems,
+        ),
+      ),
+    );
+
+    expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
   });
 }

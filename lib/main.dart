@@ -10,6 +10,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/device_list_page.dart';
 
 void main() {
@@ -40,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   List<PortScanSummary> _scanResults = [];
   List<NetworkDevice> _devices = <NetworkDevice>[];
   List<SecurityReport> _reports = [];
+  List<SslCheckEntry> _sslEntries = [];
   List<SpfResult> _spfResults = [];
   List<diag.ExternalCommEntry> _externalComms = [];
   diag.NetworkSpeed? _speed;
@@ -79,6 +81,7 @@ class _HomePageState extends State<HomePage> {
       _devices = <NetworkDevice>[];
       _scanResults = [];
       _reports = [];
+      _sslEntries = [];
       _spfResults = [];
       _externalComms = [];
       _speed = null;
@@ -192,6 +195,26 @@ class _HomePageState extends State<HomePage> {
         dmarcValid: dmarcValid,
       );
 
+      // Parse SSL certificate details
+      var issuer = '';
+      var expiry = '';
+      var comment = '';
+      final m =
+          RegExp(r'SSL cert expires on (.*?), issued by (.*)').firstMatch(sslRes.message);
+      if (m != null) {
+        expiry = m.group(1) ?? '';
+        issuer = m.group(2) ?? '';
+      } else {
+        comment = sslRes.message;
+      }
+      _sslEntries.add(SslCheckEntry(
+        domain: ip,
+        issuer: issuer,
+        expiry: expiry,
+        safe: sslRes.valid,
+        comment: comment,
+      ));
+
       _scanResults.add(summary);
       _spfResults.add(spfResWithOthers);
       for (final r in summary.results) {
@@ -302,6 +325,7 @@ class _HomePageState extends State<HomePage> {
           securityScore: securityScore,
           riskScore: riskScore,
           items: items,
+          sslEntries: _sslEntries,
           portSummaries: _scanResults,
           spfResults: _spfResults,
           externalComms: _externalComms,

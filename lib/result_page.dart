@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/device_list_page.dart';
 import 'package:nwc_densetsu/network_scan.dart' show NetworkDevice;
 import 'package:nwc_densetsu/utils/report_utils.dart'
@@ -39,6 +40,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final int securityScore;
   final int riskScore;
   final List<DiagnosticItem> items;
+  final List<SslCheckEntry> sslEntries;
   final List<PortScanSummary> portSummaries;
   final List<SpfResult> spfResults;
   final List<ExternalCommEntry> externalComms;
@@ -53,6 +55,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.securityScore,
     required this.riskScore,
     required this.items,
+    this.sslEntries = const [],
     this.portSummaries = const [],
     this.spfResults = const [],
     this.externalComms = const [],
@@ -509,8 +512,15 @@ class DiagnosticResultPage extends StatelessWidget {
           children: [
             _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore),
+          _scoreSection('リスクスコア', riskScore),
+          const SizedBox(height: 16),
+          if (sslEntries.isNotEmpty) ...[
+            SslCheckSection(results: sslEntries),
             const SizedBox(height: 16),
+          ],
+          Expanded(
+            child: ListView.builder(
+              itemCount: items.length,
             _portStatusSection(),
             const SizedBox(height: 16),
             _lanDevicesSection(context),
