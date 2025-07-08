@@ -9,7 +9,17 @@ from common_constants import DANGER_COUNTRIES
 
 
 def calc_utm_items(score: float, open_ports: Iterable[str], countries: Iterable[str]) -> List[str]:
-    """Return which UTM features help mitigate the detected risks."""
+    """Return which UTM features help mitigate the detected risks.
+
+    Parameters
+    ----------
+    score : float
+        Overall risk score from :func:`calc_risk_score`.
+    open_ports : Iterable[str]
+        Detected open ports for the host.
+    countries : Iterable[str]
+        Countries observed in the host's traffic.
+    """
     items = set()
     if list(open_ports):
         items.add("firewall")
