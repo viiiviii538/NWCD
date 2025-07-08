@@ -37,7 +37,7 @@ brew install nmap arp-scan speedtest-cli
 
 # Windows
 winget install -e --id Nmap.Nmap   # nmap
-pip install speedtest-cli          # speedtest-cli
+pip install speedtest-cli==2.1.3   # speedtest-cli
 # arp-scan は Windows 版が存在しないため省略
 ```
 
@@ -51,8 +51,8 @@ pip install speedtest-cli          # speedtest-cli
 ## Python ライブラリのインストール / Dependency Setup
 
 付属の Python スクリプトには `geoip2`, `psutil`, `pdfkit`, `weasyprint` などの
-モジュールが必要です。リポジトリのルートで次のコマンドを実行し、必要なライブラリ
-をまとめてインストールしてください:
+モジュールが必要です。`requirements.txt` では動作確認済みのバージョンを明記して
+いるため、リポジトリのルートで次のコマンドを実行すると同じ環境を再現できます:
 
 ```bash
 pip install -r requirements.txt
