@@ -306,7 +306,7 @@ Future<SecurityReport> runSecurityReport({
     }
     return SecurityReport(
       data['ip']?.toString() ?? ip,
-      parsedScore(),
+      score,
       risks,
       utm,
       data['path']?.toString() ?? '',

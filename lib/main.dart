@@ -234,8 +234,8 @@ class _HomePageState extends State<HomePage> {
         ? _reports.map((e) => e.score).reduce((a, b) => a + b) /
             _reports.length
         : 0.0;
-    final securityScore = (10 - risk).round();
-    final riskScore = risk.round();
+    final double securityScore = 10 - risk;
+    final double riskScore = risk;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DiagnosticResultPage(

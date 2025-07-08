@@ -33,8 +33,8 @@ class DiagnosticItem {
 }
 
 class DiagnosticResultPage extends StatelessWidget {
-  final int securityScore;
-  final int riskScore;
+  final double securityScore;
+  final double riskScore;
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
   final Future<String> Function()? onGenerateTopology;
@@ -273,9 +273,9 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _scoreSection('セキュリティスコア', securityScore.toDouble()),
+            _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore.toDouble()),
+            _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
             _portStatusSection(),
             const SizedBox(height: 16),
