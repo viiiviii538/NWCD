@@ -454,7 +454,7 @@ class DiagnosticResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _scoreSection('セキュリティスコア', securityScore as int),
+            _scoreSection('セキュリティスコア', securityScore.toInt()),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
@@ -561,7 +561,7 @@ class ResultPage extends StatelessWidget {
               for (final r in reports)
                 DataRow(
                   color: WidgetStateProperty.all(
-                    _scoreColor(r.score as int),
+                    _scoreColor(r.score.toInt()),
                   ),
                   cells: [
                     DataCell(Text(r.ip)),
@@ -586,7 +586,7 @@ class ResultPage extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Text(
-                          '${_riskState(r.score as int)} → '
+                          '${_riskState(r.score.toInt())} → '
                           '${risk.description} → ${risk.countermeasure}',
                         ),
                       ),
