@@ -1,48 +1,34 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import subprocess
 
-def lookup_spf(domain: str) -> str:
-    result = subprocess.run(['nslookup', '-type=txt', domain], capture_output=True, text=True)
-    for line in result.stdout.splitlines():
-        if 'v=spf1' in line:
-            return line.strip()
-    return ''
+from dns_records import (
+    get_spf_record,
+    get_dkim_record,
+    get_dmarc_record,
+)
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Verify domain SPF record')
+    parser = argparse.ArgumentParser(
+        description='Verify SPF, DKIM and DMARC records for a domain'
+    )
     parser.add_argument('domain', help='Domain name to check')
-    parser.add_argument('--offline', help='Path to offline SPF record JSON file')
+    parser.add_argument('--selector', default='default', help='DKIM selector')
+    parser.add_argument('--zone-file', help='Path to zone file for offline mode')
     args = parser.parse_args()
 
-    record = ''
-    comment = ''
+    spf = get_spf_record(args.domain, records_file=args.zone_file)
+    dkim = get_dkim_record(args.domain, selector=args.selector, records_file=args.zone_file)
+    dmarc = get_dmarc_record(args.domain, records_file=args.zone_file)
 
-    if args.offline:
-        try:
-            with open(args.offline, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            record = data.get(args.domain, '')
-            if record:
-                comment = 'offline record'
-        except Exception as e:
-            comment = f'failed to read offline file: {e}'
-
-    if not record:
-        try:
-            record = lookup_spf(args.domain)
-            if not record:
-                comment = 'No SPF record found'
-        except Exception as e:
-            comment = f'Failed to check SPF record: {e}'
-
-    status = 'safe' if record else 'danger'
     result = {
         'domain': args.domain,
-        'record': record,
-        'status': status,
-        'comment': comment,
+        'spf': spf,
+        'dkim': dkim,
+        'dmarc': dmarc,
+        'spf_status': 'safe' if spf else 'danger',
+        'dkim_status': 'safe' if dkim else 'danger',
+        'dmarc_status': 'safe' if dmarc else 'danger',
     }
     print(json.dumps(result, ensure_ascii=False))
 
