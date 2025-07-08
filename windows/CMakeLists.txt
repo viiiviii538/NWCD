@@ -109,11 +109,7 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
 
 # Install required Python helper scripts next to the executable so that the
 # Flutter app can invoke them at runtime.
-install(FILES
-  "${CMAKE_CURRENT_LIST_DIR}/../discover_hosts.py"
-  "${CMAKE_CURRENT_LIST_DIR}/../port_scan.py"
-  "${CMAKE_CURRENT_LIST_DIR}/../lan_port_scan.py"
-  "${CMAKE_CURRENT_LIST_DIR}/../network_speed.py"
-  "${CMAKE_CURRENT_LIST_DIR}/../security_report.py"
+file(GLOB PY_HELPERS "${CMAKE_CURRENT_LIST_DIR}/../*.py")
+install(FILES ${PY_HELPERS}
   DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)

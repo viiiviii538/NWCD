@@ -274,16 +274,18 @@ flutter test
 
 ## リリースバンドルに含めるファイル
 
-デスクトップ版を配布する際は、以下の Python スクリプトを実行ファイルと同じ
-ディレクトリに配置してください。`flutter build windows` や `flutter build linux`
-で作成したバンドルにこれらを含めないと、アプリから外部スクリプトを呼び出せなく
-なります。
+デスクトップ版を配布する際は、リポジトリ直下の Python スクリプトをすべて実行
+ファイルと同じディレクトリに配置してください。`flutter build windows` や
+`flutter build linux` で作成したバンドルにこれらを含めないと、アプリから外部ス
+クリプトを呼び出せなくなります。主なスクリプトは次の通りです。
 
 - `discover_hosts.py`
 - `port_scan.py`
 - `lan_port_scan.py`
 - `network_speed.py`
 - `security_report.py`
+- `generate_html_report.py`
+- `generate_topology.py`
 
 ## 貢献
 
