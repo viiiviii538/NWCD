@@ -58,6 +58,22 @@ class ExternalCommEntry {
   }
 }
 
+class GeoipEntry {
+  final String ip;
+  final String domain;
+  final String country;
+
+  const GeoipEntry(this.ip, this.domain, this.country);
+
+  factory GeoipEntry.fromJson(Map<String, dynamic> json) {
+    return GeoipEntry(
+      json['ip']?.toString() ?? '',
+      json['domain']?.toString() ?? '',
+      json['country']?.toString() ?? '',
+    );
+  }
+}
+
 
 class RiskItem {
   final String description;
@@ -252,6 +268,24 @@ Future<List<ExternalCommEntry>> runExternalCommReport() async {
     return [
       for (final item in data)
         ExternalCommEntry.fromJson(item as Map<String, dynamic>)
+    ];
+  } catch (_) {
+    return [];
+  }
+}
+
+/// Runs external_ip_report.py and returns GeoIP entries with country info.
+Future<List<GeoipEntry>> runGeoipReport() async {
+  const script = 'external_ip_report.py';
+  try {
+    final result = await Process.run('python', [script, '--json']);
+    if (result.exitCode != 0) {
+      return [];
+    }
+    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    return [
+      for (final item in data)
+        GeoipEntry.fromJson(item as Map<String, dynamic>)
     ];
   } catch (_) {
     return [];
