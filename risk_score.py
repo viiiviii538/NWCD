@@ -3,7 +3,12 @@
 import json
 import sys
 
-from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
+from common_constants import (
+    DANGER_COUNTRIES,
+    SAFE_COUNTRIES,
+    RED,
+    RESET,
+)
 
 
 # Score added when encountering an unknown port.
@@ -26,8 +31,6 @@ PORT_SCORES = {
 }
 
 
-RED = "\033[31m"
-RESET = "\033[0m"
 
 
 def calc_risk_score(

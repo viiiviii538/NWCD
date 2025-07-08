@@ -14,8 +14,7 @@ except ImportError:
     geoip2 = None
 
 
-RED = "\033[31m"
-RESET = "\033[0m"
+from common_constants import RED, RESET
 
 ENCRYPTED_PORTS = {443, 22, 993, 995, 465, 563, 989, 990}
 UNENCRYPTED_PORTS = {80, 20, 21, 23, 25, 110, 143}
