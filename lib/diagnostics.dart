@@ -6,7 +6,7 @@ import 'ssl_result.dart';
 export 'ssl_result.dart';
 import 'spf_result.dart';
 export 'spf_result.dart';
-import 'network_scan.dart' as net;
+import 'package:nwc_densetsu/network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
 
