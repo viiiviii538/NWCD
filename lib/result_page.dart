@@ -168,24 +168,48 @@ class DiagnosticResultPage extends StatelessWidget {
       children: [
         const Text('ポート開放状況'),
         const SizedBox(height: 4),
-        for (final s in portSummaries)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.host),
-              DataTable(columns: const [
-                DataColumn(label: Text('Port')),
-                DataColumn(label: Text('State')),
-                DataColumn(label: Text('Service')),
-              ], rows: [
-                for (final p in s.results)
-                  DataRow(cells: [
-                    DataCell(Text(p.port.toString())),
-                    DataCell(Text(p.state)),
-                    DataCell(Text(p.service)),
-                  ]),
-              ]),
-            ],
+        const Text(
+          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
+        for (final s in portSummaries) ...[
+          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('状態')),
+                DataColumn(label: Text('補足')),
+              ],
+              rows: [
+                for (final r in s.results)
+                  DataRow(
+                    color: MaterialStateProperty.all(
+                      r.state == 'open' && _dangerPortNotes.containsKey(r.port)
+                          ? Colors.redAccent.withOpacity(0.2)
+                          : r.state == 'open'
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.2),
+                    ),
+                    cells: [
+                      DataCell(Text(r.port.toString())),
+                      DataCell(Text(
+                        r.state == 'open'
+                            ? (_dangerPortNotes.containsKey(r.port)
+                                ? '危険（開いている）'
+                                : '安全（開いている）')
+                            : '安全（閉じている）',
+                      )),
+                      DataCell(
+                        _dangerPortNotes[r.port] != null
+                            ? Text(_dangerPortNotes[r.port]!)
+                            : const Text('-'),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
       ],
     );

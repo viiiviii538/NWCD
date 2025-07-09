@@ -41,8 +41,10 @@ void main() {
 
     // Port status section
     expect(find.text('ポート開放状況'), findsOneWidget);
-    expect(find.textContaining('3389'), findsOneWidget);
-    expect(find.textContaining('危険'), findsOneWidget);
+    expect(find.text('3389'), findsOneWidget);
+    expect(find.text('危険（開いている）'), findsOneWidget);
+    expect(find.text('445'), findsOneWidget);
+    expect(find.text('安全（閉じている）'), findsOneWidget);
   });
 
   testWidgets('extended result sections are visible when data provided',
