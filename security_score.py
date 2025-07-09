@@ -28,8 +28,13 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
 
     high = medium = low = 0
 
-    # number of ports considered dangerous (e.g. 3389, 445, telnet)
-    high += int(data.get("danger_ports", 0))
+    # list of ports considered dangerous (e.g. 3389, 445, telnet)
+    dp = data.get("danger_ports", [])
+    try:
+        high += len(list(dp))
+    except TypeError:
+        # fallback for legacy integer values
+        high += int(dp)
 
     geo = str(data.get("geoip", "")).upper()
     if geo in DANGER_COUNTRIES:

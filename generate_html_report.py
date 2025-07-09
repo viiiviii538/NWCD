@@ -94,8 +94,9 @@ def generate_html(data: Any) -> str:
         ip = dev.get("ip") or dev.get("device") or ""
         ports = [str(p) for p in dev.get("open_ports", [])]
         countries = _collect_countries(dev)
+        danger_list = [p for p in ports if p in {"3389", "445", "23"}]
         data = {
-            "danger_ports": sum(1 for p in ports if p in {"3389", "445", "23"}),
+            "danger_ports": danger_list,
             "geoip": countries[0] if countries else "",
             "open_port_count": len(ports),
             "ssl": dev.get("ssl", True),
