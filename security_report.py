@@ -24,7 +24,7 @@ def parse_args(argv):
 
 
 def calc_score(open_ports, ssl_valid, spf_valid, geoip):
-    """Compatibility wrapper for CLI usage."""
+    """Return score, risk descriptions and UTM items."""
 
     risks = []
     if open_ports:
@@ -56,7 +56,16 @@ def calc_score(open_ports, ssl_valid, spf_valid, geoip):
             }
         )
 
-    score, _warns = calc_security_score(open_ports, [geoip] if geoip else [])
+    data = {
+        "danger_ports": sum(1 for p in open_ports if p in {"3389", "445", "23"}),
+        "open_port_count": len(open_ports),
+        "geoip": geoip,
+        "ssl": ssl_valid,
+        "dns_fail_rate": 0.0 if spf_valid else 1.0,
+    }
+
+    res = calc_security_score(data)
+    score = res["score"]
     utm_items = calc_utm_items(score, open_ports, [geoip])
     return score, risks, utm_items
 

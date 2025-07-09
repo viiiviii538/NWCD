@@ -1,95 +1,118 @@
 #!/usr/bin/env python3
-"""Assign security scores to devices based on open ports and remote countries."""
+"""Calculate network security scores from assorted risk indicators."""
+
+from __future__ import annotations
+
 import json
 import sys
+from typing import Any, Dict
 
-from common_constants import (
-    DANGER_COUNTRIES,
-    SAFE_COUNTRIES,
-    RED,
-    RESET,
-)
-
-
-# Score added when encountering an unknown port.
-# Unknown services still add a small amount of risk.
-UNKNOWN_PORT_POINTS = 0.5
-
-PORT_SCORE_CAP = 6.0
-COUNTRY_SCORE_CAP = 4.0
+from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
 __all__ = ["calc_security_score"]
 
-PORT_SCORES = {
-    "3389": 4.0,  # RDP
-    "445": 3.0,   # SMB
-    "23": 2.0,    # Telnet
-    "22": 1.5,    # SSH
-    "21": 1.0,    # FTP
-    "80": 1.0,    # HTTP
-    "443": 0.5,   # HTTPS
-}
 
+def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Return overall score and risk counts for the given metrics.
 
+    Parameters
+    ----------
+    data : Dict[str, Any]
+        Dictionary containing risk values such as ``danger_ports`` or ``geoip``.
+    """
 
+    high = medium = low = 0
 
-def calc_security_score(
-    open_ports: list[str],
-    countries: list[str],
-    has_utm: bool = False,
-) -> tuple[float, list[str]]:
-    """Return security score (0.0-10.0) and warnings for the given data."""
+    # number of ports considered dangerous (e.g. 3389, 445, telnet)
+    high += int(data.get("danger_ports", 0))
 
-    warnings: list[str] = []
-    port_points = 0.0
-    for p in open_ports:
-        if p in PORT_SCORES:
-            port_points += PORT_SCORES[p]
-            if p == "3389":
-                warnings.append(f"{RED}RDP port open (3389){RESET}")
-        else:
-            port_points += UNKNOWN_PORT_POINTS
-    port_points = min(port_points, PORT_SCORE_CAP)
+    geo = str(data.get("geoip", "")).upper()
+    if geo in DANGER_COUNTRIES:
+        high += 1
+    elif geo and geo not in SAFE_COUNTRIES:
+        medium += 1
 
-    country_points = 0.0
-    for c in countries:
-        c_up = c.upper()
-        if c_up in DANGER_COUNTRIES:
-            country_points += 3.0
-            warnings.append(f"{RED}Communicating with {c_up}{RESET}")
-        elif c_up not in SAFE_COUNTRIES and c_up:
-            country_points += 0.5
-    country_points = min(country_points, COUNTRY_SCORE_CAP)
+    if data.get("ssl") is False:
+        medium += 1
 
-    score = port_points + country_points
-    if has_utm:
-        score *= 0.8
+    if data.get("upnp"):
+        medium += 1
 
+    rate = float(data.get("dns_fail_rate", 0.0))
+    if rate >= 0.5:
+        high += 1
+    elif rate >= 0.1:
+        medium += 1
+    elif rate > 0:
+        low += 1
+
+    http_ratio = float(data.get("http_ratio", 0.0))
+    if http_ratio >= 0.5:
+        medium += 1
+    elif http_ratio > 0:
+        low += 1
+
+    unknown_ratio = float(data.get("unknown_mac_ratio", 0.0))
+    if unknown_ratio >= 0.3:
+        medium += 1
+    elif unknown_ratio > 0:
+        low += 1
+
+    dev_count = int(data.get("device_count", 0))
+    if dev_count > 50:
+        medium += 1
+    elif dev_count > 10:
+        low += 1
+
+    open_count = int(data.get("open_port_count", 0))
+    if open_count > 15:
+        high += 1
+    elif open_count > 5:
+        medium += 1
+    elif open_count > 0:
+        low += 1
+
+    intl_ratio = float(data.get("intl_traffic_ratio", 0.0))
+    if intl_ratio >= 0.5:
+        high += 1
+    elif intl_ratio >= 0.2:
+        medium += 1
+    elif intl_ratio > 0:
+        low += 1
+
+    if data.get("ip_conflict"):
+        high += 1
+
+    score = 10.0 - high * 0.7 - medium * 0.3 - low * 0.2
     score = max(0.0, min(10.0, score))
-    return round(score, 1), warnings
+
+    return {
+        "score": round(score, 1),
+        "high_risk": int(high),
+        "medium_risk": int(medium),
+        "low_risk": int(low),
+    }
 
 
 
 def main():
-    """Read device data from a JSON file and print each device's security score.
+    """Read risk data from JSON and print scores for each entry."""
 
-    The path to the JSON file is expected as the first command line argument.
-    The file should contain a list of device dictionaries with ``open_ports`` and
-    ``countries`` fields. Scores and any warnings are printed to ``stdout``.
-    """
     if len(sys.argv) < 2:
         print("Usage: security_score.py <input.json>", file=sys.stderr)
         sys.exit(1)
+
     path = sys.argv[1]
     with open(path, "r", encoding="utf-8") as f:
         devices = json.load(f)
+
     for dev in devices:
         name = dev.get("device") or dev.get("ip") or "unknown"
-        ports = dev.get("open_ports", [])
-        countries = dev.get("countries", [])
-        score, warns = calc_security_score([str(p) for p in ports], [c.upper() for c in countries])
-        warn_text = "; ".join(warns) if warns else ""
-        print(f"{name}\tScore: {score}\t{warn_text}")
+        res = calc_security_score(dev)
+        print(
+            f"{name}\tScore: {res['score']}"
+            f"\t(H:{res['high_risk']} M:{res['medium_risk']} L:{res['low_risk']})"
+        )
 
 if __name__ == "__main__":
     main()
