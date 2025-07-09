@@ -42,8 +42,9 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
     elif geo and geo not in SAFE_COUNTRIES:
         medium += 1
 
-    if data.get("ssl") is False:
-        medium += 1
+    ssl_status = str(data.get("ssl", "")).lower()
+    if ssl_status in {"invalid", "self-signed"}:
+        high += 1
 
     if data.get("upnp"):
         medium += 1

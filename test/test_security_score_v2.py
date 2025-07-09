@@ -12,7 +12,7 @@ class CalcSecurityScoreV2Test(unittest.TestCase):
         data = {
             "danger_ports": ["3389"] * 20,
             "geoip": "RU",
-            "ssl": False,
+            "ssl": "self-signed",
             "open_port_count": 20,
             "dns_fail_rate": 1.0,
             "intl_traffic_ratio": 0.9,

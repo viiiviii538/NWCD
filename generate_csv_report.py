@@ -20,7 +20,7 @@ def generate_report(devices: List[Dict]) -> List[List[str]]:
             "danger_ports": danger_list,
             "geoip": countries[0] if countries else "",
             "open_port_count": len(ports),
-            "ssl": dev.get("ssl", True),
+            "ssl": dev.get("ssl", "valid"),
             "dns_fail_rate": 0.0,
         }
         res = calc_security_score(data)

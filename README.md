@@ -142,8 +142,8 @@ JSON を読み込み、10.0 を満点とするセキュリティスコアを計�
 
 ```json
 [
-  {"device": "192.168.1.10", "danger_ports": ["3389"], "geoip": "RU", "ssl": false, "open_port_count": 3},
-  {"device": "192.168.1.20", "danger_ports": [], "geoip": "US", "ssl": true, "open_port_count": 2}
+  {"device": "192.168.1.10", "danger_ports": 1, "geoip": "RU", "ssl": "invalid", "open_port_count": 3},
+  {"device": "192.168.1.20", "danger_ports": 0, "geoip": "US", "ssl": "valid", "open_port_count": 2}
 ]
 ```
 
@@ -176,7 +176,7 @@ from security_score import calc_security_score
 result = calc_security_score({
     "danger_ports": ["3389"],
     "geoip": "RU",
-    "ssl": False,
+    "ssl": "invalid",
     "open_port_count": 3,
 })
 print(result["score"], result["high_risk"])
