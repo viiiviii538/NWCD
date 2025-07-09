@@ -99,7 +99,6 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
 def main():
     """Read risk data from JSON and print scores for each entry."""
 
@@ -118,6 +117,7 @@ def main():
             f"{name}\tScore: {res['score']}"
             f"\t(H:{res['high_risk']} M:{res['medium_risk']} L:{res['low_risk']})"
         )
+
 
 if __name__ == "__main__":
     main()
