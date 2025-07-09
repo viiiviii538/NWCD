@@ -172,6 +172,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openResultPage() async {
     final version = await diag.getWindowsVersion();
+    if (!mounted) return;
     final items = [
       const DiagnosticItem(
         name: 'ポート開放',
