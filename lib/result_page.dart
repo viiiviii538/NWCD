@@ -31,7 +31,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final double securityScore;
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
-  final Future<String> Function()? onGenerateTopology;
+  final Future<String> Function(List<LanDeviceRisk>)? onGenerateTopology;
   final List<SslCheck> sslChecks;
   final List<SpfCheck> spfChecks;
   final List<DomainAuthCheck> domainAuths;
@@ -404,7 +404,7 @@ class DiagnosticResultPage extends StatelessWidget {
   Future<void> _showTopology(BuildContext context) async {
     try {
       final generator = onGenerateTopology;
-      final path = await (generator ?? report_utils.generateTopologyDiagram)();
+      final path = await (generator ?? report_utils.generateTopologyDiagram)(lanDevices);
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);

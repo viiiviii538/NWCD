@@ -9,6 +9,11 @@ from typing import Any, Dict
 
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
+# Weighting factors for each risk level used in the final score calculation
+HIGH_WEIGHT = 0.7
+MEDIUM_WEIGHT = 0.3
+LOW_WEIGHT = 0.2
+
 __all__ = ["calc_security_score"]
 
 
@@ -23,8 +28,13 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
 
     high = medium = low = 0
 
-    # number of ports considered dangerous (e.g. 3389, 445, telnet)
-    high += int(data.get("danger_ports", 0))
+    # list of ports considered dangerous (e.g. 3389, 445, telnet)
+    dp = data.get("danger_ports", [])
+    try:
+        high += len(list(dp))
+    except TypeError:
+        # fallback for legacy integer values
+        high += int(dp)
 
     geo = str(data.get("geoip", "")).upper()
     if geo in DANGER_COUNTRIES:
@@ -84,7 +94,7 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
     if data.get("ip_conflict"):
         high += 1
 
-    score = 10.0 - high * 0.7 - medium * 0.3 - low * 0.2
+    score = 10.0 - high * HIGH_WEIGHT - medium * MEDIUM_WEIGHT - low * LOW_WEIGHT
     score = max(0.0, min(10.0, score))
 
     return {
@@ -93,7 +103,6 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
         "medium_risk": int(medium),
         "low_risk": int(low),
     }
-
 
 
 def main():
@@ -114,6 +123,7 @@ def main():
             f"{name}\tScore: {res['score']}"
             f"\t(H:{res['high_risk']} M:{res['medium_risk']} L:{res['low_risk']})"
         )
+
 
 if __name__ == "__main__":
     main()

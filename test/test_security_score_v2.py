@@ -1,4 +1,8 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from security_score import calc_security_score
 from report_utils import calc_utm_items
 
@@ -6,7 +10,7 @@ from report_utils import calc_utm_items
 class CalcSecurityScoreV2Test(unittest.TestCase):
     def test_score_capping_and_utm(self):
         data = {
-            "danger_ports": 20,
+            "danger_ports": ["3389"] * 20,
             "geoip": "RU",
             "ssl": "self-signed",
             "open_port_count": 20,

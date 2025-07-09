@@ -157,8 +157,15 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 
 ## 0.0〜10.0 スコアリングシステム
 
-スコアは high_risk, medium_risk, low_risk の件数を用いて 
-`10 - high*0.7 - medium*0.3 - low*0.2` で計算されます。
+スコアは high_risk, medium_risk, low_risk の件数を用いて
+`10 - high*HIGH_WEIGHT - medium*MEDIUM_WEIGHT - low*LOW_WEIGHT` で計算されます。
+各定数のデフォルト値は `security_score.py` で次のように定義されています。
+
+```python
+HIGH_WEIGHT = 0.7
+MEDIUM_WEIGHT = 0.3
+LOW_WEIGHT = 0.2
+```
 数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。
 
 例として Python から直接呼び出す場合は次の通りです。
@@ -167,7 +174,7 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 from security_score import calc_security_score
 
 result = calc_security_score({
-    "danger_ports": 1,
+    "danger_ports": ["3389"],
     "geoip": "RU",
     "ssl": "invalid",
     "open_port_count": 3,

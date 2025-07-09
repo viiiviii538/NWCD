@@ -21,8 +21,6 @@ def parse_args(argv):
     return ip, ports, ssl_status, spf_valid, geoip
 
 
-
-
 def calc_score(open_ports, ssl_status, spf_valid, geoip):
     """Return score, risk descriptions and UTM items."""
 
@@ -56,8 +54,9 @@ def calc_score(open_ports, ssl_status, spf_valid, geoip):
             }
         )
 
+    danger_list = [p for p in open_ports if p in {"3389", "445", "23"}]
     data = {
-        "danger_ports": sum(1 for p in open_ports if p in {"3389", "445", "23"}),
+        "danger_ports": danger_list,
         "open_port_count": len(open_ports),
         "geoip": geoip,
         "ssl": ssl_status,

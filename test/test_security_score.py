@@ -1,5 +1,10 @@
 import unittest
-from security_score import calc_security_score
+from security_score import (
+    calc_security_score,
+    HIGH_WEIGHT,
+    MEDIUM_WEIGHT,
+    LOW_WEIGHT,
+)
 
 
 class CalcSecurityTest(unittest.TestCase):
@@ -11,7 +16,7 @@ class CalcSecurityTest(unittest.TestCase):
         self.assertEqual(res["low_risk"], 0)
 
     def test_single_high(self):
-        res = calc_security_score({"danger_ports": 1})
+        res = calc_security_score({"danger_ports": ["3389"]})
         self.assertEqual(res["high_risk"], 1)
         self.assertAlmostEqual(res["score"], 9.3, places=1)
 

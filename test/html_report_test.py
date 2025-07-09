@@ -1,4 +1,8 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from generate_html_report import generate_html_report
 
 
