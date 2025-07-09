@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import port_scan
 
+
 class PortScanScriptTest(unittest.TestCase):
     def test_run_scan_uses_all_ports_when_empty(self):
         xml = "<nmaprun></nmaprun>"

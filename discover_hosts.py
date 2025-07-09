@@ -11,6 +11,9 @@ IP_RE = re.compile(r'(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+')
 from pathlib import Path
 from urllib.request import urlopen
 
+# Cache for MAC prefix to vendor lookups
+_VENDOR_CACHE: dict[str, str] = {}
+
 def _get_subnet():
     if os.name == 'nt':
         try:
@@ -37,6 +40,24 @@ def _get_subnet():
                         pass
         except Exception:
             pass
+    elif sys.platform == 'darwin':
+        try:
+            proc = subprocess.run(['ifconfig'], capture_output=True, text=True)
+            if proc.returncode == 0:
+                for line in proc.stdout.splitlines():
+                    line = line.strip()
+                    m = re.search(r'inet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)', line)
+                    if m and not m.group(1).startswith('127.'):
+                        ip = m.group(1)
+                        mask_hex = m.group(2)
+                        try:
+                            mask_addr = ipaddress.IPv4Address(int(mask_hex, 16))
+                            network = ipaddress.IPv4Network(f'{ip}/{mask_addr}', strict=False)
+                            return str(network)
+                        except Exception:
+                            continue
+        except Exception:
+            pass
     else:
         try:
             proc = subprocess.run(['ip', 'addr'], capture_output=True, text=True)
@@ -46,7 +67,7 @@ def _get_subnet():
                 for line in proc.stdout.splitlines():
                     line = line.strip()
                     m = re.match(r'inet (\d+\.\d+\.\d+\.\d+)/(\d+)', line)
-                    if m and not line.startswith('127.'):
+                    if m and not m.group(1).startswith('127.'):
                         inet = m.group(1)
                         masklen = int(m.group(2))
                         network = ipaddress.IPv4Network(f'{inet}/{masklen}', strict=False)
@@ -54,6 +75,7 @@ def _get_subnet():
         except Exception:
             pass
     return None
+
 
 def _run_arp_scan():
     try:
@@ -73,6 +95,7 @@ def _run_arp_scan():
     except Exception:
         pass
     raise RuntimeError('arp-scan failed')
+
 
 def _run_nmap_scan(subnet):
     cmd = ['nmap']
@@ -102,8 +125,13 @@ def _run_nmap_scan(subnet):
             results.append({'ip': ip, 'mac': mac, 'vendor': vendor})
     return results
 
+
 def _lookup_vendor(mac):
     prefix = mac.upper().replace(':', '')[:6]
+
+    if prefix in _VENDOR_CACHE:
+        return _VENDOR_CACHE[prefix]
+
     db_path = Path('oui.txt')
     if db_path.exists():
         try:
@@ -113,14 +141,21 @@ def _lookup_vendor(mac):
                     if not line:
                         continue
                     if line.upper().startswith(prefix):
-                        return line[6:].strip()
+                        vendor = line[6:].strip()
+                        _VENDOR_CACHE[prefix] = vendor
+                        return vendor
         except Exception:
             pass
+
     try:
         with urlopen(f'https://api.macvendors.com/{mac}') as resp:
-            return resp.read().decode('utf-8')
+            vendor = resp.read().decode('utf-8')
+            _VENDOR_CACHE[prefix] = vendor
+            return vendor
     except Exception:
+        _VENDOR_CACHE[prefix] = ''
         return ''
+
 
 def main():
     subnet = None
@@ -135,6 +170,7 @@ def main():
         if not h.get('vendor'):
             h['vendor'] = _lookup_vendor(h.get('mac', ''))
     print(json.dumps({'hosts': hosts}, ensure_ascii=False))
+
 
 if __name__ == '__main__':
     main()

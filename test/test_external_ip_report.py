@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import external_ip_report
 
+
 class ExternalIPReportTest(unittest.TestCase):
     def test_classify_port_encrypted(self):
         self.assertEqual(external_ip_report.classify_port(443), "\u6697\u53f7\u5316")
@@ -36,6 +37,7 @@ class ExternalIPReportTest(unittest.TestCase):
         reader = MagicMock()
         reader.country.side_effect = Exception()
         self.assertEqual(external_ip_report.geoip_country(reader, '1.1.1.1'), '')
+
 
 if __name__ == '__main__':
     unittest.main()
