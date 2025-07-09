@@ -137,12 +137,13 @@ python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 
 ## セキュリティスコア計算
 
-`security_score.py` スクリプトは、各機器の開放ポートと通信先の国情報を入力とし、0〜10 のセキュリティスコアを算出します。入力ファイルは次のような JSON 配列を想定しています。
+`security_score.py` スクリプトはポート数や GeoIP、UPnP など複数の指標をまとめた
+JSON を読み込み、10.0 を満点とするセキュリティスコアを計算します。値が小さいほど危険度が高いことを示します。入力例は以下の通りです。
 
 ```json
 [
-  {"device": "192.168.1.10", "open_ports": ["3389"], "countries": ["RU"]},
-  {"device": "192.168.1.20", "open_ports": ["80", "22"], "countries": ["US"]}
+  {"device": "192.168.1.10", "danger_ports": 1, "geoip": "RU", "ssl": false, "open_port_count": 3},
+  {"device": "192.168.1.20", "danger_ports": 0, "geoip": "US", "ssl": true, "open_port_count": 2}
 ]
 ```
 
@@ -156,21 +157,22 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 
 ## 0.0〜10.0 スコアリングシステム
 
-
-`calc_security_score` 関数は開放ポートと通信国の情報から 0.0〜10.0 のスコアを計算します。RDP(3389) は 4 点、445 番は 3 点、23 番は 2 点、22 番は 1.5 点、21 番と 80 番は 1 点、443 番は 0.5 点が加算されます。未定義のポートは 0.5 点と低めに加算され、ポート由来の合計は最大 6 点です。国コードの評価では、`RU`、`CN`、`KP` といった危険国は 3 点、上記以外で安全国（JP, US, GB, DE, FR, CA, AU）に該当しない国は 0.5 点ずつ加算され、こちらは 4 点が上限となります。UTM を導入している場合は `has_utm=True` を指定すると最終スコアが 0.8 倍になります。
-
+スコアは high_risk, medium_risk, low_risk の件数を用いて 
+`10 - high*0.7 - medium*0.3 - low*0.2` で計算されます。
+数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。
 
 例として Python から直接呼び出す場合は次の通りです。
 
 ```python
 from security_score import calc_security_score
 
-score, warnings = calc_security_score(
-    open_ports=["3389", "80"],
-    countries=["RU", "JP"],
-    has_utm=False,
-)
-print(score, warnings)
+result = calc_security_score({
+    "danger_ports": 1,
+    "geoip": "RU",
+    "ssl": False,
+    "open_port_count": 3,
+})
+print(result["score"], result["high_risk"])
 ```
 
 
