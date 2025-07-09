@@ -169,7 +169,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _openResultPage() {
+  Future<void> _openResultPage() async {
+    final version = await diag.getWindowsVersion();
     final items = [
       const DiagnosticItem(
         name: 'ポート開放',
@@ -297,6 +298,7 @@ class _HomePageState extends State<HomePage> {
           lanDevices: lanDevices,
           externalComms: externalComms,
           defenseStatus: defenseStatus,
+          windowsVersion: version ?? '',
         ),
       ),
     );
