@@ -1,6 +1,7 @@
 import unittest
 from security_report import calc_score
 
+
 class CalcScoreTest(unittest.TestCase):
     def test_all_safe(self):
         score, risks, utm = calc_score([], True, True, 'JP')
@@ -22,6 +23,7 @@ class CalcScoreTest(unittest.TestCase):
         self.assertTrue(risks)
         self.assertTrue(all('counter' in r for r in risks))
         self.assertEqual(utm, ['firewall'])
+
 
 if __name__ == '__main__':
     unittest.main()

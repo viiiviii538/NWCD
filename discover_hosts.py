@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from urllib.request import urlopen
 
+
 def _get_subnet():
     if os.name == 'nt':
         try:
@@ -53,6 +54,7 @@ def _get_subnet():
             pass
     return None
 
+
 def _run_arp_scan():
     try:
         proc = subprocess.run(['arp-scan', '--localnet'], capture_output=True, text=True)
@@ -71,6 +73,7 @@ def _run_arp_scan():
     except Exception:
         pass
     raise RuntimeError('arp-scan failed')
+
 
 def _run_nmap_scan(subnet):
     cmd = ['nmap', '-sn', subnet, '-oX', '-']
@@ -93,6 +96,7 @@ def _run_nmap_scan(subnet):
             results.append({'ip': ip, 'mac': mac, 'vendor': vendor})
     return results
 
+
 def _lookup_vendor(mac):
     prefix = mac.upper().replace(':', '')[:6]
     db_path = Path('oui.txt')
@@ -113,6 +117,7 @@ def _lookup_vendor(mac):
     except Exception:
         return ''
 
+
 def main():
     subnet = None
     if len(sys.argv) > 1:
@@ -126,6 +131,7 @@ def main():
         if not h.get('vendor'):
             h['vendor'] = _lookup_vendor(h.get('mac', ''))
     print(json.dumps({'hosts': hosts}, ensure_ascii=False))
+
 
 if __name__ == '__main__':
     main()

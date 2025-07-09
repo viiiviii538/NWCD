@@ -30,8 +30,10 @@ th { background: #eee; }
 .score-mid { background: #fff3cd; }
 """
 
+
 def _escape(val: Any) -> str:
     return html.escape(str(val))
+
 
 def _collect_countries(dev: Dict[str, Any]) -> List[str]:
     countries = [c for c in dev.get("countries", []) if c]
@@ -41,6 +43,7 @@ def _collect_countries(dev: Dict[str, Any]) -> List[str]:
         if country:
             countries.append(country)
     return [str(c).upper() for c in countries]
+
 
 def generate_html(data: Any) -> str:
     """Generate HTML from device list or combined result dict."""
@@ -140,6 +143,7 @@ def generate_html_report(devices: List[Dict[str, Any]]) -> str:
     """Wrapper that maintains backwards compatibility."""
     return generate_html(devices)
 
+
 def convert_to_pdf(html_path: Path, pdf_path: Path) -> None:
     if pdfkit:
         pdfkit.from_file(str(html_path), str(pdf_path))
@@ -147,6 +151,7 @@ def convert_to_pdf(html_path: Path, pdf_path: Path) -> None:
         WeasyHTML(filename=str(html_path)).write_pdf(str(pdf_path))
     else:
         raise RuntimeError("pdfkit or weasyprint is required for PDF output")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create HTML report from scan results")
@@ -157,7 +162,6 @@ def main() -> None:
 
     with open(args.input, "r", encoding="utf-8") as f:
         data = json.load(f)
-
 
     html_data = generate_html(data)
     out_path = Path(args.output)
@@ -171,6 +175,7 @@ def main() -> None:
             print(f"PDF written to {pdf_path}")
         except Exception as e:
             print(f"PDF conversion failed: {e}")
+
 
 if __name__ == "__main__":
     main()

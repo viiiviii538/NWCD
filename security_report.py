@@ -21,8 +21,6 @@ def parse_args(argv):
     return ip, ports, ssl_valid, spf_valid, geoip
 
 
-
-
 def calc_score(open_ports, ssl_valid, spf_valid, geoip):
     """Return score, risk descriptions and UTM items."""
 

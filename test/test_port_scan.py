@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import port_scan
 
+
 class PortScanScriptTest(unittest.TestCase):
     def test_run_scan_uses_all_ports_when_empty(self):
         xml = "<nmaprun></nmaprun>"
@@ -20,6 +21,7 @@ class PortScanScriptTest(unittest.TestCase):
             m.assert_called_with([
                 'nmap', '-sV', '-O', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
+
 
 if __name__ == '__main__':
     unittest.main()
