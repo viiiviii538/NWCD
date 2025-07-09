@@ -92,6 +92,7 @@ void main() {
     const defense = [
       DefenseFeatureStatus(feature: 'Firewall', status: 'recommended', comment: '')
     ];
+    const version = 'Windows 10';
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -106,6 +107,7 @@ void main() {
           lanDevices: devices,
           externalComms: comms,
           defenseStatus: defense,
+          windowsVersion: version,
         ),
       ),
     );
@@ -117,5 +119,7 @@ void main() {
     expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
     expect(find.text('外部通信の暗号化状況'), findsOneWidget);
     expect(find.text('端末の防御機能の有効性チェック'), findsOneWidget);
+    expect(find.text('Windows バージョン'), findsOneWidget);
+    expect(find.text(version), findsOneWidget);
   });
 }
