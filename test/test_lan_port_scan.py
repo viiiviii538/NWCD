@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import lan_port_scan
 
+
 class LanPortScanJsonTest(unittest.TestCase):
     @patch('lan_port_scan.run_scan')
     @patch('lan_port_scan._run_arp_scan')
@@ -76,6 +77,5 @@ class LanPortScanConcurrencyTest(unittest.TestCase):
             self.assertEqual(len(FakeExecutor.instance.submitted), 2)
             # ensure run_scan executed only after submissions
             self.assertTrue(all(c == 2 for c in call_counts))
-
 if __name__ == '__main__':
     unittest.main()
