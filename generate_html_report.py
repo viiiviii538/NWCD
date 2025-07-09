@@ -91,13 +91,20 @@ def generate_html(data: Any) -> str:
         ip = dev.get("ip") or dev.get("device") or ""
         ports = [str(p) for p in dev.get("open_ports", [])]
         countries = _collect_countries(dev)
-        score, _ = calc_security_score(ports, countries)
+        data = {
+            "danger_ports": sum(1 for p in ports if p in {"3389", "445", "23"}),
+            "geoip": countries[0] if countries else "",
+            "open_port_count": len(ports),
+            "ssl": dev.get("ssl", True),
+        }
+        res = calc_security_score(data)
+        score = res["score"]
         utm = calc_utm_items(score, ports, countries)
         all_utm.update(utm)
         cls = ""
-        if score >= 8:
+        if score <= 3:
             cls = "score-high"
-        elif score >= 5:
+        elif score <= 5:
             cls = "score-mid"
         parts.append(f"<tr class='{cls}'><td>{_escape(ip)}</td><td>{score}</td></tr>")
     parts.append("</table>")

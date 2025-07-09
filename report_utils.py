@@ -25,7 +25,7 @@ def calc_utm_items(score: float, open_ports: Iterable[str], countries: Iterable[
         items.add("firewall")
     if any(str(c).upper() in DANGER_COUNTRIES for c in countries):
         items.add("web_filter")
-    if score >= 5:
+    if score <= 5:
         items.add("ips")
     return sorted(items)
 

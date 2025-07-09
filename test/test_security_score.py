@@ -3,36 +3,26 @@ from security_score import calc_security_score
 
 
 class CalcSecurityTest(unittest.TestCase):
-    def test_no_inputs(self):
-        score, warnings = calc_security_score([], [])
-        self.assertEqual(score, 0.0)
-        self.assertEqual(warnings, [])
+    def test_empty_data(self):
+        res = calc_security_score({})
+        self.assertEqual(res["score"], 10.0)
+        self.assertEqual(res["high_risk"], 0)
+        self.assertEqual(res["medium_risk"], 0)
+        self.assertEqual(res["low_risk"], 0)
 
-    def test_http_port(self):
-        score, warnings = calc_security_score(["80"], ["JP"])
-        self.assertEqual(score, 1.0)
-        self.assertEqual(warnings, [])
+    def test_single_high(self):
+        res = calc_security_score({"danger_ports": 1})
+        self.assertEqual(res["high_risk"], 1)
+        self.assertAlmostEqual(res["score"], 9.3, places=1)
 
-    def test_rdp_port_warning(self):
-        score, warnings = calc_security_score(["3389"], ["JP"])
-        self.assertEqual(score, 4.0)
-        self.assertTrue(any("RDP port open" in w for w in warnings))
-
-    def test_rdp_and_russia(self):
-        score, warnings = calc_security_score(["3389"], ["RU"])
-        self.assertEqual(score, 7.0)
-        self.assertTrue(any("RDP" in w for w in warnings))
-        self.assertTrue(any("RU" in w for w in warnings))
-
-    def test_danger_country_and_cap(self):
-        score, warnings = calc_security_score(["3389", "445"], ["CN"])
-        self.assertEqual(score, 9.0)
-        self.assertEqual(len(warnings), 2)
-
-    def test_score_capped(self):
-        ports = ["3389", "445", "23", "22", "21", "80", "443"]
-        score, _ = calc_security_score(ports, ["RU", "CN"])
-        self.assertEqual(score, 10.0)
+    def test_mixed_levels(self):
+        data = {"danger_ports": 1, "ssl": False, "open_port_count": 2}
+        res = calc_security_score(data)
+        self.assertEqual(res["high_risk"], 1)
+        self.assertEqual(res["medium_risk"], 1)
+        self.assertEqual(res["low_risk"], 1)
+        expected = 10 - 0.7 - 0.3 - 0.2
+        self.assertAlmostEqual(res["score"], expected, places=1)
 
 
 if __name__ == "__main__":
