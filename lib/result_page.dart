@@ -64,12 +64,6 @@ class DiagnosticResultPage extends StatelessWidget {
     return Colors.redAccent;
   }
 
-  String _scoreMessage(int score) {
-    if (score >= 8) return '社内ネットワークは安全です';
-    if (score >= 5) return '注意が必要です';
-    return '危険な状態です';
-  }
-
   Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
@@ -104,8 +98,6 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(_scoreMessage(score)),
       ],
     );
   }
