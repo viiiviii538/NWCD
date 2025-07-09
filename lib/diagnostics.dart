@@ -112,6 +112,21 @@ Future<NetworkSpeed?> measureNetworkSpeed() async {
   }
 }
 
+/// Detects the Windows version of the current system using ``os_version.py``.
+/// Returns ``null`` on non-Windows or when detection fails.
+Future<String?> getWindowsVersion() async {
+  const script = 'os_version.py';
+  try {
+    final result = await Process.run(pythonExecutable, [script]);
+    if (result.exitCode != 0) return null;
+    final output = result.stdout.toString().trim();
+    if (output.isEmpty || output == 'Non-Windows') return null;
+    return output;
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Runs the bundled Python script using `nmap` to scan [ports] on [host].
 /// Returns a [PortScanSummary] containing all results.
 Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {

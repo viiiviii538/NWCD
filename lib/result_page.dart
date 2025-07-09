@@ -39,6 +39,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<LanDeviceRisk> lanDevices;
   final List<ExternalCommInfo> externalComms;
   final List<DefenseFeatureStatus> defenseStatus;
+  final String windowsVersion;
 
   const DiagnosticResultPage({
     super.key,
@@ -53,6 +54,7 @@ class DiagnosticResultPage extends StatelessWidget {
     this.lanDevices = const [],
     this.externalComms = const [],
     this.defenseStatus = const [],
+    this.windowsVersion = '',
   });
 
   Color _scoreColor(int score) {
@@ -380,6 +382,18 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _windowsVersionSection() {
+    if (windowsVersion.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Windows バージョン'),
+        const SizedBox(height: 4),
+        Text(windowsVersion),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -507,6 +521,8 @@ class DiagnosticResultPage extends StatelessWidget {
               _externalCommSection(),
               const SizedBox(height: 16),
               _defenseSection(),
+              const SizedBox(height: 16),
+              _windowsVersionSection(),
               const SizedBox(height: 16),
               Align(
                 alignment: Alignment.center,
