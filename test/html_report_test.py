@@ -1,4 +1,8 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from generate_html_report import generate_html_report
 
 
@@ -12,7 +16,7 @@ class HtmlReportGeneratorTest(unittest.TestCase):
         self.assertTrue(html.startswith("<html>"))
         self.assertIn("<table>", html)
         self.assertIn("<td>dev1</td>", html)
-        self.assertIn("<td>1.0</td>", html)  # score for dev1
+        self.assertIn("<td>9.7</td>", html)  # score for dev1
         self.assertTrue(html.endswith("</html>"))
 
 

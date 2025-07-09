@@ -106,3 +106,10 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Install required Python helper scripts next to the executable so that the
+# Flutter app can invoke them at runtime.
+file(GLOB PY_HELPERS "${CMAKE_CURRENT_LIST_DIR}/../*.py")
+install(FILES ${PY_HELPERS}
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)

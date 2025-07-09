@@ -2,7 +2,7 @@
 import sys
 import json
 
-from risk_score import calc_risk_score
+from security_score import calc_security_score
 from report_utils import calc_utm_items
 
 
@@ -15,7 +15,7 @@ def parse_args(argv):
         sys.exit(1)
     ip = argv[1]
     ports = [p for p in argv[2].split(',') if p]
-    ssl_valid = argv[3].lower() in {"1", "true", "yes"}
+    ssl_status = argv[3].lower()
     spf_valid = argv[4].lower() in {"1", "true", "yes"}
     dkim_valid = argv[5].lower() in {"1", "true", "yes"}
     dmarc_valid = argv[6].lower() in {"1", "true", "yes"}
@@ -36,10 +36,10 @@ def calc_score(open_ports, ssl_valid, spf_valid, dkim_valid, dmarc_valid, geoip)
                 "counter": "Close unused ports or enable a firewall",
             }
         )
-    if not ssl_valid:
+    if ssl_status in {"invalid", "self-signed"}:
         risks.append(
             {
-                "risk": "SSL certificate invalid",
+                "risk": f"SSL certificate {ssl_status}",
                 "counter": "Install a valid SSL certificate",
             }
         )
@@ -72,7 +72,17 @@ def calc_score(open_ports, ssl_valid, spf_valid, dkim_valid, dmarc_valid, geoip)
             }
         )
 
-    score, _warns = calc_risk_score(open_ports, [geoip] if geoip else [])
+    danger_list = [p for p in open_ports if p in {"3389", "445", "23"}]
+    data = {
+        "danger_ports": danger_list,
+        "open_port_count": len(open_ports),
+        "geoip": geoip,
+        "ssl": ssl_status,
+        "dns_fail_rate": 0.0 if spf_valid else 1.0,
+    }
+
+    res = calc_security_score(data)
+    score = res["score"]
     utm_items = calc_utm_items(score, open_ports, [geoip])
     return score, risks, utm_items
 

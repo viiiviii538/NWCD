@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'utils/python_utils.dart';
+
 import 'ssl_result.dart';
 export 'ssl_result.dart';
 import 'spf_result.dart';
@@ -9,6 +11,12 @@ export 'spf_result.dart';
 import 'package:nwc_densetsu/network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
+
+typedef ProcessRunner = Future<ProcessResult> Function(
+    String executable, List<String> arguments);
+
+Future<ProcessResult> _defaultRunner(String exe, List<String> args) =>
+    Process.run(exe, args);
 
 class PortStatus {
   final int port;
@@ -89,7 +97,7 @@ class RiskItem {
 
 class SecurityReport {
   final String ip;
-  final int score;
+  final double score;
   final List<RiskItem> risks;
   final List<String> utmItems;
   final String path;
@@ -141,11 +149,15 @@ Future<String> runPing([String host = 'google.com']) async {
 Future<NetworkSpeed?> measureNetworkSpeed() async {
   const script = 'network_speed.py';
   try {
-    final result = await Process.run('python', [script]);
+    final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       return null;
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return null;
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final down = (data['download'] as num).toDouble();
     final up = (data['upload'] as num).toDouble();
     final ping = (data['ping'] as num).toDouble();
@@ -190,11 +202,15 @@ Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
     if (ports != null && ports.isNotEmpty) {
       args.add(ports.join(','));
     }
-    final result = await Process.run('python', args);
+    final result = await Process.run(pythonExecutable, args);
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return PortScanSummary(host, []);
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final portList = <PortStatus>[];
     if (data.containsKey('ports')) {
       for (final item in data['ports']) {
@@ -231,11 +247,15 @@ Future<List<LanPortDevice>> scanLanWithPorts({
     args.addAll(['--ports', ports.join(',')]);
   }
   try {
-    final result = await Process.run('python', [script, ...args]);
+    final result = await Process.run(pythonExecutable, [script, ...args]);
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
-    final data = jsonDecode(result.stdout.toString()) as List<dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return [];
+    }
+    final data = jsonDecode(output) as List<dynamic>;
     final devices = <LanPortDevice>[];
     for (final item in data) {
       final portList = <PortStatus>[];
@@ -458,10 +478,11 @@ Future<SecurityReport> runSecurityReport({
   required bool dkimValid,
   required bool dmarcValid,
   String geoip = 'JP',
+  ProcessRunner processRunner = _defaultRunner,
 }) async {
   const script = 'security_report.py';
   try {
-    final result = await Process.run('python', [
+    final result = await processRunner(pythonExecutable, [
       script,
       ip,
       openPorts.join(','),
@@ -471,7 +492,19 @@ Future<SecurityReport> runSecurityReport({
       dmarcValid ? 'true' : 'false',
       geoip,
     ]);
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      return SecurityReport(
+        ip,
+        0.0,
+        [const RiskItem('error', 'No output from security_report.py')],
+        [],
+        '',
+        openPorts: [],
+        geoip: '',
+      );
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final risks = <RiskItem>[];
     if (data['risks'] is List) {
       for (final r in data['risks']) {
@@ -507,9 +540,7 @@ Future<SecurityReport> runSecurityReport({
         data['dmarc_valid']?.toString().toLowerCase() == 'true';
     return SecurityReport(
       data['ip']?.toString() ?? ip,
-      data['score'] is int
-          ? data['score'] as int
-          : int.tryParse(data['score'].toString()) ?? 0,
+      score,
       risks,
       utm,
       data['path']?.toString() ?? '',
@@ -521,7 +552,7 @@ Future<SecurityReport> runSecurityReport({
   } catch (e) {
     return SecurityReport(
       ip,
-      0,
+      0.0,
       [RiskItem('error', e.toString())],
       [],
       '',

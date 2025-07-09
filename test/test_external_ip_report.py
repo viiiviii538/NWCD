@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 import external_ip_report
 import json
 
+
 class ExternalIPReportTest(unittest.TestCase):
     def test_classify_port_encrypted(self):
         self.assertEqual(external_ip_report.classify_port(443), "\u6697\u53f7\u5316")

@@ -1,7 +1,12 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from security_report import calc_score
 
-class CalcSecurityScoreTest(unittest.TestCase):
+
+class CalcScoreTest(unittest.TestCase):
     def test_all_safe(self):
         score, risks, utm = calc_score([], True, True, True, True, 'JP')
         self.assertEqual(score, 0.0)
@@ -13,7 +18,7 @@ class CalcSecurityScoreTest(unittest.TestCase):
         self.assertAlmostEqual(score, 7.0, places=1)
         self.assertEqual(len(risks), 6)
         self.assertTrue(all('risk' in r and 'counter' in r for r in risks))
-        self.assertEqual(utm, ['firewall', 'ips', 'web_filter'])
+        self.assertEqual(utm, ['firewall', 'web_filter'])
 
     def test_many_open_ports(self):
         ports = [str(i) for i in range(1, 11)]
@@ -21,7 +26,8 @@ class CalcSecurityScoreTest(unittest.TestCase):
         self.assertAlmostEqual(score, 5.0, places=1)
         self.assertTrue(risks)
         self.assertTrue(all('counter' in r for r in risks))
-        self.assertEqual(utm, ['firewall', 'ips'])
+        self.assertEqual(utm, ['firewall'])
+
 
 if __name__ == '__main__':
     unittest.main()

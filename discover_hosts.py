@@ -6,27 +6,30 @@ import xml.etree.ElementTree as ET
 import ipaddress
 import re
 import os
+
+IP_RE = re.compile(r'(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+')
 from pathlib import Path
 from urllib.request import urlopen
 
+# Cache for MAC prefix to vendor lookups
+_VENDOR_CACHE: dict[str, str] = {}
+
 def _get_subnet():
     if os.name == 'nt':
-        # Windows - parse output of ipconfig for IPv4 address and subnet mask.
         try:
             proc = subprocess.run(['ipconfig'], capture_output=True, text=True)
             if proc.returncode == 0:
                 ip = None
                 mask = None
                 for line in proc.stdout.splitlines():
-                    line = line.strip()
-                    if not ip:
-                        m = re.search(r'IPv4[^:]*:\s*(\d+\.\d+\.\d+\.\d+)', line)
-                        if m:
-                            ip = m.group(1)
-                    if not mask:
-                        m = re.search(r'Subnet[^:]*Mask[^:]*:\s*(\d+\.\d+\.\d+\.\d+)', line)
-                        if m:
-                            mask = m.group(1)
+                    if 'IPv4 Address' in line or line.strip().startswith('IPv4'):
+                        parts = line.split(':')
+                        if len(parts) > 1:
+                            ip = parts[1].strip()
+                    elif 'Subnet Mask' in line:
+                        parts = line.split(':')
+                        if len(parts) > 1:
+                            mask = parts[1].strip()
                     if ip and mask:
                         break
                 if ip and mask:
@@ -35,6 +38,24 @@ def _get_subnet():
                         return str(network)
                     except Exception:
                         pass
+        except Exception:
+            pass
+    elif sys.platform == 'darwin':
+        try:
+            proc = subprocess.run(['ifconfig'], capture_output=True, text=True)
+            if proc.returncode == 0:
+                for line in proc.stdout.splitlines():
+                    line = line.strip()
+                    m = re.search(r'inet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)', line)
+                    if m and not m.group(1).startswith('127.'):
+                        ip = m.group(1)
+                        mask_hex = m.group(2)
+                        try:
+                            mask_addr = ipaddress.IPv4Address(int(mask_hex, 16))
+                            network = ipaddress.IPv4Network(f'{ip}/{mask_addr}', strict=False)
+                            return str(network)
+                        except Exception:
+                            continue
         except Exception:
             pass
     else:
@@ -46,7 +67,7 @@ def _get_subnet():
                 for line in proc.stdout.splitlines():
                     line = line.strip()
                     m = re.match(r'inet (\d+\.\d+\.\d+\.\d+)/(\d+)', line)
-                    if m and not line.startswith('127.'):
+                    if m and not m.group(1).startswith('127.'):
                         inet = m.group(1)
                         masklen = int(m.group(2))
                         network = ipaddress.IPv4Network(f'{inet}/{masklen}', strict=False)
@@ -54,6 +75,7 @@ def _get_subnet():
         except Exception:
             pass
     return None
+
 
 def _run_arp_scan():
     try:
@@ -63,7 +85,7 @@ def _run_arp_scan():
         results = []
         for line in proc.stdout.splitlines():
             parts = line.split()  # whitespace
-            if len(parts) >= 2 and re.match(r'\d+\.\d+\.\d+\.\d+', parts[0]):
+            if len(parts) >= 2 and IP_RE.fullmatch(parts[0]):
                 vendor = ""
                 if len(parts) >= 3:
                     vendor = " ".join(parts[2:])
@@ -74,14 +96,17 @@ def _run_arp_scan():
         pass
     raise RuntimeError('arp-scan failed')
 
+
 def _run_nmap_scan(subnet):
-    if not subnet:
-        raise ValueError('subnet is required for nmap scan')
-    cmd = ['nmap', '-sn', subnet, '-oX', '-']
+    cmd = ['nmap']
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-    except FileNotFoundError as e:
-        raise RuntimeError('nmap command not found') from e
+        if ipaddress.ip_network(subnet, strict=False).version == 6:
+            cmd.append('-6')
+    except Exception:
+        if ':' in subnet:
+            cmd.append('-6')
+    cmd += ['-sn', subnet, '-oX', '-']
+    proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip())
     root = ET.fromstring(proc.stdout)
@@ -92,7 +117,7 @@ def _run_nmap_scan(subnet):
         vendor = ''
         name = ''
         for addr in host.findall('address'):
-            if addr.get('addrtype') == 'ipv4':
+            if addr.get('addrtype') in ('ipv4', 'ipv6'):
                 ip = addr.get('addr')
             elif addr.get('addrtype') == 'mac':
                 mac = addr.get('addr')
@@ -104,9 +129,14 @@ def _run_nmap_scan(subnet):
             results.append({'ip': ip, 'mac': mac, 'vendor': vendor, 'name': name})
     return results
 
+
 def _lookup_vendor(mac):
     prefix = mac.upper().replace(':', '')[:6]
-    db_path = Path(__file__).with_name('oui.txt')
+
+    if prefix in _VENDOR_CACHE:
+        return _VENDOR_CACHE[prefix]
+
+    db_path = Path('oui.txt')
     if db_path.exists():
         try:
             with db_path.open('r', encoding='utf-8', errors='ignore') as f:
@@ -115,14 +145,21 @@ def _lookup_vendor(mac):
                     if not line:
                         continue
                     if line.upper().startswith(prefix):
-                        return line[6:].strip()
+                        vendor = line[6:].strip()
+                        _VENDOR_CACHE[prefix] = vendor
+                        return vendor
         except Exception:
             pass
+
     try:
         with urlopen(f'https://api.macvendors.com/{mac}') as resp:
-            return resp.read().decode('utf-8')
+            vendor = resp.read().decode('utf-8')
+            _VENDOR_CACHE[prefix] = vendor
+            return vendor
     except Exception:
+        _VENDOR_CACHE[prefix] = ''
         return ''
+
 
 def main():
     subnet = None
@@ -137,6 +174,7 @@ def main():
         if not h.get('vendor'):
             h['vendor'] = _lookup_vendor(h.get('mac', ''))
     print(json.dumps({'hosts': hosts}, ensure_ascii=False))
+
 
 if __name__ == '__main__':
     main()
