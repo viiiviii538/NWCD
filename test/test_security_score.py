@@ -1,5 +1,10 @@
 import unittest
-from security_score import calc_security_score
+from security_score import (
+    calc_security_score,
+    HIGH_WEIGHT,
+    MEDIUM_WEIGHT,
+    LOW_WEIGHT,
+)
 
 
 class CalcSecurityTest(unittest.TestCase):
@@ -21,7 +26,7 @@ class CalcSecurityTest(unittest.TestCase):
         self.assertEqual(res["high_risk"], 1)
         self.assertEqual(res["medium_risk"], 1)
         self.assertEqual(res["low_risk"], 1)
-        expected = 10 - 0.7 - 0.3 - 0.2
+        expected = 10 - HIGH_WEIGHT - MEDIUM_WEIGHT - LOW_WEIGHT
         self.assertAlmostEqual(res["score"], expected, places=1)
 
 

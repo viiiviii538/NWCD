@@ -9,6 +9,11 @@ from typing import Any, Dict
 
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
+# Weighting factors for each risk level used in the final score calculation
+HIGH_WEIGHT = 0.7
+MEDIUM_WEIGHT = 0.3
+LOW_WEIGHT = 0.2
+
 __all__ = ["calc_security_score"]
 
 
@@ -83,7 +88,7 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
     if data.get("ip_conflict"):
         high += 1
 
-    score = 10.0 - high * 0.7 - medium * 0.3 - low * 0.2
+    score = 10.0 - high * HIGH_WEIGHT - medium * MEDIUM_WEIGHT - low * LOW_WEIGHT
     score = max(0.0, min(10.0, score))
 
     return {
