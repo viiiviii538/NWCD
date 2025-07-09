@@ -46,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   bool _lanScanning = false;
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
+  bool hasUtm = false;
 
 
   Future<void> _runLanScan() async {
@@ -338,6 +339,16 @@ class _HomePageState extends State<HomePage> {
                 'Ping ${_speed!.pingMs.toStringAsFixed(1)} ms',
               ),
             ],
+            SwitchListTile(
+              title: const Text('UTMを導入していますか？'),
+              subtitle: const Text('導入済みの場合、セキュリティスコアに加点されます'),
+              value: hasUtm,
+              onChanged: (value) {
+                setState(() {
+                  hasUtm = value;
+                });
+              },
+            ),
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: _saveReportFile,
