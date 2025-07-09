@@ -109,4 +109,29 @@ void main() {
     expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
   });
+
+  testWidgets('SPF table rows use colors based on status', (tester) async {
+    const results = [
+      SpfResult('ok.com', 'v=spf1 -all', 'safe', ''),
+      SpfResult('none.com', '', 'danger', 'missing'),
+      SpfResult('fail.com', '', 'warning', 'error'),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          riskScore: 5,
+          items: [],
+          spfResults: results,
+        ),
+      ),
+    );
+
+    final rows = tester.widgetList<DataRow>(find.byType(DataRow)).toList();
+    expect(rows.length, 3);
+    expect(rows[0].color?.resolve({}), Colors.green.withOpacity(0.2));
+    expect(rows[1].color?.resolve({}), Colors.redAccent.withOpacity(0.2));
+    expect(rows[2].color?.resolve({}), Colors.yellowAccent.withOpacity(0.2));
+  });
 }

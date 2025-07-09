@@ -322,14 +322,26 @@ Future<SslResult> checkSslCertificate(String host) async {
 
 /// Retrieves the SPF record for the given domain. When [recordsFile] is
 /// supplied, the TXT record is looked up offline via `dns_records.py`.
-Future<SpfResult> checkSpfRecord(String domain, {String? recordsFile}) async {
+typedef _ProcessRunner = Future<ProcessResult> Function(
+    String executable, List<String> arguments,
+    {String? workingDirectory,
+    Map<String, String>? environment,
+    bool? runInShell,
+    Encoding? stdoutEncoding,
+    Encoding? stderrEncoding});
+
+Future<SpfResult> checkSpfRecord(
+  String domain, {
+  String? recordsFile,
+  _ProcessRunner runProcess = Process.run,
+}) async {
   const script = 'dns_records.py';
   final args = <String>[script, domain];
   if (recordsFile != null) {
     args.addAll(['--zone-file', recordsFile]);
   }
   try {
-    final result = await Process.run('python', args);
+    final result = await runProcess('python', args);
     if (result.exitCode != 0) {
       throw result.stderr.toString();
     }
