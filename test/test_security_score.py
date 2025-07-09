@@ -11,12 +11,12 @@ class CalcSecurityTest(unittest.TestCase):
         self.assertEqual(res["low_risk"], 0)
 
     def test_single_high(self):
-        res = calc_security_score({"danger_ports": 1})
+        res = calc_security_score({"danger_ports": ["3389"]})
         self.assertEqual(res["high_risk"], 1)
         self.assertAlmostEqual(res["score"], 9.3, places=1)
 
     def test_mixed_levels(self):
-        data = {"danger_ports": 1, "ssl": False, "open_port_count": 2}
+        data = {"danger_ports": ["23"], "ssl": False, "open_port_count": 2}
         res = calc_security_score(data)
         self.assertEqual(res["high_risk"], 1)
         self.assertEqual(res["medium_risk"], 1)

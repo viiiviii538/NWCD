@@ -6,7 +6,7 @@ from report_utils import calc_utm_items
 class CalcSecurityScoreV2Test(unittest.TestCase):
     def test_score_capping_and_utm(self):
         data = {
-            "danger_ports": 20,
+            "danger_ports": ["3389"] * 20,
             "geoip": "RU",
             "ssl": False,
             "open_port_count": 20,
