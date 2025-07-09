@@ -53,12 +53,12 @@ class _HomePageState extends State<HomePage> {
   static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
 
-void _openGeoipPageWithExistingData() {
+/// Opens the GeoIP result page using the collected entries.
+void _openGeoipPage() {
   if (_geoipEntries.isEmpty) return;
-  Navigator.push(
-    context,
+  Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (context) => GeoipResultPage(entries: _geoipEntries),
+      builder: (_) => GeoipResultPage(entries: _geoipEntries),
     ),
   );
 }

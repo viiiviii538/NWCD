@@ -399,16 +399,11 @@ python generate_topology.py scan_results.json -o topology.svg
 
 ## GeoIP 解析画面
 
-LAN スキャンの結果ページでは、外部通信の国別統計をグラフ化した **GeoIP 解析** ボタンが表示されます。
-この画面は `external_ip_report.py` で取得した通信先一覧や、`lan_security_check.py` の
-`country_counts` 情報を利用しており、危険とされる国 (`CN`, `RU`, `KP` など) への通信は赤色で強調されます。
-棒グラフの描画には Flutter パッケージの [`fl_chart`](https://pub.dev/packages/fl_chart) を使用しているため、
-`pubspec.yaml` に同パッケージが含まれている必要があります。Python 側では `geoip2` モジュールと
-GeoLite2 データベースを用いて IP アドレスから国コードを解決します。
+LAN スキャン完了後の診断結果画面右上には、外部通信の国別統計を確認する **GeoIP 解析** ボタンが表示されます。ここをクリックすると国ごとの通信件数を棒グラフで示す専用画面に切り替わります。危険とされる国 (`CN`, `RU`, `KP` など) への通信は赤色で強調され、リスクを一目で把握できます。
 
-LAN スキャンを実行すると同時にこれらのデータが収集されるため、追加操作なしで最新の GeoIP 結果を
-閲覧できます。グラフ下には各通信先の IP・ドメインと判定結果の一覧が表示され、危険度の判断材料として
-利用できます。
+GeoIP 解析では `external_ip_report.py` の通信先一覧や `lan_security_check.py` が出力する `country_counts` を利用しており、LAN スキャンと同時に自動でデータが収集されます。グラフ下には各通信先 IP・ドメインと判定結果が一覧表示され、不審な接続の有無を確認できます。
+
+棒グラフ描画には Flutter パッケージの [`fl_chart`](https://pub.dev/packages/fl_chart) を使用するため、`pubspec.yaml` にこの依存関係を追加しておく必要があります。Python 側では `geoip2` モジュールと MaxMind の GeoLite2 データベースを用いて IP アドレスから国コードを解決します。
 
 ## スキャン実行時の注意
 
@@ -417,8 +412,10 @@ LAN スキャンを実行すると同時にこれらのデータが収集され�
 ## テスト
 
 Python スクリプトのユニットテストは `test` ディレクトリにあります。実行する前に
-`requirements.txt` に記載された依存ライブラリ (例: `graphviz`) をインストールして
-ください。以下のコマンド、または `scripts/setup_test_env.sh` を使って準備できます。
+`requirements.txt` に記載された依存ライブラリをインストールしてください。特に
+トポロジー生成テストでは `graphviz` が必要となるため、未導入の場合は合わせて
+インストールしておきます。次のコマンド、または `scripts/setup_test_env.sh` を
+使って準備できます。
 
 ```bash
 pip install -r requirements.txt
