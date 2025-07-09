@@ -3,21 +3,21 @@
     "device": "192.168.1.10",
     "danger_ports": 1,
     "geoip": "RU",
-    "ssl": false,
+    "ssl": "invalid",
     "open_port_count": 3
   },
   {
     "device": "192.168.1.20",
     "danger_ports": 0,
     "geoip": "US",
-    "ssl": true,
+    "ssl": "valid",
     "open_port_count": 2
   },
   {
     "device": "192.168.1.30",
     "danger_ports": 0,
     "geoip": "JP",
-    "ssl": true,
+    "ssl": "self-signed",
     "open_port_count": 0
   }
 ]

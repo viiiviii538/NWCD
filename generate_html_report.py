@@ -95,7 +95,7 @@ def generate_html(data: Any) -> str:
             "danger_ports": sum(1 for p in ports if p in {"3389", "445", "23"}),
             "geoip": countries[0] if countries else "",
             "open_port_count": len(ports),
-            "ssl": dev.get("ssl", True),
+            "ssl": dev.get("ssl", "valid"),
         }
         res = calc_security_score(data)
         score = res["score"]
