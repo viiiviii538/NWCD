@@ -343,8 +343,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
             SwitchListTile(
-              title: const Text('UTMを導入していますか？'),
-              subtitle: const Text('導入済みの場合、セキュリティスコアに加点されます'),
+              title: const Text('セキュリティ機器'),
               value: hasUtm,
               onChanged: (value) {
                 setState(() {
