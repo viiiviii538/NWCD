@@ -88,6 +88,9 @@ pip install -r requirements.txt
       `dig` の出力を保存したテキストを `--zone-file` に指定して
       オフラインで参照できます。各行は `example.com. IN TXT "v=spf1 +mx -all"`
       のように TXT レコードを記述してください。
+  - 外部通信の暗号化状況
+    - `external_ip_report.py --json` の出力を取り込み、宛先ドメインと暗号化有無を
+      診断結果ページで表形式表示します。
   - ネットワーク速度測定 (download/upload/ping) の結果表示
   - これらを基にしたセキュリティスコア（0〜10）
 
@@ -279,7 +282,7 @@ python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
 
 ## 外部通信の暗号化状況
 
-`external_ip_report.py` を実行すると、現在の外部接続を確認し、HTTP や SMTP など暗号化されていない通信も含めて一覧表示できます。危険な通信は赤字で強調されます。`--json` オプションを付けると結果を JSON 形式で取得できます。
+`external_ip_report.py` を実行すると、現在の外部接続を確認し、HTTP や SMTP など暗号化されていない通信も含めて一覧表示できます。危険な通信は赤字で強調されます。`--json` オプションを付けると結果を JSON 形式で取得できます。`--json` では `[{"dest", "protocol", "encryption", "state", "comment"}]` の配列が返され、Flutter アプリから呼び出して表形式で利用できます。
 
 ```bash
 python external_ip_report.py

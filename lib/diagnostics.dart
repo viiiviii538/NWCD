@@ -43,20 +43,14 @@ class ExternalCommEntry {
   final String encryption;
   final String state;
   final String comment;
-  final String ip;
-  final String domain;
-  final String country;
 
   const ExternalCommEntry(
     this.dest,
     this.protocol,
     this.encryption,
     this.state,
-    this.comment, {
-    this.ip = '',
-    this.domain = '',
-    this.country = '',
-  });
+    this.comment,
+  );
 
   factory ExternalCommEntry.fromJson(Map<String, dynamic> json) {
     return ExternalCommEntry(
@@ -65,9 +59,6 @@ class ExternalCommEntry {
       json['encryption']?.toString() ?? '',
       json['state']?.toString() ?? '',
       json['comment']?.toString() ?? '',
-      ip: json['ip']?.toString() ?? '',
-      domain: json['domain']?.toString() ?? '',
-      country: json['country']?.toString() ?? '',
     );
   }
 }

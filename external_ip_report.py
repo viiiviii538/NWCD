@@ -147,9 +147,6 @@ def main():
             state = "安全" if flag == "\u6697\u53f7\u5316" else "危険" if flag == "\u975e\u6697\u53f7\u5316" else "不明"
             comment = risk_comment(port) if flag == "\u975e\u6697\u53f7\u5316" else ""
             data.append({
-                "ip": ip,
-                "domain": domain,
-                "country": country,
                 "dest": dest,
                 "protocol": proto,
                 "encryption": flag,
