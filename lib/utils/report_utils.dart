@@ -7,6 +7,8 @@ import '../diagnostics.dart' show SecurityReport;
 import '../extended_results.dart' show LanDeviceRisk;
 import 'python_utils.dart';
 import 'file_utils.dart';
+import '../extended_results.dart' show LanDeviceRisk;
+import 'python_utils.dart';
 
 /// Generates a PDF report from [reports] using the bundled Python script
 /// and saves it to a location chosen by the user.
@@ -56,13 +58,14 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
 }
 /// Generates a network topology diagram from [devices].
 ///
-/// The function writes the device list to a temporary JSON file and invokes
-/// the bundled ``generate_topology.py`` script. The path to the generated image
-/// (SVG by default) is returned.
-Future<String> generateTopologyDiagram(List<LanDeviceRisk> devices) async {
-  final tmp = await Directory.systemTemp.createTemp('nwcd_topology');
-  final inputPath = p.join(tmp.path, 'scan.json');
-  final outputPath = p.join(tmp.path, 'topology.svg');
+/// The function creates a temporary JSON file compatible with
+/// `generate_topology.py` and invokes the script. The returned path points
+/// to the produced SVG file.
+Future<String> generateTopologyDiagram([List<LanDeviceRisk> devices = const []])
+    async {
+  final tmpDir = await Directory.systemTemp.createTemp('nwcd_topology');
+  final jsonPath = p.join(tmpDir.path, 'scan.json');
+  final outputPath = p.join(tmpDir.path, 'topology.svg');
 
   final data = {
     'hosts': [
@@ -73,11 +76,11 @@ Future<String> generateTopologyDiagram(List<LanDeviceRisk> devices) async {
         }
     ]
   };
-  await File(inputPath).writeAsString(jsonEncode(data));
+  await File(jsonPath).writeAsString(jsonEncode(data));
 
   final result = await Process.run(pythonExecutable, [
     'generate_topology.py',
-    inputPath,
+    jsonPath,
     '-o',
     outputPath,
   ]);
@@ -85,5 +88,6 @@ Future<String> generateTopologyDiagram(List<LanDeviceRisk> devices) async {
   if (result.exitCode != 0) {
     throw Exception(result.stderr.toString());
   }
+
   return outputPath;
 }

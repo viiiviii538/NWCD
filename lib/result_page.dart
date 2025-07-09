@@ -403,8 +403,9 @@ class DiagnosticResultPage extends StatelessWidget {
 
   Future<void> _showTopology(BuildContext context) async {
     try {
-      final generator = onGenerateTopology;
-      final path = await (generator ?? report_utils.generateTopologyDiagram)(lanDevices);
+      final generator =
+          onGenerateTopology ?? () => report_utils.generateTopologyDiagram(lanDevices);
+      final path = await generator();
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);

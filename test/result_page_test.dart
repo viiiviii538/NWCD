@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:nwc_densetsu/extended_results.dart';
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'dart:io';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 
@@ -64,15 +66,14 @@ void main() {
   });
 
   testWidgets('Topology button shows image dialog', (tester) async {
-    const devices = [
+    final devices = const [
       LanDeviceRisk(
-        ip: '192.168.1.2',
-        mac: '00:11',
-        vendor: 'Acme',
-        name: 'dev',
-        status: 'ok',
-        comment: '',
-      )
+          ip: '192.168.1.2',
+          mac: '00:11',
+          vendor: 'Test',
+          name: 'd',
+          status: 'ok',
+          comment: '')
     ];
 
     await tester.pumpWidget(
@@ -82,7 +83,9 @@ void main() {
           items: const [],
           portSummaries: const [],
           lanDevices: devices,
-          onGenerateTopology: report_utils.generateTopologyDiagram,
+          onGenerateTopology: () async {
+            return report_utils.generateTopologyDiagram(devices);
+          },
         ),
       ),
     );
