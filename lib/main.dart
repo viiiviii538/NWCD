@@ -171,7 +171,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
         return value;
       });
       final domain = d.name;
-      final spfFuture = diag.checkSpfRecord(domain).then((value) {
+      final spfFuture = diag.checkSpfRecord(ip).then((value) {
         setState(() {
           _progress[ip] = (_progress[ip] ?? 0) + 1;
           completedTasks++;

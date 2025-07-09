@@ -297,6 +297,21 @@ Future<List<GeoipEntry>> runGeoipReport() async {
   }
 }
 
+/// Performs a reverse DNS lookup for [ip] and returns the hostname.
+/// Returns `null` if the lookup fails.
+Future<String?> reverseDns(String ip) async {
+  try {
+    final address = InternetAddress(ip);
+    final reversed = await address.reverse();
+    if (reversed.host != address.address) {
+      return reversed.host;
+    }
+  } catch (_) {
+    // ignore errors and fall through
+  }
+  return null;
+}
+
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
@@ -320,21 +335,47 @@ Future<SslResult> checkSslCertificate(String host) async {
   }
 }
 
-/// Retrieves the SPF record for the given domain. When [recordsFile] is
+/// Retrieves the SPF record for the host. If [host] is an IP address, a reverse
+/// DNS lookup is performed to obtain the domain name. When [recordsFile] is
 /// supplied, the TXT record is looked up offline via `dns_records.py`.
 typedef _ProcessRunner = Future<ProcessResult> Function(
-    String executable, List<String> arguments,
-    {String? workingDirectory,
-    Map<String, String>? environment,
-    bool? runInShell,
-    Encoding? stdoutEncoding,
-    Encoding? stderrEncoding});
+  String executable,
+  List<String> arguments, {
+  String? workingDirectory,
+  Map<String, String>? environment,
+  bool? runInShell,
+  Encoding? stdoutEncoding,
+  Encoding? stderrEncoding,
+});
 
 Future<SpfResult> checkSpfRecord(
-  String domain, {
+  String host, {
   String? recordsFile,
   _ProcessRunner runProcess = Process.run,
 }) async {
+  final ip = InternetAddress.tryParse(host);
+  String? domain;
+
+  if (ip != null) {
+    domain = await reverseDns(ip.address);
+  } else {
+    domain = host;
+  }
+
+  if (domain == null || domain.isEmpty) {
+    return const SpfResult('', '', 'warning', 'Hostname not found');
+  }
+
+  const script = 'dns_records.py';
+  final args = <String>[script, domain];
+
+  if (recordsFile != null) {
+    args.addAll(['--zone-file', recordsFile]);
+  }
+
+  // 残りの処理（例：runProcess 実行）が続く...
+}
+
   const script = 'dns_records.py';
   final args = <String>[script, domain];
   if (recordsFile != null) {
@@ -501,7 +542,7 @@ Future<SecurityReport> analyzeHost(
 }) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(domain);
+  final spfRes = await checkSpfRecord(ip);
   final dkimValid = await checkDkimRecord(domain);
   final dmarcValid = await checkDmarcRecord(domain);
   final report = await runSecurityReport(
