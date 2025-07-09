@@ -54,7 +54,8 @@ void main() {
         home: DiagnosticResultPage(
           securityScore: 4,
           items: items,
-          portSummaries: [],
+          sslEntries: const [],
+          portSummaries: const [],
         ),
       ),
     );
@@ -81,6 +82,7 @@ void main() {
         home: DiagnosticResultPage(
           securityScore: 4,
           items: const [],
+          sslEntries: const [],
           portSummaries: const [],
           lanDevices: devices,
           onGenerateTopology: () async {

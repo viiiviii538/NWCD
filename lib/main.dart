@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/diagnostics.dart'
-    show PortScanSummary, SecurityReport, SslResult;
+    show PortScanSummary, SecurityReport, SslResult, SpfResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
-import 'package:nwc_densetsu/network_scan.dart'
-    show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
-import 'package:nwc_densetsu/extended_results.dart';
-import 'config.dart';
+import 'package:nwc_densetsu/port_constants.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
+import 'package:nwc_densetsu/device_list_page.dart';
+import 'package:nwc_densetsu/geoip_result_page.dart';
+import 'package:nwc_densetsu/geoip_entry.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,25 +39,69 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _output = '';
   List<PortScanSummary> _scanResults = [];
-  List<NetworkDevice> _devices = <NetworkDevice>[];
+  List<net.NetworkDevice> _devices = <net.NetworkDevice>[];
   List<SecurityReport> _reports = [];
-  final Map<String, SslResult> _sslResults = {};
-  final Map<String, String> _spfResults = {};
+  List<SslCheckEntry> _sslEntries = [];
+  List<SpfResult> _spfResults = [];
+  List<diag.ExternalCommEntry> _externalComms = [];
+  List<GeoipEntry> _geoipEntries = [];
   diag.NetworkSpeed? _speed;
+  diag.DefenseStatus? _defense;
   bool _lanScanning = false;
   final Map<String, int> _progress = {};
-  static const int _taskCount = 3; // port, SSL, SPF
-  bool hasUtm = false;
+  static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
+  double _overallProgress = 0.0;
+
+/// Opens the GeoIP result page using the collected entries.
+void _openGeoipPage() {
+  if (_geoipEntries.isEmpty) return;
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => GeoipResultPage(entries: _geoipEntries),
+    ),
+  );
+}
+
+Future<void> _openGeoipPageWithFreshScan() async {
+  final entries = await diag.runGeoipReport();
+  if (!mounted) return;
+  setState(() => _geoipEntries = entries);
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => GeoipResultPage(entries: entries),
+    ),
+  );
+}
+
+  void _openGeoipPage() {
+    if (_geoipEntries.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
+    );
+  }
+
+  List<int> get _selectedPorts {
+    switch (_portPreset) {
+      case 'quick':
+        return quickPorts;
+      case 'full':
+        return fullPorts;
+      default:
+        return defaultPortList;
+    }
+  }
 
 
   Future<void> _runLanScan() async {
     setState(() {
       _lanScanning = true;
-      _devices = <NetworkDevice>[];
+      _devices = <net.NetworkDevice>[];
       _scanResults = [];
       _reports = [];
-      _sslResults.clear();
-      _spfResults.clear();
+      _sslEntries = [];
+      _spfResults = [];
+      _externalComms = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -64,6 +109,12 @@ class _HomePageState extends State<HomePage> {
 
     final speed = await diag.measureNetworkSpeed();
     setState(() => _speed = speed);
+    final defense = await diag.checkDefenseStatus();
+    setState(() => _defense = defense);
+    final comms = await diag.runExternalCommReport();
+    setState(() {
+      _externalComms = comms;
+    });
     final buffer = StringBuffer();
     if (speed != null) {
       buffer.writeln('--- Network Speed ---');
@@ -105,26 +156,81 @@ class _HomePageState extends State<HomePage> {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
+      final domain = d.name;
       final spfFuture = diag.checkSpfRecord(ip).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
+      final dkimFuture = diag.checkDkimRecord(domain).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
+      final dmarcDomain = domain.startsWith('_dmarc.') ? domain : '_dmarc.$domain';
+      final dmarcFuture = diag.checkDmarcRecord(dmarcDomain).then((value) {
+        setState(() {
+          _progress[ip] = (_progress[ip] ?? 0) + 1;
+          completedTasks++;
+          _overallProgress =
+              totalTasks > 0 ? completedTasks / totalTasks : 1.0;
+        });
+        return value;
+      });
 
-      final results = await Future.wait([portFuture, sslFuture, spfFuture]);
+      final results = await Future.wait([portFuture, sslFuture, spfFuture, dkimFuture, dmarcFuture]);
 
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
-      final spfRes = results[2] as String;
+      final spfRes = results[2] as SpfResult;
+      final dkimValid = results[3] as bool;
+      final dmarcValid = results[4] as bool;
+      final spfResWithOthers = SpfResult(
+        spfRes.domain,
+        spfRes.record,
+        spfRes.status,
+        spfRes.comment,
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
+      );
+
+      // Parse SSL certificate details
+      var issuer = '';
+      var expiry = '';
+      var comment = '';
+      final m =
+          RegExp(r'SSL cert expires on (.*?), issued by (.*)').firstMatch(sslRes.message);
+      if (m != null) {
+        expiry = m.group(1) ?? '';
+        issuer = m.group(2) ?? '';
+      } else {
+        comment = sslRes.message;
+      }
+      _sslEntries.add(SslCheckEntry(
+        domain: ip,
+        issuer: issuer,
+        expiry: expiry,
+        safe: sslRes.valid,
+        comment: comment,
+      ));
 
       _scanResults.add(summary);
-      _sslResults[ip] = sslRes;
-      _spfResults[ip] = spfRes;
+      _spfResults.add(spfResWithOthers);
       for (final r in summary.results) {
         buffer.writeln('Port ${r.port}: ${r.state} ${r.service}');
       }
 
       buffer.writeln(sslRes.message);
-      buffer.writeln(spfRes);
+      if (spfRes.record.isNotEmpty) {
+        buffer.writeln('SPF record: ${spfRes.record}');
+      } else {
+        buffer.writeln(spfRes.comment);
+      }
+      buffer.writeln('DKIM: ${dkimValid ? 'valid' : 'missing'}');
+      buffer.writeln('DMARC: ${dmarcValid ? 'valid' : 'missing'}');
 
       final report = await diag.runSecurityReport(
         ip: ip,
@@ -133,7 +239,9 @@ class _HomePageState extends State<HomePage> {
             if (r.state == 'open') r.port
         ],
         sslValid: sslRes.valid,
-        spfValid: spfRes.startsWith('SPF record'),
+        spfValid: spfRes.status == 'safe',
+        dkimValid: dkimValid,
+        dmarcValid: dmarcValid,
       );
       _reports.add(report);
       buffer.writeln('Score: ${report.score}');
@@ -152,6 +260,9 @@ class _HomePageState extends State<HomePage> {
       _lanScanning = false;
       _devices = devices;
     });
+    if (mounted) {
+      _openGeoipPage();
+    }
   }
 
 
@@ -292,15 +403,25 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => DiagnosticResultPage(
           securityScore: avgScore,
           items: items,
+          sslEntries: _sslEntries,
           portSummaries: _scanResults,
-          sslChecks: sslChecks,
-          spfChecks: spfChecks,
-          domainAuths: domainAuths,
-          geoipStats: geoipStats,
-          lanDevices: lanDevices,
-          externalComms: externalComms,
-          defenseStatus: defenseStatus,
-          windowsVersion: version ?? '',
+          spfResults: _spfResults,
+          externalComms: _externalComms,
+          devices: _devices,
+          reports: _reports,
+          defenderEnabled: _defense?.defenderEnabled,
+          firewallEnabled: _defense?.firewallEnabled,
+        ),
+      ),
+    );
+  }
+
+  void _openDeviceListPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DeviceListPage(
+          devices: _devices,
+          reports: _reports,
         ),
       ),
     );
@@ -360,6 +481,18 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: _openResultPage,
               child: const Text('診断結果ページ'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _openGeoipPage,
+              child: const Text('GeoIP解析ページ'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _devices.isEmpty && _reports.isEmpty
+                  ? null
+                  : _openDeviceListPage,
+              child: const Text('LAN内デバイス一覧'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
@@ -448,6 +581,46 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 16),
             ],
+            if (_spfResults.isNotEmpty) ...[
+              const Text('SPFレコードの設定状況',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text('メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('ドメイン')),
+                    DataColumn(label: Text('SPFレコード')),
+                    DataColumn(label: Text('DKIM')),
+                    DataColumn(label: Text('DMARC')),
+                    DataColumn(label: Text('状態')),
+                    DataColumn(label: Text('コメント')),
+                  ],
+                  rows: [
+                    for (final r in _spfResults)
+                      DataRow(
+                        color: MaterialStateProperty.all(
+                          r.status == 'danger'
+                              ? Colors.redAccent.withOpacity(0.2)
+                              : r.status == 'warning'
+                                  ? Colors.yellowAccent.withOpacity(0.2)
+                                  : Colors.green.withOpacity(0.2),
+                        ),
+                        cells: [
+                          DataCell(Text(r.domain)),
+                          DataCell(Text(r.record)),
+                          DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
+                          DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
+                          DataCell(Text(r.status)),
+                          DataCell(Text(r.comment)),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (_devices.isNotEmpty) ...[
               const Text('LAN Devices'),
               SingleChildScrollView(
@@ -459,7 +632,7 @@ class _HomePageState extends State<HomePage> {
                     DataColumn(label: Text('Vendor')),
                   ],
                   rows: [
-                    for (final NetworkDevice d in _devices)
+                    for (final net.NetworkDevice d in _devices)
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
@@ -485,7 +658,7 @@ class _HomePageState extends State<HomePage> {
                           DataColumn(label: Text('Vendor')),
                         ],
                         rows: _devices
-                            .map((NetworkDevice? d) => DataRow(cells: [
+                            .map((net.NetworkDevice? d) => DataRow(cells: [
                                   DataCell(Text(d?.ip ?? '')),
                                   DataCell(Text(d?.mac ?? '')),
                                   DataCell(Text(d?.vendor ?? '')),
