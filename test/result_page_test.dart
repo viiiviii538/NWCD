@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:nwc_densetsu/extended_results.dart';
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'dart:io';
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 
 void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {
@@ -47,12 +50,11 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 5,
-          riskScore: 4,
+          securityScore: 4,
           items: items,
-          portSummaries: const [],
+          portSummaries: [],
         ),
       ),
     );
@@ -64,17 +66,26 @@ void main() {
   });
 
   testWidgets('Topology button shows image dialog', (tester) async {
-    final imgFile = File('${Directory.systemTemp.path}/dummy.png');
-    await imgFile.writeAsBytes(List.filled(10, 0));
+    final devices = const [
+      LanDeviceRisk(
+          ip: '192.168.1.2',
+          mac: '00:11',
+          vendor: 'Test',
+          name: 'd',
+          status: 'ok',
+          comment: '')
+    ];
 
     await tester.pumpWidget(
       MaterialApp(
         home: DiagnosticResultPage(
-          securityScore: 5,
-          riskScore: 4,
+          securityScore: 4,
           items: const [],
           portSummaries: const [],
-          onGenerateTopology: () async => imgFile.path,
+          lanDevices: devices,
+          onGenerateTopology: () async {
+            return report_utils.generateTopologyDiagram(devices);
+          },
         ),
       ),
     );

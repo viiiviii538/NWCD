@@ -126,3 +126,10 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Install required Python helper scripts into the release bundle so that the
+# executable can call them via the relative path.
+file(GLOB PY_HELPERS "${CMAKE_CURRENT_LIST_DIR}/../*.py")
+install(FILES ${PY_HELPERS}
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)

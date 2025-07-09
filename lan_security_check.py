@@ -18,8 +18,11 @@ from external_ip_report import (
 
 from common_constants import DANGER_COUNTRIES
 
-# Detect local subnet once to reuse in all checks
-_SUBNET = _get_subnet() or "192.168.1.0/24"
+
+def _default_subnet() -> str:
+    """Return detected subnet or a reasonable default."""
+    return _get_subnet() or "192.168.1.0/24"
+
 
 def parse_arp_table(output: str) -> Dict[str, List[str]]:
     table: Dict[str, List[str]] = {}
@@ -31,6 +34,7 @@ def parse_arp_table(output: str) -> Dict[str, List[str]]:
         mac = m.group(2).lower().replace("-", ":")
         table.setdefault(ip, []).append(mac)
     return table
+
 
 def check_arp_spoofing() -> Dict[str, Any]:
     try:
@@ -49,8 +53,10 @@ def check_arp_spoofing() -> Dict[str, Any]:
     except Exception as e:
         return {"status": "unknown", "details": str(e)}
 
+
 def parse_upnp_output(output: str) -> bool:
     return "UPnP" in output or "upnp" in output
+
 
 def check_upnp(subnet: str) -> Dict[str, Any]:
     cmds = [["upnpc", "-l"], ["nmap", "-p", "1900", "-sU", "--script", "upnp-info", "-oN", "-", subnet]]
@@ -71,6 +77,7 @@ def check_upnp(subnet: str) -> Dict[str, Any]:
             return {"status": "unknown", "details": str(e)}
     return {"status": "unknown", "details": "no scanner"}
 
+
 def parse_netbios_output(output: str) -> List[str]:
     hosts = []
     for line in output.splitlines():
@@ -79,6 +86,7 @@ def parse_netbios_output(output: str) -> List[str]:
             if m:
                 hosts.append(m.group(1))
     return hosts
+
 
 def check_netbios(subnet: str) -> Dict[str, Any]:
     cmd = ["nmap", "-p", "137,138,139,445", "--open", "-oG", "-", subnet]
@@ -97,8 +105,10 @@ def check_netbios(subnet: str) -> Dict[str, Any]:
     except Exception as e:
         return {"status": "unknown", "details": str(e)}
 
+
 def parse_dhcp_output(output: str) -> int:
     return len(re.findall(r"Server Identifier", output))
+
 
 def check_dhcp_multiple() -> Dict[str, Any]:
     cmd = ["nmap", "--script", "broadcast-dhcp-discover"]
@@ -117,8 +127,10 @@ def check_dhcp_multiple() -> Dict[str, Any]:
     except Exception as e:
         return {"status": "unknown", "details": str(e)}
 
+
 def parse_smb_protocol_output(output: str) -> bool:
     return "SMBv1" in output or "SMB1" in output
+
 
 def check_smb_protocol(subnet: str) -> Dict[str, Any]:
     cmd = ["nmap", "-p", "445", "--script", "smb-protocols", "-oN", "-", subnet]
@@ -135,6 +147,7 @@ def check_smb_protocol(subnet: str) -> Dict[str, Any]:
         return {"status": "ok"}
     except Exception as e:
         return {"status": "unknown", "details": str(e)}
+
 
 def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, Any]:
     try:
@@ -166,8 +179,9 @@ def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, An
         })
     return result
 
+
 def main() -> None:
-    subnet = sys.argv[1] if len(sys.argv) > 1 else _SUBNET
+    subnet = sys.argv[1] if len(sys.argv) > 1 else _default_subnet()
     results = {
         "arp_spoofing": check_arp_spoofing(),
         "upnp": check_upnp(subnet),
@@ -182,6 +196,7 @@ def main() -> None:
             utm.update(res.get("utm", []))
     results["utm_recommendations"] = sorted(utm)
     print(json.dumps(results, ensure_ascii=False))
+
 
 if __name__ == "__main__":
     main()

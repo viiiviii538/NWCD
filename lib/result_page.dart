@@ -1,17 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
-import 'package:nwc_densetsu/utils/report_utils.dart'
-    show generateTopologyDiagram;
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
+import 'extended_results.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
-
-const Map<int, String> _dangerPortNotes = {
-  3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
-  22: 'SSH 接続に使われ、ブルートフォース攻撃の標的となる恐れがあります',
-  23: 'Telnet 用ポートは平文通信のため非常に危険です',
-  445: 'ファイル共有(SMB)に利用され、マルウェア侵入経路となりえます',
-};
 
 class _SvgNode {
   final String label;
@@ -34,31 +28,40 @@ class DiagnosticItem {
 }
 
 class DiagnosticResultPage extends StatelessWidget {
-  final int securityScore;
-  final int riskScore;
-  final List<DiagnosticItem> items;
+  final double securityScore;
   final List<PortScanSummary> portSummaries;
+  final List<DiagnosticItem> items;
   final Future<String> Function()? onGenerateTopology;
+  final List<SslCheck> sslChecks;
+  final List<SpfCheck> spfChecks;
+  final List<DomainAuthCheck> domainAuths;
+  final List<GeoIpStat> geoipStats;
+  final List<LanDeviceRisk> lanDevices;
+  final List<ExternalCommInfo> externalComms;
+  final List<DefenseFeatureStatus> defenseStatus;
+  final String windowsVersion;
 
   const DiagnosticResultPage({
     super.key,
     required this.securityScore,
-    required this.riskScore,
     required this.items,
-    this.portSummaries = const [],
+    required this.portSummaries,
     this.onGenerateTopology,
+    this.sslChecks = const [],
+    this.spfChecks = const [],
+    this.domainAuths = const [],
+    this.geoipStats = const [],
+    this.lanDevices = const [],
+    this.externalComms = const [],
+    this.defenseStatus = const [],
+    this.windowsVersion = '',
   });
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
-  }
-
-  String _scoreMessage(int score) {
-    if (score >= 8) return '社内ネットワークは安全です';
-    if (score >= 5) return '注意が必要です';
-    return '危険な状態です';
   }
 
   Widget _scoreSection(String label, int score) {
@@ -79,6 +82,7 @@ class DiagnosticResultPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
+            // ignore: deprecated_member_use
             color: color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -94,8 +98,6 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(_scoreMessage(score)),
       ],
     );
   }
@@ -137,10 +139,14 @@ class DiagnosticResultPage extends StatelessWidget {
                     ))
                 .toList();
             if (points.isNotEmpty) {
-              final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
-              final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
-              final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-              final maxY = points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+              final minX =
+                  points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+              final maxX =
+                  points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+              final minY =
+                  points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+              final maxY =
+                  points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
               nodes.add(
                 _SvgNode(
                   title,
@@ -155,13 +161,12 @@ class DiagnosticResultPage extends StatelessWidget {
     return nodes;
   }
 
-  Widget _portStatusSection() {
+  Widget _portSection() {
     if (portSummaries.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ポート開放状況',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('ポート開放状況'),
         const SizedBox(height: 4),
         const Text(
           '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
@@ -206,8 +211,201 @@ class DiagnosticResultPage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-        ],
+      ],
+    );
+  }
+
+  Widget _sslSection() {
+    if (sslChecks.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SSL証明書の安全性チェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('発行者')),
+          DataColumn(label: Text('有効期限')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in sslChecks)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.issuer)),
+              DataCell(Text(c.expiry)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _spfSection() {
+    if (spfChecks.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SPFレコードの設定状況'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('SPF')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in spfChecks)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.spf)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _domainAuthSection() {
+    if (domainAuths.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ドメインの送信元検証設定'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('ドメイン')),
+          DataColumn(label: Text('SPF')),
+          DataColumn(label: Text('DKIM')),
+          DataColumn(label: Text('DMARC')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in domainAuths)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.spf ? '✅' : '❌')),
+              DataCell(Text(c.dkim ? '✅' : '❌')),
+              DataCell(Text(c.dmarc ? '✅' : '❌')),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _geoipSection() {
+    if (geoipStats.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('GeoIP解析：通信先の国別リスクチェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('国名')),
+          DataColumn(label: Text('通信数')),
+          DataColumn(label: Text('状態')),
+        ], rows: [
+          for (final g in geoipStats)
+            DataRow(cells: [
+              DataCell(Text(g.country)),
+              DataCell(Text(g.count.toString())),
+              DataCell(Text(g.status)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _lanSection() {
+    if (lanDevices.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('LAN内デバイス一覧とリスクチェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('IPアドレス')),
+          DataColumn(label: Text('MACアドレス')),
+          DataColumn(label: Text('ベンダー名')),
+          DataColumn(label: Text('機器名')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final d in lanDevices)
+            DataRow(cells: [
+              DataCell(Text(d.ip)),
+              DataCell(Text(d.mac)),
+              DataCell(Text(d.vendor)),
+              DataCell(Text(d.name)),
+              DataCell(Text(d.status)),
+              DataCell(Text(d.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _externalCommSection() {
+    if (externalComms.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('外部通信の暗号化状況'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('宛先ドメイン')),
+          DataColumn(label: Text('通信プロトコル')),
+          DataColumn(label: Text('暗号化状況')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final c in externalComms)
+            DataRow(cells: [
+              DataCell(Text(c.domain)),
+              DataCell(Text(c.protocol)),
+              DataCell(Text(c.encryption)),
+              DataCell(Text(c.status)),
+              DataCell(Text(c.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _defenseSection() {
+    if (defenseStatus.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('端末の防御機能の有効性チェック'),
+        const SizedBox(height: 4),
+        DataTable(columns: const [
+          DataColumn(label: Text('保護機能')),
+          DataColumn(label: Text('状態')),
+          DataColumn(label: Text('コメント')),
+        ], rows: [
+          for (final d in defenseStatus)
+            DataRow(cells: [
+              DataCell(Text(d.feature)),
+              DataCell(Text(d.status)),
+              DataCell(Text(d.comment)),
+            ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _windowsVersionSection() {
+    if (windowsVersion.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Windows バージョン'),
+        const SizedBox(height: 4),
+        Text(windowsVersion),
       ],
     );
   }
@@ -235,11 +433,13 @@ class DiagnosticResultPage extends StatelessWidget {
 
   Future<void> _showTopology(BuildContext context) async {
     try {
-      final generator = onGenerateTopology;
-      final path = await (generator ?? generateTopologyDiagram)();
+      final generator =
+          onGenerateTopology ?? () => report_utils.generateTopologyDiagram(lanDevices);
+      final path = await generator();
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
+      if (!context.mounted) return;
       final controller = TransformationController();
 
       await showDialog(
@@ -285,19 +485,17 @@ class DiagnosticResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('診断結果')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _scoreSection('セキュリティスコア', securityScore),
-            const SizedBox(height: 16),
-            _scoreSection('リスクスコア', riskScore),
-            const SizedBox(height: 16),
-            _portStatusSection(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _scoreSection('セキュリティスコア', securityScore.toInt()),
+              const SizedBox(height: 16),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -309,8 +507,8 @@ class DiagnosticResultPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
@@ -323,25 +521,43 @@ class DiagnosticResultPage extends StatelessWidget {
                   );
                 },
               ),
-            ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _saveReport(context),
-                    child: const Text('レポート保存'),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => _showTopology(context),
-                    child: const Text('トポロジ表示'),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _portSection(),
+              const SizedBox(height: 16),
+              _sslSection(),
+              const SizedBox(height: 16),
+              _spfSection(),
+              const SizedBox(height: 16),
+              _domainAuthSection(),
+              const SizedBox(height: 16),
+              _geoipSection(),
+              const SizedBox(height: 16),
+              _lanSection(),
+              const SizedBox(height: 16),
+              _externalCommSection(),
+              const SizedBox(height: 16),
+              _defenseSection(),
+              const SizedBox(height: 16),
+              _windowsVersionSection(),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _saveReport(context),
+                      child: const Text('レポート保存'),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => _showTopology(context),
+                      child: const Text('トポロジ表示'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -355,6 +571,7 @@ class ResultPage extends StatelessWidget {
   const ResultPage({super.key, required this.reports, required this.onSave});
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
@@ -384,8 +601,8 @@ class ResultPage extends StatelessWidget {
             rows: [
               for (final r in reports)
                 DataRow(
-                  color: MaterialStateProperty.all(
-                    _scoreColor(r.score),
+                  color: WidgetStateProperty.all(
+                    useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                   ),
                   cells: [
                     DataCell(Text(r.ip)),
@@ -410,7 +627,7 @@ class ResultPage extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Text(
-                          '${_riskState(r.score)} → '
+                          '${_riskState(r.score.toInt())} → '
                           '${risk.description} → ${risk.countermeasure}',
                         ),
                       ),

@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""List active external connections with domain and country information.
+
+`psutil.net_connections()` may require administrator privileges to access
+network connection details. Run this script with `sudo` if no results are
+shown.
+"""
+
 import argparse
 import socket
 import ipaddress
@@ -14,8 +21,7 @@ except ImportError:
     geoip2 = None
 
 
-RED = "\033[31m"
-RESET = "\033[0m"
+from common_constants import RED, RESET
 
 ENCRYPTED_PORTS = {443, 22, 993, 995, 465, 563, 989, 990}
 UNENCRYPTED_PORTS = {80, 20, 21, 23, 25, 110, 143}
