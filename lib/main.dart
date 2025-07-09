@@ -53,32 +53,15 @@ class _HomePageState extends State<HomePage> {
   static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
 
-void _openGeoipPageWithExistingData() {
+/// Opens the GeoIP result page using the collected entries.
+void _openGeoipPage() {
   if (_geoipEntries.isEmpty) return;
-  Navigator.push(
-    context,
+  Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (context) => GeoipResultPage(entries: _geoipEntries),
+      builder: (_) => GeoipResultPage(entries: _geoipEntries),
     ),
   );
 }
-
-Future<void> _openGeoipPageWithFreshScan() async {
-  final entries = await diag.runGeoipReport();
-  if (!mounted) return;
-  setState(() => _geoipEntries = entries);
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => GeoipResultPage(entries: entries),
-    ),
-  );
-}
-
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
-    );
-  }
 
   List<int> get _selectedPorts {
     switch (_portPreset) {
