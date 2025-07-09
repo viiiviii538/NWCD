@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'extended_results.dart';
@@ -56,6 +57,7 @@ class DiagnosticResultPage extends StatelessWidget {
   });
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
@@ -531,6 +533,7 @@ class ResultPage extends StatelessWidget {
   const ResultPage({super.key, required this.reports, required this.onSave});
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
@@ -561,7 +564,7 @@ class ResultPage extends StatelessWidget {
               for (final r in reports)
                 DataRow(
                   color: WidgetStateProperty.all(
-                    _scoreColor(r.score.toInt()),
+                    useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                   ),
                   cells: [
                     DataCell(Text(r.ip)),
