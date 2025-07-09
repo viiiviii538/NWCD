@@ -1,4 +1,8 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from security_score import calc_security_score
 from report_utils import calc_utm_items
 
