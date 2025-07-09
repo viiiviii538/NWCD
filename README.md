@@ -111,6 +111,10 @@ nmap -V # または arp-scan --version
 
 表示されない場合はインストール先を PATH に追加してください。
 
+### IPv6 スキャン
+
+`discover_hosts.py` と `lan_port_scan.py` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。`arp-scan` は IPv4 専用のため、IPv6 では常に `nmap` が使用されます。
+
 
 ## LAN + Port Scan
 

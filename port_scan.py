@@ -3,6 +3,7 @@ import json
 import sys
 import subprocess
 import xml.etree.ElementTree as ET
+import ipaddress
 
 
 def run_scan(
@@ -13,6 +14,12 @@ def run_scan(
     scripts: list[str] | None = None,
 ) -> list[dict[str, str]]:
     cmd = ["nmap"]
+    try:
+        if ipaddress.ip_address(host).version == 6:
+            cmd.append("-6")
+    except Exception:
+        if ":" in host:
+            cmd.append("-6")
     if service:
         cmd.append("-sV")
     if os_detect:

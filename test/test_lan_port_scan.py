@@ -25,5 +25,14 @@ class LanPortScanJsonTest(unittest.TestCase):
         self.assertEqual(res[0]['ip'], '10.0.0.5')
         self.assertEqual(res[0]['ports'], [])
 
+    @patch('lan_port_scan.run_scan')
+    @patch('lan_port_scan._run_arp_scan')
+    def test_ipv6_hosts(self, mock_arp, mock_scan):
+        mock_arp.return_value = [{'ip': 'fe80::1', 'mac': 'aa', 'vendor': 'X'}]
+        mock_scan.return_value = []
+        res = lan_port_scan.scan_hosts('fe80::/64', ['80'])
+        mock_scan.assert_called_with('fe80::1', ['80'], service=False, os_detect=False, scripts=None)
+        self.assertEqual(res[0]['ip'], 'fe80::1')
+
 if __name__ == '__main__':
     unittest.main()

@@ -21,5 +21,14 @@ class PortScanScriptTest(unittest.TestCase):
                 'nmap', '-sV', '-O', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
 
+    def test_run_scan_ipv6_adds_flag(self):
+        xml = "<nmaprun></nmaprun>"
+        with patch('subprocess.run') as m:
+            m.return_value = MagicMock(returncode=0, stdout=xml)
+            port_scan.run_scan('fe80::1', [])
+            m.assert_called_with([
+                'nmap', '-6', '-p-', '-oX', '-', 'fe80::1'
+            ], capture_output=True, text=True)
+
 if __name__ == '__main__':
     unittest.main()
