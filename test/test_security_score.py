@@ -2,7 +2,6 @@ import unittest
 from security_score import (
     calc_security_score,
     HIGH_WEIGHT,
-    MEDIUM_WEIGHT,
     LOW_WEIGHT,
 )
 

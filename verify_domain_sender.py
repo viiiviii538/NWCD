@@ -2,16 +2,9 @@
 import argparse
 import json
 import subprocess
-import re
 from typing import List
 
 import dns_records
-
-from dns_records import (
-    get_spf_record,
-    get_dkim_record,
-    get_dmarc_record,
-)
 
 
 def lookup_spf(domain: str) -> str:

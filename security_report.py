@@ -9,7 +9,8 @@ from report_utils import calc_utm_items
 def parse_args(argv):
     if len(argv) < 8:
         print(
-            "Usage: security_report.py <ip> <open_ports_csv> <ssl_valid> <spf_valid> <dkim_valid> <dmarc_valid> <geoip>",
+            "Usage: security_report.py <ip> <open_ports_csv> <ssl_valid> "
+            "<spf_valid> <dkim_valid> <dmarc_valid> <geoip>",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -20,12 +21,17 @@ def parse_args(argv):
     dkim_valid = argv[5].lower() in {"1", "true", "yes"}
     dmarc_valid = argv[6].lower() in {"1", "true", "yes"}
     geoip = argv[7]
-    return ip, ports, ssl_valid, spf_valid, dkim_valid, dmarc_valid, geoip
+    return ip, ports, ssl_status, spf_valid, dkim_valid, dmarc_valid, geoip
 
 
-
-
-def calc_score(open_ports, ssl_valid, spf_valid, dkim_valid, dmarc_valid, geoip):
+def calc_score(
+    open_ports,
+    ssl_status,
+    spf_valid,
+    dkim_valid,
+    dmarc_valid,
+    geoip,
+):
     """Compatibility wrapper for CLI usage."""
 
     risks = []
@@ -91,14 +97,14 @@ def main(argv):
     (
         ip,
         ports,
-        ssl_valid,
+        ssl_status,
         spf_valid,
         dkim_valid,
         dmarc_valid,
         geoip,
     ) = parse_args(argv)
     score, risks, utm_items = calc_score(
-        ports, ssl_valid, spf_valid, dkim_valid, dmarc_valid, geoip
+        ports, ssl_status, spf_valid, dkim_valid, dmarc_valid, geoip
     )
     result = {
         "ip": ip,

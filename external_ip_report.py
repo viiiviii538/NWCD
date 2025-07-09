@@ -125,8 +125,9 @@ def main():
     args = parser.parse_args()
 
     if psutil is None:
-        print("psutil module not available")
-        return
+        if not args.json:
+            print("psutil module not available")
+            return
 
     reader = None
     if geoip2 is not None:
