@@ -26,6 +26,15 @@ class LanPortScanJsonTest(unittest.TestCase):
         self.assertEqual(res[0]['ip'], '10.0.0.5')
         self.assertEqual(res[0]['ports'], [])
 
+@patch('lan_port_scan.run_scan')
+@patch('lan_port_scan._run_arp_scan')
+def test_ipv6_hosts(self, mock_arp, mock_scan):
+    mock_arp.return_value = [{'ip': 'fe80::1', 'mac': 'aa', 'vendor': 'X'}]
+    mock_scan.return_value = []
+    res = lan_port_scan.scan_hosts('fe80::/64', ['80'])
+    mock_scan.assert_called_with('fe80::1', ['80'], service=False, os_detect=False, scripts=None)
+    self.assertEqual(res[0]['ip'], 'fe80::1')
+
 
 class FakeFuture:
     def __init__(self, fn, *args, **kwargs):
@@ -67,7 +76,6 @@ class LanPortScanConcurrencyTest(unittest.TestCase):
         call_counts = []
 
         def side_effect(*args, **kwargs):
-            # run_scan should be called after all tasks are submitted
             call_counts.append(len(FakeExecutor.instance.submitted))
             return []
 
@@ -75,7 +83,7 @@ class LanPortScanConcurrencyTest(unittest.TestCase):
             lan_port_scan.scan_hosts('1.1.1.0/24', ['80'])
             self.assertEqual(mock_run.call_count, 2)
             self.assertEqual(len(FakeExecutor.instance.submitted), 2)
-            # ensure run_scan executed only after submissions
             self.assertTrue(all(c == 2 for c in call_counts))
+
 if __name__ == '__main__':
     unittest.main()
