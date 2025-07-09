@@ -75,6 +75,8 @@ Future<void> _openGeoipPageWithFreshScan() async {
   );
 }
 
+  void _openGeoipPage() {
+    if (_geoipEntries.isEmpty) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
     );
@@ -114,11 +116,6 @@ Future<void> _openGeoipPageWithFreshScan() async {
     final comms = await diag.runExternalCommReport();
     setState(() {
       _externalComms = comms;
-      _geoipEntries = [
-        for (final c in comms)
-          if (c.country.isNotEmpty)
-            GeoipEntry(c.ip, c.domain, c.country)
-      ];
     });
     final buffer = StringBuffer();
     if (speed != null) {
