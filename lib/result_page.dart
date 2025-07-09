@@ -169,25 +169,42 @@ class DiagnosticResultPage extends StatelessWidget {
         const SizedBox(height: 8),
         for (final s in portSummaries) ...[
           Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Column(
-            children: [
-              for (final r in s.results)
-                Card(
-                  color: r.state == 'open'
-                      ? (_dangerPortNotes.containsKey(r.port)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('状態')),
+                DataColumn(label: Text('補足')),
+              ],
+              rows: [
+                for (final r in s.results)
+                  DataRow(
+                    color: MaterialStateProperty.all(
+                      r.state == 'open' && _dangerPortNotes.containsKey(r.port)
                           ? Colors.redAccent.withOpacity(0.2)
-                          : Colors.green.withOpacity(0.2))
-                      : Colors.grey.withOpacity(0.2),
-                  margin: const EdgeInsets.symmetric(vertical: 2),
-                  child: ListTile(
-                    title: Text(
-                        "${r.port}：${r.state == 'open' ? '危険（開いている）' : '安全（閉じている）'}"),
-                    subtitle: _dangerPortNotes[r.port] != null
-                        ? Text(_dangerPortNotes[r.port]!)
-                        : null,
+                          : r.state == 'open'
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.2),
+                    ),
+                    cells: [
+                      DataCell(Text(r.port.toString())),
+                      DataCell(Text(
+                        r.state == 'open'
+                            ? (_dangerPortNotes.containsKey(r.port)
+                                ? '危険（開いている）'
+                                : '安全（開いている）')
+                            : '安全（閉じている）',
+                      )),
+                      DataCell(
+                        _dangerPortNotes[r.port] != null
+                            ? Text(_dangerPortNotes[r.port]!)
+                            : const Text('-'),
+                      ),
+                    ],
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 8),
         ],
