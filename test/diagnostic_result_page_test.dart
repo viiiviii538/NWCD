@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/extended_results.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
