@@ -141,8 +141,8 @@ python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 
 ## セキュリティスコア計算
 
-`security_score.py` スクリプトはポート数や GeoIP、UPnP など複数の指標をまとめた
-JSON を読み込み、10.0 を満点とするセキュリティスコアを計算します。値が小さいほど危険度が高いことを示します。入力例は以下の通りです。
+`security_score.py` スクリプトはポート数や GeoIP、UPnP の有無に加え、ファイアウォール状態や OS の種類といった
+複数の指標をまとめた JSON を読み込み、10.0 を満点とするセキュリティスコアを計算します。値が小さいほど危険度が高いことを示します。入力例は以下の通りです。
 
 ```json
 [
@@ -166,9 +166,9 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 各定数のデフォルト値は `security_score.py` で次のように定義されています。
 
 ```python
-HIGH_WEIGHT = 0.7
-MEDIUM_WEIGHT = 0.3
-LOW_WEIGHT = 0.2
+HIGH_WEIGHT = 1.0
+MEDIUM_WEIGHT = 0.5
+LOW_WEIGHT = 0.3
 ```
 数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。
 
