@@ -423,10 +423,10 @@ class DiagnosticResultPage extends StatelessWidget {
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
+      if (!context.mounted) return;
       final controller = TransformationController();
 
       await showDialog(
-        // ignore: use_build_context_synchronously
         context: context,
         builder: (_) => Dialog(
           child: SizedBox(
