@@ -31,7 +31,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final double securityScore;
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
-  final Future<String> Function()? onGenerateTopology;
+  final Future<String> Function(List<LanDeviceRisk>)? onGenerateTopology;
   final List<SslCheck> sslChecks;
   final List<SpfCheck> spfChecks;
   final List<DomainAuthCheck> domainAuths;

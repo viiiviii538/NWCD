@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nwc_densetsu/extended_results.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'dart:io';
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 
 void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {

@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import lan_port_scan
 
+
 class LanPortScanJsonTest(unittest.TestCase):
     @patch('lan_port_scan.run_scan')
     @patch('lan_port_scan._run_arp_scan')
@@ -25,5 +26,56 @@ class LanPortScanJsonTest(unittest.TestCase):
         self.assertEqual(res[0]['ip'], '10.0.0.5')
         self.assertEqual(res[0]['ports'], [])
 
+
+class FakeFuture:
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def result(self):
+        return self.fn(*self.args, **self.kwargs)
+
+
+class FakeExecutor:
+    instance = None
+
+    def __init__(self, *args, **kwargs):
+        FakeExecutor.instance = self
+        self.submitted = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        self.submitted.append((fn, args, kwargs))
+        return FakeFuture(fn, *args, **kwargs)
+
+
+class LanPortScanConcurrencyTest(unittest.TestCase):
+    @patch('lan_port_scan.ThreadPoolExecutor', FakeExecutor)
+    @patch('lan_port_scan.gather_hosts')
+    def test_concurrent_execution(self, mock_gather):
+        mock_gather.return_value = [
+            {'ip': '1.1.1.1', 'mac': '', 'vendor': ''},
+            {'ip': '1.1.1.2', 'mac': '', 'vendor': ''},
+        ]
+
+        call_counts = []
+
+        def side_effect(*args, **kwargs):
+            # run_scan should be called after all tasks are submitted
+            call_counts.append(len(FakeExecutor.instance.submitted))
+            return []
+
+        with patch('lan_port_scan.run_scan', side_effect=side_effect) as mock_run:
+            lan_port_scan.scan_hosts('1.1.1.0/24', ['80'])
+            self.assertEqual(mock_run.call_count, 2)
+            self.assertEqual(len(FakeExecutor.instance.submitted), 2)
+            # ensure run_scan executed only after submissions
+            self.assertTrue(all(c == 2 for c in call_counts))
 if __name__ == '__main__':
     unittest.main()

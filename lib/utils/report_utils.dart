@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../diagnostics.dart' show SecurityReport;
+import '../extended_results.dart' show LanDeviceRisk;
+import 'python_utils.dart';
 import 'file_utils.dart';
 import '../extended_results.dart' show LanDeviceRisk;
 import 'python_utils.dart';

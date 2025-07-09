@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import network_speed
 
+
 class NetworkSpeedTest(unittest.TestCase):
     @patch.object(network_speed, 'speedtest')
     def test_measure_speed(self, mock_speedtest):
@@ -38,6 +39,7 @@ class NetworkSpeedTest(unittest.TestCase):
         mock_speedtest.Speedtest.return_value = inst
         result = network_speed.measure_speed()
         self.assertIsNone(result)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,9 @@ import os
 from pathlib import Path
 from urllib.request import urlopen
 
+# Cache for MAC prefix to vendor lookups
+_VENDOR_CACHE: dict[str, str] = {}
+
 def _get_subnet():
     if os.name == 'nt':
         try:
@@ -71,6 +74,7 @@ def _get_subnet():
             pass
     return None
 
+
 def _run_arp_scan():
     try:
         proc = subprocess.run(['arp-scan', '--localnet'], capture_output=True, text=True)
@@ -89,6 +93,7 @@ def _run_arp_scan():
     except Exception:
         pass
     raise RuntimeError('arp-scan failed')
+
 
 def _run_nmap_scan(subnet):
     cmd = ['nmap', '-sn', subnet, '-oX', '-']
@@ -111,8 +116,13 @@ def _run_nmap_scan(subnet):
             results.append({'ip': ip, 'mac': mac, 'vendor': vendor})
     return results
 
+
 def _lookup_vendor(mac):
     prefix = mac.upper().replace(':', '')[:6]
+
+    if prefix in _VENDOR_CACHE:
+        return _VENDOR_CACHE[prefix]
+
     db_path = Path('oui.txt')
     if db_path.exists():
         try:
@@ -122,14 +132,21 @@ def _lookup_vendor(mac):
                     if not line:
                         continue
                     if line.upper().startswith(prefix):
-                        return line[6:].strip()
+                        vendor = line[6:].strip()
+                        _VENDOR_CACHE[prefix] = vendor
+                        return vendor
         except Exception:
             pass
+
     try:
         with urlopen(f'https://api.macvendors.com/{mac}') as resp:
-            return resp.read().decode('utf-8')
+            vendor = resp.read().decode('utf-8')
+            _VENDOR_CACHE[prefix] = vendor
+            return vendor
     except Exception:
+        _VENDOR_CACHE[prefix] = ''
         return ''
+
 
 def main():
     subnet = None
@@ -144,6 +161,7 @@ def main():
         if not h.get('vendor'):
             h['vendor'] = _lookup_vendor(h.get('mac', ''))
     print(json.dumps({'hosts': hosts}, ensure_ascii=False))
+
 
 if __name__ == '__main__':
     main()

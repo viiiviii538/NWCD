@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch, MagicMock
 import discover_hosts
 
-
 class DiscoverHostsSubnetTest(unittest.TestCase):
     @patch('discover_hosts.os.name', 'posix')
     @patch('discover_hosts.sys.platform', 'darwin')
@@ -17,7 +16,6 @@ en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
         mock_run.return_value = MagicMock(returncode=0, stdout=ifconfig_output)
         subnet = discover_hosts._get_subnet()
         self.assertEqual(subnet, '192.168.2.0/24')
-
 
 if __name__ == '__main__':
     unittest.main()
