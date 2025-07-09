@@ -10,9 +10,9 @@ from typing import Any, Dict
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
 # Weighting factors for each risk level used in the final score calculation
-HIGH_WEIGHT = 0.7
-MEDIUM_WEIGHT = 0.3
-LOW_WEIGHT = 0.2
+HIGH_WEIGHT = 1.0
+MEDIUM_WEIGHT = 0.5
+LOW_WEIGHT = 0.3
 
 __all__ = ["calc_security_score"]
 
@@ -48,6 +48,24 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
 
     if data.get("upnp"):
         medium += 1
+
+    firewall = data.get("firewall_enabled")
+    if firewall is False:
+        high += 1
+
+    defender = data.get("defender_enabled")
+    if defender is False:
+        high += 1
+
+    ver = str(data.get("os_version") or data.get("windows_version") or "").lower()
+    if ver:
+        if any(v in ver for v in ("windows xp", "windows vista")):
+            high += 1
+        elif any(v in ver for v in ("windows 7", "windows 8", "windows 8.1")):
+            medium += 1
+
+    if data.get("smbv1") or data.get("smb1") or str(data.get("smb_protocol", "")).lower().startswith("smbv1"):
+        high += 1
 
     rate = float(data.get("dns_fail_rate", 0.0))
     if rate >= 0.5:
