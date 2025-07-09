@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from urllib.request import urlopen
 
+# Cache for MAC prefix to vendor lookups
+_VENDOR_CACHE: dict[str, str] = {}
 
 def _get_subnet():
     if os.name == 'nt':
@@ -117,6 +119,10 @@ def _run_nmap_scan(subnet):
 
 def _lookup_vendor(mac):
     prefix = mac.upper().replace(':', '')[:6]
+
+    if prefix in _VENDOR_CACHE:
+        return _VENDOR_CACHE[prefix]
+
     db_path = Path('oui.txt')
     if db_path.exists():
         try:
@@ -126,13 +132,19 @@ def _lookup_vendor(mac):
                     if not line:
                         continue
                     if line.upper().startswith(prefix):
-                        return line[6:].strip()
+                        vendor = line[6:].strip()
+                        _VENDOR_CACHE[prefix] = vendor
+                        return vendor
         except Exception:
             pass
+
     try:
         with urlopen(f'https://api.macvendors.com/{mac}') as resp:
-            return resp.read().decode('utf-8')
+            vendor = resp.read().decode('utf-8')
+            _VENDOR_CACHE[prefix] = vendor
+            return vendor
     except Exception:
+        _VENDOR_CACHE[prefix] = ''
         return ''
 
 
