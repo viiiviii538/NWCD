@@ -35,6 +35,24 @@ def _get_subnet():
                         pass
         except Exception:
             pass
+    elif sys.platform == 'darwin':
+        try:
+            proc = subprocess.run(['ifconfig'], capture_output=True, text=True)
+            if proc.returncode == 0:
+                for line in proc.stdout.splitlines():
+                    line = line.strip()
+                    m = re.search(r'inet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)', line)
+                    if m and not m.group(1).startswith('127.'):
+                        ip = m.group(1)
+                        mask_hex = m.group(2)
+                        try:
+                            mask_addr = ipaddress.IPv4Address(int(mask_hex, 16))
+                            network = ipaddress.IPv4Network(f'{ip}/{mask_addr}', strict=False)
+                            return str(network)
+                        except Exception:
+                            continue
+        except Exception:
+            pass
     else:
         try:
             proc = subprocess.run(['ip', 'addr'], capture_output=True, text=True)
@@ -44,7 +62,7 @@ def _get_subnet():
                 for line in proc.stdout.splitlines():
                     line = line.strip()
                     m = re.match(r'inet (\d+\.\d+\.\d+\.\d+)/(\d+)', line)
-                    if m and not line.startswith('127.'):
+                    if m and not m.group(1).startswith('127.'):
                         inet = m.group(1)
                         masklen = int(m.group(2))
                         network = ipaddress.IPv4Network(f'{inet}/{masklen}', strict=False)
