@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'config.dart';
 
 void main() {
   runApp(const MyApp());
@@ -248,10 +249,12 @@ class _HomePageState extends State<HomePage> {
                     for (final r in summary.results)
                       DataRow(
                         color: WidgetStateProperty.all(
-                          r.state == 'open'
-                              ? ([23, 445].contains(r.port)
-                                  ? Colors.redAccent
-                                  : Colors.green)
+                          useColor
+                              ? (r.state == 'open'
+                                  ? ([23, 445].contains(r.port)
+                                      ? Colors.redAccent
+                                      : Colors.green)
+                                  : Colors.grey)
                               : Colors.grey,
                         ),
                         cells: [
@@ -281,7 +284,7 @@ class _HomePageState extends State<HomePage> {
                     for (final r in _reports)
                       DataRow(
                         color: WidgetStateProperty.all(
-                          _scoreColor(r.score.toInt()),
+                          useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                         ),
                         cells: [
                           DataCell(Text(r.ip)),
@@ -375,6 +378,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 Color _scoreColor(int score) {
+  if (!useColor) return Colors.black;
   if (score >= 8) return Colors.green;
   if (score >= 5) return Colors.orange;
   return Colors.redAccent;
