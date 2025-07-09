@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../diagnostics.dart' show SecurityReport;
+import '../extended_results.dart' show LanDeviceRisk;
+import 'python_utils.dart';
 import 'file_utils.dart';
 
 /// Generates a PDF report from [reports] using the bundled Python script
@@ -52,7 +54,36 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     }
   }
 }
-Future<String> generateTopologyDiagram() async {
-  // ここに本当はネットワーク構成からSVGを生成する処理が入る
-  return '<svg><!-- dummy topology diagram --></svg>';
+/// Generates a network topology diagram from [devices].
+///
+/// The function writes the device list to a temporary JSON file and invokes
+/// the bundled ``generate_topology.py`` script. The path to the generated image
+/// (SVG by default) is returned.
+Future<String> generateTopologyDiagram(List<LanDeviceRisk> devices) async {
+  final tmp = await Directory.systemTemp.createTemp('nwcd_topology');
+  final inputPath = p.join(tmp.path, 'scan.json');
+  final outputPath = p.join(tmp.path, 'topology.svg');
+
+  final data = {
+    'hosts': [
+      for (final d in devices)
+        {
+          'ip': d.ip,
+          if (d.vendor.isNotEmpty) 'vendor': d.vendor,
+        }
+    ]
+  };
+  await File(inputPath).writeAsString(jsonEncode(data));
+
+  final result = await Process.run(pythonExecutable, [
+    'generate_topology.py',
+    inputPath,
+    '-o',
+    outputPath,
+  ]);
+
+  if (result.exitCode != 0) {
+    throw Exception(result.stderr.toString());
+  }
+  return outputPath;
 }

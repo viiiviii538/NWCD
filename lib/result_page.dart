@@ -7,7 +7,6 @@ import 'extended_results.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
-
 class _SvgNode {
   final String label;
   final Rect rect;
@@ -32,7 +31,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final double securityScore;
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
-  final Future<String> Function()? onGenerateTopology;
+  final Future<String> Function(List<LanDeviceRisk>)? onGenerateTopology;
   final List<SslCheck> sslChecks;
   final List<SpfCheck> spfChecks;
   final List<DomainAuthCheck> domainAuths;
@@ -146,10 +145,14 @@ class DiagnosticResultPage extends StatelessWidget {
                     ))
                 .toList();
             if (points.isNotEmpty) {
-              final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
-              final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
-              final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-              final maxY = points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+              final minX =
+                  points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+              final maxX =
+                  points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+              final minY =
+                  points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+              final maxY =
+                  points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
               nodes.add(
                 _SvgNode(
                   title,
@@ -401,7 +404,7 @@ class DiagnosticResultPage extends StatelessWidget {
   Future<void> _showTopology(BuildContext context) async {
     try {
       final generator = onGenerateTopology;
-      final path = await (generator ?? report_utils.generateTopologyDiagram)();
+      final path = await (generator ?? report_utils.generateTopologyDiagram)(lanDevices);
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
@@ -451,15 +454,17 @@ class DiagnosticResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('診断結果')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _scoreSection('セキュリティスコア', securityScore.toInt()),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _scoreSection('セキュリティスコア', securityScore.toInt()),
+              const SizedBox(height: 16),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -471,8 +476,8 @@ class DiagnosticResultPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
@@ -485,41 +490,41 @@ class DiagnosticResultPage extends StatelessWidget {
                   );
                 },
               ),
-            ),
-            const SizedBox(height: 16),
-            _portSection(),
-            const SizedBox(height: 16),
-            _sslSection(),
-            const SizedBox(height: 16),
-            _spfSection(),
-            const SizedBox(height: 16),
-            _domainAuthSection(),
-            const SizedBox(height: 16),
-            _geoipSection(),
-            const SizedBox(height: 16),
-            _lanSection(),
-            const SizedBox(height: 16),
-            _externalCommSection(),
-            const SizedBox(height: 16),
-            _defenseSection(),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _saveReport(context),
-                    child: const Text('レポート保存'),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => _showTopology(context),
-                    child: const Text('トポロジ表示'),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _portSection(),
+              const SizedBox(height: 16),
+              _sslSection(),
+              const SizedBox(height: 16),
+              _spfSection(),
+              const SizedBox(height: 16),
+              _domainAuthSection(),
+              const SizedBox(height: 16),
+              _geoipSection(),
+              const SizedBox(height: 16),
+              _lanSection(),
+              const SizedBox(height: 16),
+              _externalCommSection(),
+              const SizedBox(height: 16),
+              _defenseSection(),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _saveReport(context),
+                      child: const Text('レポート保存'),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => _showTopology(context),
+                      child: const Text('トポロジ表示'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

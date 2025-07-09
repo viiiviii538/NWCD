@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import lan_port_scan
 
+
 class LanPortScanJsonTest(unittest.TestCase):
     @patch('lan_port_scan.run_scan')
     @patch('lan_port_scan._run_arp_scan')
@@ -24,6 +25,7 @@ class LanPortScanJsonTest(unittest.TestCase):
         res = lan_port_scan.scan_hosts('10.0.0.0/24', ['80'])
         self.assertEqual(res[0]['ip'], '10.0.0.5')
         self.assertEqual(res[0]['ports'], [])
+
 
 if __name__ == '__main__':
     unittest.main()

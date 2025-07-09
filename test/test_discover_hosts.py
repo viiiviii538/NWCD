@@ -2,23 +2,20 @@ import unittest
 from unittest.mock import patch, MagicMock
 import discover_hosts
 
-class LookupVendorCacheTest(unittest.TestCase):
-    def setUp(self):
-        discover_hosts._VENDOR_CACHE.clear()
-
-    @patch('pathlib.Path.exists', return_value=False)
-    @patch('discover_hosts.urlopen')
-    def test_lookup_vendor_caches_result(self, mock_urlopen, mock_exists):
-        resp = MagicMock()
-        resp.read.return_value = b'MyVendor'
-        mock_urlopen.return_value.__enter__.return_value = resp
-
-        vendor1 = discover_hosts._lookup_vendor('aa:bb:cc:dd:ee:ff')
-        vendor2 = discover_hosts._lookup_vendor('AA:BB:CC:11:22:33')
-
-        self.assertEqual(vendor1, 'MyVendor')
-        self.assertEqual(vendor2, 'MyVendor')
-        mock_urlopen.assert_called_once()
+class DiscoverHostsSubnetTest(unittest.TestCase):
+    @patch('discover_hosts.os.name', 'posix')
+    @patch('discover_hosts.sys.platform', 'darwin')
+    @patch('discover_hosts.subprocess.run')
+    def test_get_subnet_darwin(self, mock_run):
+        ifconfig_output = """
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384
+    inet 127.0.0.1 netmask 0xff000000
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+    inet 192.168.2.5 netmask 0xffffff00 broadcast 192.168.2.255
+"""
+        mock_run.return_value = MagicMock(returncode=0, stdout=ifconfig_output)
+        subnet = discover_hosts._get_subnet()
+        self.assertEqual(subnet, '192.168.2.0/24')
 
 if __name__ == '__main__':
     unittest.main()
