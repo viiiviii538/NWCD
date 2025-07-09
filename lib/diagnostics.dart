@@ -297,6 +297,21 @@ Future<List<GeoipEntry>> runGeoipReport() async {
   }
 }
 
+/// Performs a reverse DNS lookup for [ip] and returns the hostname.
+/// Returns `null` if the lookup fails.
+Future<String?> reverseDns(String ip) async {
+  try {
+    final address = InternetAddress(ip);
+    final reversed = await address.reverse();
+    if (reversed.host != address.address) {
+      return reversed.host;
+    }
+  } catch (_) {
+    // ignore errors and fall through
+  }
+  return null;
+}
+
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
@@ -320,9 +335,21 @@ Future<SslResult> checkSslCertificate(String host) async {
   }
 }
 
-/// Retrieves the SPF record for the given domain. When [recordsFile] is
+/// Retrieves the SPF record for the host. If [host] is an IP address, a reverse
+/// DNS lookup is performed to obtain the domain name. When [recordsFile] is
 /// supplied, the TXT record is looked up offline via `dns_records.py`.
-Future<SpfResult> checkSpfRecord(String domain, {String? recordsFile}) async {
+Future<SpfResult> checkSpfRecord(String host, {String? recordsFile}) async {
+  final ip = InternetAddress.tryParse(host);
+  String? domain;
+  if (ip != null) {
+    domain = await reverseDns(ip.address);
+  } else {
+    domain = host;
+  }
+  if (domain == null || domain.isEmpty) {
+    return const SpfResult('', '', 'warning', 'Hostname not found');
+  }
+
   const script = 'dns_records.py';
   final args = <String>[script, domain];
   if (recordsFile != null) {
@@ -489,7 +516,7 @@ Future<SecurityReport> analyzeHost(
 }) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
-  final spfRes = await checkSpfRecord(domain);
+  final spfRes = await checkSpfRecord(ip);
   final dkimValid = await checkDkimRecord(domain);
   final dmarcValid = await checkDmarcRecord(domain);
   final report = await runSecurityReport(
