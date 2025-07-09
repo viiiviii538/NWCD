@@ -1,4 +1,8 @@
 import unittest
+import pytest
+
+pytest.importorskip("graphviz")
+
 from security_report import calc_score
 
 class CalcScoreTest(unittest.TestCase):
