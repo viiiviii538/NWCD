@@ -414,8 +414,10 @@ LAN スキャンを実行すると同時にこれらのデータが収集され�
 ## テスト
 
 Python スクリプトのユニットテストは `test` ディレクトリにあります。実行する前に
-`requirements.txt` に記載された依存ライブラリ (例: `graphviz`) をインストールして
-ください。以下のコマンド、または `scripts/setup_test_env.sh` を使って準備できます。
+`requirements.txt` に記載された依存ライブラリをインストールしてください。特に
+トポロジー生成テストでは `graphviz` が必要となるため、未導入の場合は合わせて
+インストールしておきます。次のコマンド、または `scripts/setup_test_env.sh` を
+使って準備できます。
 
 ```bash
 pip install -r requirements.txt
