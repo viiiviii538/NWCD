@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'ssl_result.dart';
 export 'ssl_result.dart';
+import 'spf_result.dart';
+export 'spf_result.dart';
 import 'network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
@@ -204,19 +206,19 @@ Future<SslResult> checkSslCertificate(String host) async {
 }
 
 /// Retrieves the SPF record for the given domain using `nslookup`.
-Future<String> checkSpfRecord(String domain) async {
+Future<SpfResult> checkSpfRecord(String domain) async {
   try {
     final result = await Process.run('nslookup', ['-type=txt', domain]);
     final output = result.stdout.toString();
     final lines = output.split('\n');
     for (final line in lines) {
       if (line.contains('v=spf1')) {
-        return 'SPF record: ${line.trim()}';
+        return SpfResult(domain, line.trim(), 'safe', '');
       }
     }
-    return 'No SPF record found for $domain';
+    return SpfResult(domain, '', 'danger', 'No SPF record found');
   } catch (e) {
-    return 'Failed to check SPF record: $e';
+    return SpfResult(domain, '', 'warning', 'Failed to check SPF record: $e');
   }
 }
 
@@ -296,13 +298,12 @@ Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
   final portSummary = await scanPorts(ip, ports);
   final sslRes = await checkSslCertificate(ip);
   final spfRes = await checkSpfRecord(ip);
-  final spfFound = spfRes.startsWith('SPF record');
   final report = await runSecurityReport(
     ip: ip,
     openPorts: [for (final p in portSummary.results)
       if (p.state == 'open') p.port],
     sslValid: sslRes.valid,
-    spfValid: spfFound,
+    spfValid: spfRes.status == 'safe',
   );
   return report;
 }

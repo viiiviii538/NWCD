@@ -38,6 +38,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final int riskScore;
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
+  final List<SpfResult> spfResults;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -46,6 +47,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.riskScore,
     required this.items,
     this.portSummaries = const [],
+    this.spfResults = const [],
     this.onGenerateTopology,
   });
 
@@ -59,6 +61,19 @@ class DiagnosticResultPage extends StatelessWidget {
     if (score >= 8) return '社内ネットワークは安全です';
     if (score >= 5) return '注意が必要です';
     return '危険な状態です';
+  }
+
+  String _statusText(String status) {
+    switch (status) {
+      case 'safe':
+        return '安全';
+      case 'warning':
+        return '注意';
+      case 'danger':
+        return '危険';
+      default:
+        return status;
+    }
   }
 
   Widget _scoreSection(String label, int score) {
@@ -195,6 +210,50 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _spfSection() {
+    if (spfResults.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SPFレコードの設定状況',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+            'SPFレコードは、なりすましメールを防止する仕組みです。設定されていないドメインは、フィッシング詐欺やマルウェア拡散の踏み台として悪用される可能性があります。'),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('ドメイン')),
+              DataColumn(label: Text('SPFレコード有無')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ],
+            rows: [
+              for (final r in spfResults)
+                DataRow(
+                  color: MaterialStateProperty.all(
+                    r.status == 'danger'
+                        ? Colors.redAccent.withOpacity(0.2)
+                        : r.status == 'warning'
+                            ? Colors.yellowAccent.withOpacity(0.2)
+                            : Colors.green.withOpacity(0.2),
+                  ),
+                  cells: [
+                    DataCell(Text(r.domain)),
+                    DataCell(Text(r.record.isNotEmpty ? 'あり' : 'なし')),
+                    DataCell(Text(_statusText(r.status))),
+                    DataCell(Text(r.comment)),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -278,6 +337,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
             _portStatusSection(),
+            const SizedBox(height: 16),
+            _spfSection(),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
