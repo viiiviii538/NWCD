@@ -15,6 +15,14 @@ class GeoipEntry {
 
   GeoipEntry(this.ip, this.domain, this.country);
 
+  factory GeoipEntry.fromJson(Map<String, dynamic> json) {
+    return GeoipEntry(
+      json['ip']?.toString() ?? '',
+      json['domain']?.toString() ?? '',
+      json['country']?.toString() ?? '',
+    );
+  }
+
   String get status => judgeGeoipStatus(country);
 
   String get comment {

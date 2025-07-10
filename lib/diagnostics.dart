@@ -8,6 +8,7 @@ import 'ssl_result.dart';
 export 'ssl_result.dart';
 import 'spf_result.dart';
 export 'spf_result.dart';
+import 'package:nwc_densetsu/geoip_entry.dart';
 import 'package:nwc_densetsu/network_scan.dart' as net;
 
 typedef LanDevice = net.NetworkDevice;
@@ -70,23 +71,6 @@ class ExternalCommEntry {
     );
   }
 }
-
-class GeoipEntry {
-  final String ip;
-  final String domain;
-  final String country;
-
-  const GeoipEntry(this.ip, this.domain, this.country);
-
-  factory GeoipEntry.fromJson(Map<String, dynamic> json) {
-    return GeoipEntry(
-      json['ip']?.toString() ?? '',
-      json['domain']?.toString() ?? '',
-      json['country']?.toString() ?? '',
-    );
-  }
-}
-
 
 class RiskItem {
   final String description;

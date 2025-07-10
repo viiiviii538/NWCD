@@ -48,6 +48,8 @@ class _HomePageState extends State<HomePage> {
   diag.NetworkSpeed? _speed;
   diag.DefenseStatus? _defense;
   bool _lanScanning = false;
+  String _portPreset = 'default';
+  bool hasUtm = false;
   final Map<String, int> _progress = {};
   static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
@@ -74,13 +76,6 @@ Future<void> _openGeoipPageWithFreshScan() async {
   );
 }
 
-  void _openGeoipPage() {
-    if (_geoipEntries.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
-    );
-  }
-
   List<int> get _selectedPorts {
     switch (_portPreset) {
       case 'quick':
@@ -94,6 +89,8 @@ Future<void> _openGeoipPageWithFreshScan() async {
 
 
   Future<void> _runLanScan() async {
+    int completedTasks = 0;
+    int totalTasks = 0;
     setState(() {
       _lanScanning = true;
       _devices = <net.NetworkDevice>[];
@@ -141,6 +138,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
         _progress[d.ip] = 0;
       }
     });
+    totalTasks = devices.length * _taskCount;
 
     for (final d in devices) {
       final ip = d.ip;
@@ -299,47 +297,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
       ),
     ];
 
-    final sslChecks = <SslCheck>[];
-    _sslResults.forEach((host, res) {
-      final issuer =
-          RegExp(r'issued by ([^,]+)').firstMatch(res.message)?.group(1) ?? '';
-      final expiry =
-          RegExp(r'expires on ([^,]+)').firstMatch(res.message)?.group(1) ?? '';
-      sslChecks.add(SslCheck(
-        domain: host,
-        issuer: issuer,
-        expiry: expiry,
-        status: res.valid ? 'ok' : 'warning',
-        comment: res.valid ? '' : 'invalid',
-      ));
-    });
 
-    final spfChecks = <SpfCheck>[];
-    _spfResults.forEach((host, res) {
-      final ok = res.startsWith('SPF record');
-      final spf = ok
-          ? res.substring(res.indexOf('SPF record') + 10).trim()
-          : '';
-      spfChecks.add(SpfCheck(
-        domain: host,
-        spf: spf,
-        status: ok ? 'ok' : 'warning',
-        comment: ok ? '' : 'missing',
-      ));
-    });
-
-    final domainAuths = <DomainAuthCheck>[];
-    _spfResults.forEach((host, res) {
-      final ok = res.startsWith('SPF record');
-      domainAuths.add(DomainAuthCheck(
-        domain: host,
-        spf: ok,
-        dkim: false,
-        dmarc: false,
-        status: ok ? 'ok' : 'warning',
-        comment: ok ? '' : 'SPF missing',
-      ));
-    });
 
     final geoipStats = <GeoIpStat>[];
     final geoCount = <String, int>{};
