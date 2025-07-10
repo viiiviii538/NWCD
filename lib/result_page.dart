@@ -5,8 +5,7 @@ import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/device_list_page.dart';
 import 'package:nwc_densetsu/network_scan.dart' show NetworkDevice;
-import 'package:nwc_densetsu/utils/report_utils.dart'
-    show generateTopologyDiagram;
+import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -736,7 +735,7 @@ class DiagnosticResultPage extends StatelessWidget {
             SslCheckSection(results: sslEntries),
             const SizedBox(height: 16),
           ],
-          _portStatusSection(),
+          _portSection(),
           const SizedBox(height: 16),
           _lanDevicesSection(context),
           const SizedBox(height: 16),
