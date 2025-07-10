@@ -175,12 +175,6 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     final items = [
       const DiagnosticItem(
-        name: 'ポート開放',
-        description: '不要なポートが開いています',
-        status: 'warning',
-        action: '不要なポートを閉じる',
-      ),
-      const DiagnosticItem(
         name: 'SSL 証明書',
         description: '証明書の有効期限切れ',
         status: 'danger',
