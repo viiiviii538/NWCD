@@ -4,7 +4,7 @@ import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'extended_results.dart';
-import 'danger_ports.dart';
+import 'port_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
