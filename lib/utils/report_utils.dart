@@ -7,8 +7,6 @@ import '../diagnostics.dart' show SecurityReport;
 import '../extended_results.dart' show LanDeviceRisk;
 import 'python_utils.dart';
 import 'file_utils.dart';
-import '../extended_results.dart' show LanDeviceRisk;
-import 'python_utils.dart';
 
 /// Generates a PDF report from [reports] using the bundled Python script
 /// and saves it to a location chosen by the user.

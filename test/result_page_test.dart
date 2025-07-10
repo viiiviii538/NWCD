@@ -5,8 +5,6 @@ import 'package:nwc_densetsu/result_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nwc_densetsu/extended_results.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
-import 'dart:io';
-import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 
 void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {
@@ -66,7 +64,7 @@ void main() {
   });
 
   testWidgets('Topology button shows image dialog', (tester) async {
-    final devices = const [
+    const devices = [
       LanDeviceRisk(
           ip: '192.168.1.2',
           mac: '00:11',
