@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   List<SecurityReport> _reports = [];
   List<SslCheckEntry> _sslEntries = [];
   List<SpfResult> _spfResults = [];
-  List<diag.ExternalCommEntry> _externalComms = [];
+  List<diag.ExternalCommEntry> _externalCommEntries = [];
   List<GeoipEntry> _geoipEntries = [];
   diag.NetworkSpeed? _speed;
   diag.DefenseStatus? _defense;
@@ -101,7 +101,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
       _reports = [];
       _sslEntries = [];
       _spfResults = [];
-      _externalComms = [];
+      _externalCommEntries = [];
       _speed = null;
       _output = '診断中...\n';
       _progress.clear();
@@ -113,7 +113,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
     setState(() => _defense = defense);
     final comms = await diag.runExternalCommReport();
     setState(() {
-      _externalComms = comms;
+      _externalCommEntries = comms;
     });
     final buffer = StringBuffer();
     if (speed != null) {
@@ -406,7 +406,7 @@ Future<void> _openGeoipPageWithFreshScan() async {
           sslEntries: _sslEntries,
           portSummaries: _scanResults,
           spfResults: _spfResults,
-          externalComms: _externalComms,
+          externalCommEntries: _externalCommEntries,
           devices: _devices,
           reports: _reports,
           defenderEnabled: _defense?.defenderEnabled,
