@@ -17,6 +17,7 @@ UNKNOWN_PORT_POINTS = 0.5
 
 PORT_SCORE_CAP = 6.0
 COUNTRY_SCORE_CAP = 4.0
+OS_VERSION_POINTS = 0.7
 
 __all__ = ["calc_security_score"]
 
@@ -37,6 +38,7 @@ def calc_security_score(
     open_ports: list[str],
     countries: list[str],
     has_utm: bool = False,
+    os_version: str | None = None,
 ) -> tuple[float, list[str]]:
     """Return security score (0.0-10.0) and warnings for the given data."""
 
@@ -61,7 +63,11 @@ def calc_security_score(
             country_points += 0.5
     country_points = min(country_points, COUNTRY_SCORE_CAP)
 
-    score = port_points + country_points
+    os_points = 0.0
+    if os_version in {"Windows 7", "Windows XP", "Windows 8"}:
+        os_points += OS_VERSION_POINTS
+
+    score = port_points + country_points + os_points
     if has_utm:
         score *= 0.8
 
@@ -87,7 +93,12 @@ def main():
         name = dev.get("device") or dev.get("ip") or "unknown"
         ports = dev.get("open_ports", [])
         countries = dev.get("countries", [])
-        score, warns = calc_security_score([str(p) for p in ports], [c.upper() for c in countries])
+        os_ver = dev.get("os_version")
+        score, warns = calc_security_score(
+            [str(p) for p in ports],
+            [c.upper() for c in countries],
+            os_version=os_ver,
+        )
         warn_text = "; ".join(warns) if warns else ""
         print(f"{name}\tScore: {score}\t{warn_text}")
 
