@@ -7,6 +7,7 @@
 - 変更点の要点を一文でまとめ、意味のあるメッセージを記述してください。
 - 何を、なぜ変更したのかが後から見ても分かる内容を心掛けます。
 - 例: `Add progress overlay with step details`
+- 大きな機能追加を行う場合は内容を簡潔にまとめます。例: `Add GeoIP analysis page with bar charts and connection list`
 
 ## プルリクエスト
 

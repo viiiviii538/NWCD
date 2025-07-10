@@ -2,20 +2,23 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'utils/python_utils.dart';
+
 /// Represents a discovered network device.
 class NetworkDevice {
   final String ip;
   final String mac;
   final String vendor;
+  final String name;
 
-  const NetworkDevice(this.ip, this.mac, this.vendor);
+  const NetworkDevice(this.ip, this.mac, this.vendor, [this.name = '']);
 }
 
 /// Runs the LAN discovery script and returns a list of devices.
 Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}) async {
   const script = 'discover_hosts.py';
   try {
-    final result = await Process.run('python', [script]);
+    final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
       stderr.writeln(msg.isEmpty
@@ -24,7 +27,13 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
       if (onError != null) onError(msg);
       return [];
     }
-    final data = jsonDecode(result.stdout.toString()) as Map<String, dynamic>;
+    final output = result.stdout.toString();
+    if (output.trim().isEmpty) {
+      stderr.writeln('discover_hosts.py produced no output');
+      if (onError != null) onError('Empty output from discover_hosts.py');
+      return [];
+    }
+    final data = jsonDecode(output) as Map<String, dynamic>;
     final devices = <NetworkDevice>[];
     if (data.containsKey('hosts')) {
       for (final item in data['hosts']) {
@@ -32,6 +41,7 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
           item['ip'] ?? '',
           item['mac'] ?? '',
           item['vendor'] ?? '',
+          item['name'] ?? item['hostname'] ?? '',
         ));
       }
     }

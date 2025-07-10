@@ -3,6 +3,9 @@ from unittest.mock import patch
 from pathlib import Path
 import tempfile
 
+import pytest
+pytest.importorskip("graphviz")
+
 import generate_topology
 
 

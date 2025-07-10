@@ -1,5 +1,23 @@
 [
-  {"device": "192.168.1.10", "open_ports": ["3389"], "countries": ["RU"]},
-  {"device": "192.168.1.20", "open_ports": ["80", "22"], "countries": ["US"]},
-  {"device": "192.168.1.30", "open_ports": [], "countries": ["JP"]}
+  {
+    "device": "192.168.1.10",
+    "danger_ports": ["3389"],
+    "geoip": "RU",
+    "ssl": "invalid",
+    "open_port_count": 3
+  },
+  {
+    "device": "192.168.1.20",
+    "danger_ports": [],
+    "geoip": "US",
+    "ssl": "valid",
+    "open_port_count": 2
+  },
+  {
+    "device": "192.168.1.30",
+    "danger_ports": [],
+    "geoip": "JP",
+    "ssl": "self-signed",
+    "open_port_count": 0
+  }
 ]

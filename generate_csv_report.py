@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate CSV report from scan data with risk scores and UTM recommendations."""
+"""Generate CSV report from scan data with security scores and UTM recommendations."""
 import argparse
 import json
 import csv
 from typing import List, Dict
 
-from risk_score import calc_risk_score
+from security_score import calc_security_score
 from report_utils import calc_utm_items
 
 
@@ -13,14 +13,23 @@ def generate_report(devices: List[Dict]) -> List[List[str]]:
     rows = []
     for dev in devices:
         name = dev.get("device") or dev.get("ip") or "unknown"
-        open_ports = [str(p) for p in dev.get("open_ports", [])]
+        ports = [str(p) for p in dev.get("open_ports", [])]
         countries = [c.upper() for c in dev.get("countries", [])]
-        score, _warns = calc_risk_score(open_ports, countries)
-        utm = calc_utm_items(score, open_ports, countries)
+        danger_list = [p for p in ports if p in {"3389", "445", "23"}]
+        data = {
+            "danger_ports": danger_list,
+            "geoip": countries[0] if countries else "",
+            "open_port_count": len(ports),
+            "ssl": dev.get("ssl", "valid"),
+            "dns_fail_rate": 0.0,
+        }
+        res = calc_security_score(data)
+        score = res["score"]
+        utm = calc_utm_items(score, ports, countries)
         rows.append([
             name,
             str(score),
-            ",".join(open_ports),
+            ",".join(ports),
             ",".join(countries),
             ",".join(utm),
         ])
