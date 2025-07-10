@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'extended_results.dart';
+import 'port_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
-
 
 class _SvgNode {
   final String label;
@@ -39,6 +40,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<LanDeviceRisk> lanDevices;
   final List<ExternalCommInfo> externalComms;
   final List<DefenseFeatureStatus> defenseStatus;
+  final String windowsVersion;
 
   const DiagnosticResultPage({
     super.key,
@@ -53,18 +55,14 @@ class DiagnosticResultPage extends StatelessWidget {
     this.lanDevices = const [],
     this.externalComms = const [],
     this.defenseStatus = const [],
+    this.windowsVersion = '',
   });
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
-  }
-
-  String _scoreMessage(int score) {
-    if (score >= 8) return '社内ネットワークは安全です';
-    if (score >= 5) return '注意が必要です';
-    return '危険な状態です';
   }
 
   Widget _scoreSection(String label, int score) {
@@ -101,8 +99,6 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(_scoreMessage(score)),
       ],
     );
   }
@@ -144,10 +140,14 @@ class DiagnosticResultPage extends StatelessWidget {
                     ))
                 .toList();
             if (points.isNotEmpty) {
-              final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
-              final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
-              final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-              final maxY = points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+              final minX =
+                  points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+              final maxX =
+                  points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+              final minY =
+                  points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+              final maxY =
+                  points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
               nodes.add(
                 _SvgNode(
                   title,
@@ -169,27 +169,53 @@ class DiagnosticResultPage extends StatelessWidget {
       children: [
         const Text('ポート開放状況'),
         const SizedBox(height: 4),
-        for (final s in portSummaries)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.host),
-              DataTable(columns: const [
-                DataColumn(label: Text('Port')),
-                DataColumn(label: Text('State')),
-                DataColumn(label: Text('Service')),
-              ], rows: [
-                for (final p in s.results)
-                  DataRow(cells: [
-                    DataCell(Text(p.port.toString())),
-                    DataCell(Text(p.state)),
-                    DataCell(Text(p.service)),
-                  ]),
-              ]),
-            ],
+        const Text(
+          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
+        for (final s in portSummaries) ...[
+          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('状態')),
+                DataColumn(label: Text('補足')),
+              ],
+              rows: [
+                for (final r in s.results)
+                  DataRow(
+                    color: WidgetStateProperty.all(
+                      r.state == 'open' && dangerPortNotes.containsKey(r.port)
+                          ? Colors.redAccent.withAlpha((0.2 * 255).toInt()) 
+                          : r.state == 'open'
+                              ? Colors.green.withAlpha((0.2 * 255).toInt()) 
+
+                              : Colors.grey.withAlpha((0.2 * 255).toInt()) 
+
+                    ),
+                    cells: [
+                      DataCell(Text(r.port.toString())),
+                      DataCell(Text(
+                        r.state == 'open'
+                            ? (dangerPortNotes.containsKey(r.port)
+                                ? '危険（開いている）'
+                                : '安全（開いている）')
+                            : '安全（閉じている）',
+                      )),
+                      DataCell(
+                        dangerPortNotes[r.port] != null
+                            ? Text(dangerPortNotes[r.port]!)
+                            : const Text('-'),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
       ],
-    );
+    ]);
   }
 
   Widget _sslSection() {
@@ -375,6 +401,18 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _windowsVersionSection() {
+    if (windowsVersion.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Windows バージョン'),
+        const SizedBox(height: 4),
+        Text(windowsVersion),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -398,15 +436,16 @@ class DiagnosticResultPage extends StatelessWidget {
 
   Future<void> _showTopology(BuildContext context) async {
     try {
-      final generator = onGenerateTopology;
-      final path = await (generator ?? report_utils.generateTopologyDiagram)();
+      final generator =
+          onGenerateTopology ?? () => report_utils.generateTopologyDiagram(lanDevices);
+      final path = await generator();
       if (!context.mounted) return;
 
       final nodes = await _parseSvgNodes(path);
+      if (!context.mounted) return;
       final controller = TransformationController();
 
       await showDialog(
-        // ignore: use_build_context_synchronously
         context: context,
         builder: (_) => Dialog(
           child: SizedBox(
@@ -449,15 +488,17 @@ class DiagnosticResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('診断結果')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _scoreSection('セキュリティスコア', securityScore.toInt()),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _scoreSection('セキュリティスコア', securityScore.toInt()),
+              const SizedBox(height: 16),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -469,8 +510,8 @@ class DiagnosticResultPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
@@ -483,41 +524,43 @@ class DiagnosticResultPage extends StatelessWidget {
                   );
                 },
               ),
-            ),
-            const SizedBox(height: 16),
-            _portSection(),
-            const SizedBox(height: 16),
-            _sslSection(),
-            const SizedBox(height: 16),
-            _spfSection(),
-            const SizedBox(height: 16),
-            _domainAuthSection(),
-            const SizedBox(height: 16),
-            _geoipSection(),
-            const SizedBox(height: 16),
-            _lanSection(),
-            const SizedBox(height: 16),
-            _externalCommSection(),
-            const SizedBox(height: 16),
-            _defenseSection(),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _saveReport(context),
-                    child: const Text('レポート保存'),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => _showTopology(context),
-                    child: const Text('トポロジ表示'),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _portSection(),
+              const SizedBox(height: 16),
+              _sslSection(),
+              const SizedBox(height: 16),
+              _spfSection(),
+              const SizedBox(height: 16),
+              _domainAuthSection(),
+              const SizedBox(height: 16),
+              _geoipSection(),
+              const SizedBox(height: 16),
+              _lanSection(),
+              const SizedBox(height: 16),
+              _externalCommSection(),
+              const SizedBox(height: 16),
+              _defenseSection(),
+              const SizedBox(height: 16),
+              _windowsVersionSection(),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _saveReport(context),
+                      child: const Text('レポート保存'),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => _showTopology(context),
+                      child: const Text('トポロジ表示'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -531,6 +574,7 @@ class ResultPage extends StatelessWidget {
   const ResultPage({super.key, required this.reports, required this.onSave});
 
   Color _scoreColor(int score) {
+    if (!useColor) return Colors.black;
     if (score >= 8) return Colors.green;
     if (score >= 5) return Colors.orange;
     return Colors.redAccent;
@@ -561,7 +605,7 @@ class ResultPage extends StatelessWidget {
               for (final r in reports)
                 DataRow(
                   color: WidgetStateProperty.all(
-                    _scoreColor(r.score.toInt()),
+                    useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                   ),
                   cells: [
                     DataCell(Text(r.ip)),

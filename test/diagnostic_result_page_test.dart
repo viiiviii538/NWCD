@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/extended_results.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
@@ -40,7 +41,87 @@ void main() {
 
     // Port status section
     expect(find.text('ポート開放状況'), findsOneWidget);
-    expect(find.textContaining('3389'), findsOneWidget);
-    expect(find.textContaining('危険'), findsOneWidget);
+    expect(find.text('3389'), findsOneWidget);
+    expect(find.text('危険（開いている）'), findsOneWidget);
+    expect(find.text('445'), findsOneWidget);
+    expect(find.text('安全（閉じている）'), findsOneWidget);
+  });
+
+  testWidgets('extended result sections are visible when data provided',
+      (tester) async {
+    const ssl = [
+      SslCheck(
+          domain: 'example.com',
+          issuer: 'CA',
+          expiry: '2025',
+          status: 'ok',
+          comment: '')
+    ];
+    const spf = [
+      SpfCheck(
+          domain: 'example.com',
+          spf: 'v=spf1',
+          status: 'ok',
+          comment: '')
+    ];
+    const auth = [
+      DomainAuthCheck(
+          domain: 'example.com',
+          spf: true,
+          dkim: false,
+          dmarc: false,
+          status: 'ok',
+          comment: '')
+    ];
+    const geo = [GeoIpStat(country: 'US', count: 1, status: 'ok')];
+    const devices = [
+      LanDeviceRisk(
+          ip: '1.1.1.1',
+          mac: '00:11',
+          vendor: 'Acme',
+          name: 'Dev',
+          status: 'ok',
+          comment: '')
+    ];
+    const comms = [
+      ExternalCommInfo(
+          domain: 'example.com',
+          protocol: 'HTTPS',
+          encryption: '暗号化',
+          status: 'ok',
+          comment: '')
+    ];
+    const defense = [
+      DefenseFeatureStatus(feature: 'Firewall', status: 'recommended', comment: '')
+    ];
+    const version = 'Windows 10';
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 8,
+          items: [],
+          portSummaries: [],
+          sslChecks: ssl,
+          spfChecks: spf,
+          domainAuths: auth,
+          geoipStats: geo,
+          lanDevices: devices,
+          externalComms: comms,
+          defenseStatus: defense,
+          windowsVersion: version,
+        ),
+      ),
+    );
+
+    expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
+    expect(find.text('SPFレコードの設定状況'), findsOneWidget);
+    expect(find.text('ドメインの送信元検証設定'), findsOneWidget);
+    expect(find.text('GeoIP解析：通信先の国別リスクチェック'), findsOneWidget);
+    expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
+    expect(find.text('外部通信の暗号化状況'), findsOneWidget);
+    expect(find.text('端末の防御機能の有効性チェック'), findsOneWidget);
+    expect(find.text('Windows バージョン'), findsOneWidget);
+    expect(find.text(version), findsOneWidget);
   });
 }

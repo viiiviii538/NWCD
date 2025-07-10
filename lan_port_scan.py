@@ -5,6 +5,7 @@ import json
 
 from discover_hosts import _get_subnet, _run_arp_scan, _run_nmap_scan, _lookup_vendor
 from port_scan import run_scan
+from concurrent.futures import ThreadPoolExecutor
 
 DEFAULT_PORTS = [
     "21", "22", "23", "25", "53", "80", "110", "143",
@@ -33,20 +34,29 @@ def scan_hosts(
 ):
     hosts = gather_hosts(subnet)
     results = []
-    for h in hosts:
-        scanned = run_scan(
-            h["ip"],
-            ports,
-            service=service,
-            os_detect=os_detect,
-            scripts=scripts,
-        )
-        results.append({
-            "ip": h.get("ip", ""),
-            "mac": h.get("mac", ""),
-            "vendor": h.get("vendor", ""),
-            "ports": scanned,
-        })
+    # Limit worker count to avoid exhausting system resources
+    max_workers = min(32, max(1, len(hosts)))
+    futures = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for h in hosts:
+            futures.append(
+                executor.submit(
+                    run_scan,
+                    h["ip"],
+                    ports,
+                    service=service,
+                    os_detect=os_detect,
+                    scripts=scripts,
+                )
+            )
+        for h, fut in zip(hosts, futures):
+            scanned = fut.result()
+            results.append({
+                "ip": h.get("ip", ""),
+                "mac": h.get("mac", ""),
+                "vendor": h.get("vendor", ""),
+                "ports": scanned,
+            })
     return results
 
 
