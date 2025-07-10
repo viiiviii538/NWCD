@@ -16,7 +16,7 @@ class HtmlReportGeneratorTest(unittest.TestCase):
         self.assertTrue(html.startswith("<html>"))
         self.assertIn("<table>", html)
         self.assertIn("<td>dev1</td>", html)
-        self.assertIn("<td>9.8</td>", html)  # score for dev1
+        self.assertIn("<td>9.5</td>", html)  # score for dev1
         self.assertTrue(html.endswith("</html>"))
 
 

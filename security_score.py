@@ -10,9 +10,9 @@ from typing import Any, Dict
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
 # Weighting factors for each risk level used in the final score calculation
-HIGH_WEIGHT = 0.7
-MEDIUM_WEIGHT = 0.3
-LOW_WEIGHT = 0.2
+HIGH_WEIGHT = 4.5
+MEDIUM_WEIGHT = 1.7
+LOW_WEIGHT = 0.5
 
 __all__ = ["calc_security_score"]
 
@@ -48,6 +48,24 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
 
     if data.get("upnp"):
         medium += 1
+
+    firewall = data.get("firewall_enabled")
+    if firewall is False:
+        high += 1
+
+    defender = data.get("defender_enabled")
+    if defender is False:
+        high += 1
+
+    ver = str(data.get("os_version") or data.get("windows_version") or "").lower()
+    if ver:
+        if any(v in ver for v in ("windows xp", "windows vista")):
+            high += 1
+        elif any(v in ver for v in ("windows 7", "windows 8", "windows 8.1")):
+            medium += 1
+
+    if data.get("smbv1") or data.get("smb1") or str(data.get("smb_protocol", "")).lower().startswith("smbv1"):
+        high += 1
 
     rate = float(data.get("dns_fail_rate", 0.0))
     if rate >= 0.5:
@@ -92,6 +110,31 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
         low += 1
 
     if data.get("ip_conflict"):
+        high += 1
+
+    # LAN security scan results (arp spoofing, netbios exposure, etc.)
+    arp = data.get("arp_spoofing")
+    if isinstance(arp, dict):
+        arp = arp.get("status")
+    if str(arp).lower() == "warning":
+        high += 1
+
+    netbios = data.get("netbios")
+    if isinstance(netbios, dict):
+        netbios = netbios.get("status")
+    if str(netbios).lower() == "warning":
+        high += 1
+
+    dhcp = data.get("dhcp")
+    if isinstance(dhcp, dict):
+        dhcp = dhcp.get("status")
+    if str(dhcp).lower() == "warning":
+        medium += 1
+
+    ext_comm = data.get("external_comm")
+    if isinstance(ext_comm, dict):
+        ext_comm = ext_comm.get("status")
+    if str(ext_comm).lower() == "warning":
         high += 1
 
     score = 10.0 - high * HIGH_WEIGHT - medium * MEDIUM_WEIGHT - low * LOW_WEIGHT
