@@ -186,12 +186,14 @@ class DiagnosticResultPage extends StatelessWidget {
               rows: [
                 for (final r in s.results)
                   DataRow(
-                    color: MaterialStateProperty.all(
+                    color: WidgetStateProperty.all(
                       r.state == 'open' && dangerPortNotes.containsKey(r.port)
-                          ? Colors.redAccent.withOpacity(0.2)
+                          ? Colors.redAccent.withAlpha((0.2 * 255).toInt()) 
                           : r.state == 'open'
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.2),
+                              ? Colors.green.withAlpha((0.2 * 255).toInt()) 
+
+                              : Colors.grey.withAlpha((0.2 * 255).toInt()) 
+
                     ),
                     cells: [
                       DataCell(Text(r.port.toString())),
@@ -213,7 +215,7 @@ class DiagnosticResultPage extends StatelessWidget {
             ),
           ),
       ],
-    );
+    ]);
   }
 
   Widget _sslSection() {
