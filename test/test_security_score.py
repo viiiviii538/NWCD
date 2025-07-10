@@ -40,6 +40,11 @@ class CalcSecurityTest(unittest.TestCase):
         self.assertEqual(res["high_risk"], 4)
         self.assertEqual(res["score"], 6.0)
 
+    def test_os_version_points(self):
+        score, warnings = calc_security_score([], [], os_version="Windows 7")
+        self.assertEqual(score, 0.7)
+        self.assertEqual(warnings, [])
+
 
 if __name__ == "__main__":
     unittest.main()
