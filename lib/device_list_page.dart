@@ -30,12 +30,12 @@ class DeviceListPage extends StatelessWidget {
     for (final d in devices) {
       final rep =
           reports.firstWhere((r) => r.ip == d.ip, orElse: () => const SecurityReport('', 0, [], [], '', openPorts: [], geoip: ''));
-      final status = _riskState(rep.score);
+      final status = _riskState(rep.score.toInt());
       final comment = rep.risks.isNotEmpty ? rep.risks.first.description : '';
       rows.add(
         DataRow(
           color: MaterialStateProperty.all(
-            _scoreColor(rep.score).withOpacity(0.2),
+            _scoreColor(rep.score.toInt()).withOpacity(0.2),
           ),
           cells: [
             DataCell(Text(d.ip)),
