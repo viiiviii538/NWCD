@@ -186,6 +186,8 @@ Future<void> _openGeoipPageWithFreshScan() async {
       final summary = results[0] as PortScanSummary;
       final sslRes = results[1] as SslResult;
       final spfRes = results[2] as SpfResult;
+      _scanResults.add(summary);
+      _spfResults.add(spfRes);
       final dkimValid = results[3] as bool;
       final dmarcValid = results[4] as bool;
       final spfResWithOthers = SpfResult(
@@ -585,7 +587,8 @@ Future<void> _openGeoipPageWithFreshScan() async {
               const Text('SPFレコードの設定状況',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              const Text('メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+              const Text(
+                  'SPFレコードは、なりすましメールを防止する仕組みです。設定されていないドメインは、フィッシング詐欺やマルウェア拡散の踏み台として悪用される可能性があります。'),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
@@ -688,6 +691,19 @@ String _riskState(int score) {
   if (score >= 8) return '安全';
   if (score >= 5) return '注意';
   return '危険';
+}
+
+String _statusText(String status) {
+  switch (status) {
+    case 'safe':
+      return '安全';
+    case 'warning':
+      return '注意';
+    case 'danger':
+      return '危険';
+    default:
+      return status;
+  }
 }
 
 class ScoreChart extends StatelessWidget {
