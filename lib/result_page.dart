@@ -4,6 +4,7 @@ import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'extended_results.dart';
+import 'danger_ports.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -185,8 +186,8 @@ class DiagnosticResultPage extends StatelessWidget {
               rows: [
                 for (final r in s.results)
                   DataRow(
-                    color: WidgetStateProperty.all(
-                      r.state == 'open' && _dangerPortNotes.containsKey(r.port)
+                    color: MaterialStateProperty.all(
+                      r.state == 'open' && dangerPortNotes.containsKey(r.port)
                           ? Colors.redAccent.withOpacity(0.2)
                           : r.state == 'open'
                               ? Colors.green.withOpacity(0.2)
@@ -196,14 +197,14 @@ class DiagnosticResultPage extends StatelessWidget {
                       DataCell(Text(r.port.toString())),
                       DataCell(Text(
                         r.state == 'open'
-                            ? (_dangerPortNotes.containsKey(r.port)
+                            ? (dangerPortNotes.containsKey(r.port)
                                 ? '危険（開いている）'
                                 : '安全（開いている）')
                             : '安全（閉じている）',
                       )),
                       DataCell(
-                        _dangerPortNotes[r.port] != null
-                            ? Text(_dangerPortNotes[r.port]!)
+                        dangerPortNotes[r.port] != null
+                            ? Text(dangerPortNotes[r.port]!)
                             : const Text('-'),
                       ),
                     ],
