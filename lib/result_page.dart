@@ -67,6 +67,32 @@ class DiagnosticResultPage extends StatelessWidget {
     return '危険な状態です';
   }
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'safe':
+        return Colors.green;
+      case 'warning':
+        return Colors.orange;
+      case 'danger':
+        return Colors.redAccent;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'safe':
+        return Icons.check_circle;
+      case 'warning':
+        return Icons.warning;
+      case 'danger':
+        return Icons.error;
+      default:
+        return Icons.help;
+    }
+  }
+
   Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
@@ -468,9 +494,16 @@ class DiagnosticResultPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                          Row(
+                            children: [
+                              Icon(_statusIcon(item.status),
+                                  color: _statusColor(item.status)),
+                              const SizedBox(width: 8),
+                              Text(item.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
