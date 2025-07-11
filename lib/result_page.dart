@@ -272,23 +272,59 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
-  Widget _spfSection() {
+  Widget _senderAuthSection() {
     if (spfResults.isEmpty) return const SizedBox.shrink();
+
+    String _rowState(SpfResult r) {
+      var missing = 0;
+      if (r.record.isEmpty) missing++;
+      if (!r.dkimValid) missing++;
+      if (!r.dmarcValid) missing++;
+      if (missing == 0) return '安全';
+      if (missing == 1) return '注意';
+      return '危険';
+    }
+
+    String _rowComment(SpfResult r) {
+      final missing = <String>[];
+      if (r.record.isEmpty) missing.add('SPF');
+      if (!r.dkimValid) missing.add('DKIM');
+      if (!r.dmarcValid) missing.add('DMARC');
+      if (missing.isEmpty) {
+        return 'すべての認証が適切に設定されています';
+      }
+      final joined = missing.join('・');
+      return missing.length >= 2
+          ? '$joinedが未設定で、なりすましリスク大'
+          : '$joinedが未設定のため、不正メールを防ぎにくい';
+    }
+
+    Color _rowColor(String state) {
+      switch (state) {
+        case '危険':
+          return Colors.redAccent.withOpacity(0.2);
+        case '注意':
+          return Colors.yellowAccent.withOpacity(0.2);
+        default:
+          return Colors.green.withOpacity(0.2);
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('SPFレコードの設定状況',
+        const Text('ドメインの送信元検証設定',
             style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         const Text(
-            'メール送信ドメインのなりすまし防止のため、SPFレコードの有無を確認します。'),
+            'SPF・DKIM・DMARCは、送信元のドメインが正当であることを検証する仕組みです。いずれかが欠けている場合、なりすましメールのリスクが高まり、フィッシングやマルウェア(迷惑メール)の原因になります。'),
         const SizedBox(height: 8),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
             columns: const [
               DataColumn(label: Text('ドメイン')),
-              DataColumn(label: Text('SPFレコード')),
+              DataColumn(label: Text('SPF')),
               DataColumn(label: Text('DKIM')),
               DataColumn(label: Text('DMARC')),
               DataColumn(label: Text('状態')),
@@ -296,23 +332,21 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
             rows: [
               for (final r in spfResults)
-                DataRow(
-                  color: MaterialStateProperty.all(
-                    r.status == 'danger'
-                        ? Colors.redAccent.withOpacity(0.2)
-                        : r.status == 'warning'
-                            ? Colors.yellowAccent.withOpacity(0.2)
-                            : Colors.green.withOpacity(0.2),
-                  ),
-                  cells: [
-                    DataCell(Text(r.domain)),
-                    DataCell(Text(r.record)),
-                    DataCell(Text(r.dkimValid ? 'OK' : 'NG')),
-                    DataCell(Text(r.dmarcValid ? 'OK' : 'NG')),
-                    DataCell(Text(r.status)),
-                    DataCell(Text(r.comment)),
-                  ],
-                ),
+                () {
+                  final state = _rowState(r);
+                  final comment = _rowComment(r);
+                  return DataRow(
+                    color: MaterialStateProperty.all(_rowColor(state)),
+                    cells: [
+                      DataCell(Text(r.domain)),
+                      DataCell(Text(r.record.isNotEmpty ? '〇' : '×')),
+                      DataCell(Text(r.dkimValid ? '〇' : '×')),
+                      DataCell(Text(r.dmarcValid ? '〇' : '×')),
+                      DataCell(Text(state)),
+                      DataCell(Text(comment)),
+                    ],
+                  );
+                }(),
             ],
           ),
         ),
@@ -522,7 +556,7 @@ class DiagnosticResultPage extends StatelessWidget {
           const SizedBox(height: 16),
           _lanDevicesSection(context),
           const SizedBox(height: 16),
-          _spfSection(),
+          _senderAuthSection(),
           const SizedBox(height: 16),
           _externalCommSection(),
           const SizedBox(height: 16),
