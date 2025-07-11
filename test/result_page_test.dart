@@ -52,6 +52,7 @@ void main() {
           securityScore: 5,
           riskScore: 4,
           items: items,
+          sslEntries: const [],
         ),
       ),
     );
@@ -72,6 +73,7 @@ void main() {
           securityScore: 5,
           riskScore: 4,
           items: const [],
+          sslEntries: const [],
           onGenerateTopology: () async => imgFile.path,
         ),
       ),

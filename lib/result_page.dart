@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/ssl_check_section.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,6 +31,7 @@ class DiagnosticResultPage extends StatelessWidget {
   final int securityScore;
   final int riskScore;
   final List<DiagnosticItem> items;
+  final List<SslCheckEntry> sslEntries;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -37,6 +39,7 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.securityScore,
     required this.riskScore,
     required this.items,
+    this.sslEntries = const [],
     this.onGenerateTopology,
   });
 
@@ -221,41 +224,37 @@ class DiagnosticResultPage extends StatelessWidget {
       appBar: AppBar(title: const Text('診断結果')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
             _scoreSection('セキュリティスコア', securityScore),
             const SizedBox(height: 16),
             _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text(item.description),
-                          const SizedBox(height: 4),
-                          Text('現状: ${item.status}'),
-                          const SizedBox(height: 4),
-                          Text('推奨対策: ${item.action}'),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+            if (sslEntries.isNotEmpty) ...[
+              SslCheckSection(results: sslEntries),
+              const SizedBox(height: 16),
+            ],
+            for (final item in items)
+              Card(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.name,
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(item.description),
+                      const SizedBox(height: 4),
+                      Text('現状: ${item.status}'),
+                      const SizedBox(height: 4),
+                      Text('推奨対策: ${item.action}'),
+                    ],
+                  ),
+                ),
               ),
-            ),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.center,
