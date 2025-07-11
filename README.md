@@ -111,6 +111,10 @@ nmap -V # または arp-scan --version
 
 表示されない場合はインストール先を PATH に追加してください。
 
+### IPv6 スキャン
+
+`discover_hosts.py` と `lan_port_scan.py` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。`arp-scan` は IPv4 専用のため、IPv6 では常に `nmap` が使用されます。
+
 
 ## LAN + Port Scan
 
@@ -137,12 +141,13 @@ python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 
 ## セキュリティスコア計算
 
-`security_score.py` スクリプトは、各機器の開放ポートと通信先の国情報を入力とし、0〜10 のセキュリティスコアを算出します。入力ファイルは次のような JSON 配列を想定しています。
+`security_score.py` スクリプトはポート数や GeoIP、UPnP の有無に加え、ファイアウォール状態や OS の種類といった
+複数の指標をまとめた JSON を読み込み、10.0 を満点とするセキュリティスコアを計算します。値が小さいほど危険度が高いことを示します。入力例は以下の通りです。
 
 ```json
 [
-  {"device": "192.168.1.10", "open_ports": ["3389"], "countries": ["RU"]},
-  {"device": "192.168.1.20", "open_ports": ["80", "22"], "countries": ["US"]}
+  {"device": "192.168.1.10", "danger_ports": 1, "geoip": "RU", "ssl": "invalid", "open_port_count": 3},
+  {"device": "192.168.1.20", "danger_ports": 0, "geoip": "US", "ssl": "valid", "open_port_count": 2}
 ]
 ```
 
@@ -156,21 +161,29 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 
 ## 0.0〜10.0 スコアリングシステム
 
+スコアは high_risk, medium_risk, low_risk の件数を用いて
+`10 - high*HIGH_WEIGHT - medium*MEDIUM_WEIGHT - low*LOW_WEIGHT` で計算されます。
+各定数のデフォルト値は `security_score.py` で次のように定義されています。
 
-`calc_security_score` 関数は開放ポートと通信国の情報から 0.0〜10.0 のスコアを計算します。RDP(3389) は 4 点、445 番は 3 点、23 番は 2 点、22 番は 1.5 点、21 番と 80 番は 1 点、443 番は 0.5 点が加算されます。未定義のポートは 0.5 点と低めに加算され、ポート由来の合計は最大 6 点です。国コードの評価では、`RU`、`CN`、`KP` といった危険国は 3 点、上記以外で安全国（JP, US, GB, DE, FR, CA, AU）に該当しない国は 0.5 点ずつ加算され、こちらは 4 点が上限となります。UTM を導入している場合は `has_utm=True` を指定すると最終スコアが 0.8 倍になります。
-
+```python
+HIGH_WEIGHT = 1.0
+MEDIUM_WEIGHT = 0.5
+LOW_WEIGHT = 0.3
+```
+数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。
 
 例として Python から直接呼び出す場合は次の通りです。
 
 ```python
 from security_score import calc_security_score
 
-score, warnings = calc_security_score(
-    open_ports=["3389", "80"],
-    countries=["RU", "JP"],
-    has_utm=False,
-)
-print(score, warnings)
+result = calc_security_score({
+    "danger_ports": ["3389"],
+    "geoip": "RU",
+    "ssl": "invalid",
+    "open_port_count": 3,
+})
+print(result["score"], result["high_risk"])
 ```
 
 
@@ -277,6 +290,10 @@ python generate_topology.py scan_results.json -o topology.svg
 ## スキャン実行時の注意
 
 本ツールによるホスト探索やポートスキャンは、運用者が明示的な許可を得たネットワークでのみ実行してください。許可なく他者のネットワークをスキャンすると、不正アクセス禁止法などの法令に抵触し、民事・刑事上の責任を問われる可能性があります。
+
+## カラー表示の切り替え
+
+Python スクリプトやアプリでは出力にカラー表示を利用しています。端末で色を無効化したい場合は環境変数 `NWCD_NO_COLOR=1` を設定してください。Flutter アプリではビルド時に `--dart-define=NWCD_USE_COLOR=false` を指定するとグレースケールで表示されます。
 
 ## テスト
 
