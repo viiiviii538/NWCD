@@ -261,9 +261,12 @@ testWidgets('extended result sections are visible when data provided', (tester) 
 
   testWidgets('SPF table rows use colors based on status', (tester) async {
     const results = [
-      SpfResult('ok.com', 'v=spf1 -all', 'safe', ''),
-      SpfResult('none.com', '', 'danger', 'missing'),
-      SpfResult('fail.com', '', 'warning', 'error'),
+      SpfResult('ok.com', 'v=spf1 -all', 'safe', '',
+          dkimValid: true, dmarcValid: true),
+      SpfResult('none.com', '', 'danger', 'missing',
+          dkimValid: false, dmarcValid: false),
+      SpfResult('fail.com', 'v=spf1 -all', 'safe', '',
+          dkimValid: true, dmarcValid: false),
     ];
 
     await tester.pumpWidget(
