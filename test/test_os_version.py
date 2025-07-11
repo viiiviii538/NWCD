@@ -23,6 +23,18 @@ class OSVersionTest(unittest.TestCase):
         mock_get.return_value = MagicMock(major=6, minor=2)
         self.assertEqual(os_version.get_windows_version(), 'Windows 8')
 
+    @patch('os_version.sys.platform', 'win32')
+    @patch('os_version.sys.getwindowsversion', create=True)
+    def test_windows_10(self, mock_get):
+        mock_get.return_value = MagicMock(major=10, minor=0, build=19041)
+        self.assertEqual(os_version.get_windows_version(), 'Windows 10')
+
+    @patch('os_version.sys.platform', 'win32')
+    @patch('os_version.sys.getwindowsversion', create=True)
+    def test_windows_11(self, mock_get):
+        mock_get.return_value = MagicMock(major=10, minor=0, build=22000)
+        self.assertEqual(os_version.get_windows_version(), 'Windows 11')
+
     @patch('os_version.sys.platform', 'linux')
     def test_non_windows(self):
         self.assertIsNone(os_version.get_windows_version())
