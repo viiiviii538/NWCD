@@ -29,7 +29,10 @@ void main() {
     );
 
     expect(find.text('セキュリティスコア'), findsOneWidget);
-    expect(find.byIcon(Icons.error), findsOneWidget);
+    // One error icon from score section and one from the danger item
+    expect(find.byIcon(Icons.error), findsNWidgets(2));
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.byIcon(Icons.warning), findsOneWidget);
 
     // Verify status and action text for each item
     expect(find.text('現状: safe'), findsOneWidget);
