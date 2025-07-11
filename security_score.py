@@ -16,15 +16,62 @@ LOW_WEIGHT = 0.5
 
 __all__ = ["calc_security_score"]
 
+PORT_SCORE_CAP = 6.0
+COUNTRY_SCORE_CAP = 4.0
+OS_VERSION_POINTS = 0.7
 
 def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
     """Return overall score and risk counts for the given metrics.
 
-    Parameters
-    ----------
-    data : Dict[str, Any]
-        Dictionary containing risk values such as ``danger_ports`` or ``geoip``.
-    """
+PORT_SCORES = {
+    "3389": 4.0,  # RDP
+    "445": 3.0,   # SMB
+    "23": 2.0,    # Telnet
+    "22": 1.5,    # SSH
+    "21": 1.0,    # FTP
+    "80": 1.0,    # HTTP
+    "443": 0.5,   # HTTPS
+}
+
+
+
+
+def calc_security_score(
+    open_ports: list[str],
+    countries: list[str],
+    has_utm: bool = False,
+    os_version: str | None = None,
+) -> tuple[float, list[str]]:
+    """Return security score (0.0-10.0) and warnings for the given data."""
+
+    warnings: list[str] = []
+    port_points = 0.0
+    for p in open_ports:
+        if p in PORT_SCORES:
+            port_points += PORT_SCORES[p]
+            if p == "3389":
+                warnings.append(f"{RED}RDP port open (3389){RESET}")
+        else:
+            port_points += UNKNOWN_PORT_POINTS
+    port_points = min(port_points, PORT_SCORE_CAP)
+
+    country_points = 0.0
+    for c in countries:
+        c_up = c.upper()
+        if c_up in DANGER_COUNTRIES:
+            country_points += 3.0
+            warnings.append(f"{RED}Communicating with {c_up}{RESET}")
+        elif c_up not in SAFE_COUNTRIES and c_up:
+            country_points += 0.5
+    country_points = min(country_points, COUNTRY_SCORE_CAP)
+
+    os_points = 0.0
+    if os_version in {"Windows 7", "Windows XP", "Windows 8"}:
+        os_points += OS_VERSION_POINTS
+
+    score = port_points + country_points + os_points
+    if has_utm:
+        score *= 0.8
 
     high = medium = low = 0
 
@@ -161,12 +208,16 @@ def main():
 
     for dev in devices:
         name = dev.get("device") or dev.get("ip") or "unknown"
-        res = calc_security_score(dev)
-        print(
-            f"{name}\tScore: {res['score']}"
-            f"\t(H:{res['high_risk']} M:{res['medium_risk']} L:{res['low_risk']})"
+        ports = dev.get("open_ports", [])
+        countries = dev.get("countries", [])
+        os_ver = dev.get("os_version")
+        score, warns = calc_security_score(
+            [str(p) for p in ports],
+            [c.upper() for c in countries],
+            os_version=os_ver,
         )
-
+        warn_text = "; ".join(warns) if warns else ""
+        print(f"{name}\tScore: {score}\t{warn_text}")
 
 if __name__ == "__main__":
     main()

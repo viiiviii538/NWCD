@@ -173,20 +173,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _openResultPage() async {
     final version = await diag.getWindowsVersion();
     if (!mounted) return;
-    final items = [
-      const DiagnosticItem(
-        name: 'ポート開放',
-        description: '不要なポートが開いています',
-        status: 'warning',
-        action: '不要なポートを閉じる',
-      ),
-      const DiagnosticItem(
-        name: 'SSL 証明書',
-        description: '証明書の有効期限切れ',
-        status: 'danger',
-        action: '証明書を更新する',
-      ),
-    ];
+    final items = <DiagnosticItem>[];
 
     final sslChecks = <SslCheck>[];
     _sslResults.forEach((host, res) {

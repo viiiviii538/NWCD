@@ -143,8 +143,6 @@ python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 
 `security_score.py` スクリプトはポート数や GeoIP、UPnP の有無に加え、ファイアウォール状態や OS の種類、
 ARP スプーフィングや複数 DHCP サーバといった LAN リスクも含めた
-複数の指標をまとめた JSON を読み込み、10.0 を満点とするセキュリティスコアを計算します。値が小さいほど危険度が高いことを示します。入力例は以下の通りです。
-
 ```json
 [
   {"device": "192.168.1.10", "danger_ports": 1, "geoip": "RU", "ssl": "invalid", "open_port_count": 3},

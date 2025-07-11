@@ -4,6 +4,7 @@ import 'config.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'extended_results.dart';
+import 'port_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -70,6 +71,32 @@ class DiagnosticResultPage extends StatelessWidget {
     return '危険な状態です';
   }
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'safe':
+        return Colors.green;
+      case 'warning':
+        return Colors.orange;
+      case 'danger':
+        return Colors.redAccent;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'safe':
+        return Icons.check_circle;
+      case 'warning':
+        return Icons.warning;
+      case 'danger':
+        return Icons.error;
+      default:
+        return Icons.help;
+    }
+  }
+
   Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
@@ -104,8 +131,6 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(_scoreMessage(score)),
       ],
     );
   }
@@ -176,27 +201,53 @@ class DiagnosticResultPage extends StatelessWidget {
       children: [
         const Text('ポート開放状況'),
         const SizedBox(height: 4),
-        for (final s in portSummaries)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.host),
-              DataTable(columns: const [
-                DataColumn(label: Text('Port')),
-                DataColumn(label: Text('State')),
-                DataColumn(label: Text('Service')),
-              ], rows: [
-                for (final p in s.results)
-                  DataRow(cells: [
-                    DataCell(Text(p.port.toString())),
-                    DataCell(Text(p.state)),
-                    DataCell(Text(p.service)),
-                  ]),
-              ]),
-            ],
+        const Text(
+          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
+        for (final s in portSummaries) ...[
+          Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('状態')),
+                DataColumn(label: Text('補足')),
+              ],
+              rows: [
+                for (final r in s.results)
+                  DataRow(
+                    color: WidgetStateProperty.all(
+                      r.state == 'open' && dangerPortNotes.containsKey(r.port)
+                          ? Colors.redAccent.withAlpha((0.2 * 255).toInt()) 
+                          : r.state == 'open'
+                              ? Colors.green.withAlpha((0.2 * 255).toInt()) 
+
+                              : Colors.grey.withAlpha((0.2 * 255).toInt()) 
+
+                    ),
+                    cells: [
+                      DataCell(Text(r.port.toString())),
+                      DataCell(Text(
+                        r.state == 'open'
+                            ? (dangerPortNotes.containsKey(r.port)
+                                ? '危険（開いている）'
+                                : '安全（開いている）')
+                            : '安全（閉じている）',
+                      )),
+                      DataCell(
+                        dangerPortNotes[r.port] != null
+                            ? Text(dangerPortNotes[r.port]!)
+                            : const Text('-'),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
       ],
-    );
+    ]);
   }
 
   Widget _sslSection() {
@@ -205,6 +256,10 @@ class DiagnosticResultPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('SSL証明書の安全性チェック'),
+        const SizedBox(height: 4),
+        const Text('証明書の有効期限切れ'),
+        const SizedBox(height: 4),
+        const Text('推奨対策: 証明書を更新する'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
@@ -490,9 +545,16 @@ class DiagnosticResultPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          Row(
+                            children: [
+                              Icon(_statusIcon(item.status),
+                                  color: _statusColor(item.status)),
+                              const SizedBox(width: 8),
+                              Text(item.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(item.description),
                           const SizedBox(height: 4),
