@@ -16,79 +16,32 @@ LOW_WEIGHT = 0.5
 
 __all__ = ["calc_security_score"]
 
+# Limits applied to individual metrics
 PORT_SCORE_CAP = 6.0
 COUNTRY_SCORE_CAP = 4.0
 OS_VERSION_POINTS = 0.7
 
+
 def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Return overall score and risk counts for the given metrics.
-
-PORT_SCORES = {
-    "3389": 4.0,  # RDP
-    "445": 3.0,   # SMB
-    "23": 2.0,    # Telnet
-    "22": 1.5,    # SSH
-    "21": 1.0,    # FTP
-    "80": 1.0,    # HTTP
-    "443": 0.5,   # HTTPS
-}
-
-
-
-
-def calc_security_score(
-    open_ports: list[str],
-    countries: list[str],
-    has_utm: bool = False,
-    os_version: str | None = None,
-) -> tuple[float, list[str]]:
-    """Return security score (0.0-10.0) and warnings for the given data."""
-
-    warnings: list[str] = []
-    port_points = 0.0
-    for p in open_ports:
-        if p in PORT_SCORES:
-            port_points += PORT_SCORES[p]
-            if p == "3389":
-                warnings.append(f"{RED}RDP port open (3389){RESET}")
-        else:
-            port_points += UNKNOWN_PORT_POINTS
-    port_points = min(port_points, PORT_SCORE_CAP)
-
-    country_points = 0.0
-    for c in countries:
-        c_up = c.upper()
-        if c_up in DANGER_COUNTRIES:
-            country_points += 3.0
-            warnings.append(f"{RED}Communicating with {c_up}{RESET}")
-        elif c_up not in SAFE_COUNTRIES and c_up:
-            country_points += 0.5
-    country_points = min(country_points, COUNTRY_SCORE_CAP)
-
-    os_points = 0.0
-    if os_version in {"Windows 7", "Windows XP", "Windows 8"}:
-        os_points += OS_VERSION_POINTS
-
-    score = port_points + country_points + os_points
-    if has_utm:
-        score *= 0.8
+    """Return overall score and risk counts for the given metrics."""
 
     high = medium = low = 0
 
-    # list of ports considered dangerous (e.g. 3389, 445, telnet)
+    # Number of dangerous ports open (3389, 445, etc.)
     dp = data.get("danger_ports", [])
     try:
         high += len(list(dp))
     except TypeError:
-        # fallback for legacy integer values
         high += int(dp)
 
+    # Country classification
     geo = str(data.get("geoip", "")).upper()
     if geo in DANGER_COUNTRIES:
         high += 1
     elif geo and geo not in SAFE_COUNTRIES:
         medium += 1
 
+    # SSL certificate status
     ssl_status = str(data.get("ssl", "")).lower()
     if ssl_status in {"invalid", "self-signed"}:
         high += 1
@@ -195,7 +148,7 @@ def calc_security_score(
     }
 
 
-def main():
+def main() -> None:
     """Read risk data from JSON and print scores for each entry."""
 
     if len(sys.argv) < 2:
@@ -208,16 +161,9 @@ def main():
 
     for dev in devices:
         name = dev.get("device") or dev.get("ip") or "unknown"
-        ports = dev.get("open_ports", [])
-        countries = dev.get("countries", [])
-        os_ver = dev.get("os_version")
-        score, warns = calc_security_score(
-            [str(p) for p in ports],
-            [c.upper() for c in countries],
-            os_version=os_ver,
-        )
-        warn_text = "; ".join(warns) if warns else ""
-        print(f"{name}\tScore: {score}\t{warn_text}")
+        res = calc_security_score(dev)
+        print(f"{name}\tScore: {res['score']}")
+
 
 if __name__ == "__main__":
     main()

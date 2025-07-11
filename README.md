@@ -158,6 +158,9 @@ python security_score.py devices.json
 
 RDP ポート (3389) が開いている、またはロシアなど危険国との通信がある場合は、赤字で警告が表示されます。
 
+`os_version.py` を実行すると現在の Windows バージョンを取得できます。ビルド番号が
+22000 以上なら Windows 11 と判定されます。
+
 ## 0.0〜10.0 スコアリングシステム
 
 スコアは high_risk, medium_risk, low_risk の件数を用いて

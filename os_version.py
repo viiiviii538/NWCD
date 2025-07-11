@@ -5,6 +5,7 @@ import sys
 
 # Mapping of (major, minor) tuples to human-readable names
 _WINDOWS_VERSION_MAP = {
+    (5, 0): "Windows 2000",
     (5, 1): "Windows XP",
     (5, 2): "Windows XP",
     (6, 0): "Windows Vista",
@@ -20,6 +21,8 @@ def get_windows_version() -> str | None:
     if sys.platform != "win32":
         return None
     info = sys.getwindowsversion()
+    if info.major == 10 and getattr(info, "build", 0) >= 22000:
+        return "Windows 11"
     return _WINDOWS_VERSION_MAP.get((info.major, info.minor), f"Windows {info.major}.{info.minor}")
 
 
