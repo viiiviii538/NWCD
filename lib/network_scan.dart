@@ -20,10 +20,11 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
     final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
-      stderr.writeln(msg.isEmpty
+      final err = msg.isEmpty
           ? 'LAN discovery script exited with code ${result.exitCode}'
-          : msg);
-      if (onError != null) onError(msg);
+          : msg;
+      stderr.writeln(err);
+      if (onError != null) onError(err);
       return [];
     }
     final output = result.stdout.toString();
@@ -45,8 +46,10 @@ Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}
     }
     return devices;
   } catch (e) {
-    stderr.writeln(e);
-    if (onError != null) onError(e.toString());
+    final msg =
+        'Failed to run $script: $e. Ensure Python and required tools are installed.';
+    stderr.writeln(msg);
+    if (onError != null) onError(msg);
     return [];
   }
 }

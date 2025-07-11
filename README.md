@@ -335,6 +335,23 @@ flutter test
 - `generate_html_report.py`
 - `generate_topology.py`
 
+### 配布手順例
+
+1. `flutter build windows` もしくは `flutter build linux` を実行します。
+2. 生成されたバンドルのディレクトリに、リポジトリ直下の `*.py` ファイルをすべて
+   コピーします。
+
+   ```bash
+   # Windows の例
+   cp *.py build/windows/runner/Release/
+
+   # Linux の例
+   cp *.py build/linux/x64/release/bundle/
+   ```
+
+3. 配布先の PC には Python 3.10 以上と `requirements.txt` 記載のライブラリを
+   インストールしてください。
+
 ## 貢献
 
 詳しい貢献方法は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
