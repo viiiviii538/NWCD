@@ -91,15 +91,19 @@ Future<String> runPing([String host = 'google.com']) async {
 }
 
 /// Measures network speed using the `network_speed.py` script.
-Future<NetworkSpeed?> measureNetworkSpeed() async {
+Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onError}) async {
   const script = 'network_speed.py';
   try {
     final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
+      final msg = result.stderr.toString().trim();
+      if (onError != null && msg.isNotEmpty) onError(msg);
       return null;
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
+      final msg = 'network_speed.py produced no output';
+      if (onError != null) onError(msg);
       return null;
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
@@ -107,14 +111,16 @@ Future<NetworkSpeed?> measureNetworkSpeed() async {
     final up = (data['upload'] as num).toDouble();
     final ping = (data['ping'] as num).toDouble();
     return NetworkSpeed(down, up, ping);
-  } catch (_) {
+  } catch (e) {
+    final msg = 'Failed to run $script: $e';
+    if (onError != null) onError(msg);
     return null;
   }
 }
 
 /// Detects the Windows version of the current system using ``os_version.py``.
 /// Returns ``null`` on non-Windows or when detection fails.
-Future<String?> getWindowsVersion() async {
+Future<String?> getWindowsVersion({void Function(String message)? onError}) async {
   const script = 'os_version.py';
   try {
     final result = await Process.run(pythonExecutable, [script]);
@@ -122,14 +128,16 @@ Future<String?> getWindowsVersion() async {
     final output = result.stdout.toString().trim();
     if (output.isEmpty || output == 'Non-Windows') return null;
     return output;
-  } catch (_) {
+  } catch (e) {
+    if (onError != null) onError('Failed to run $script: $e');
     return null;
   }
 }
 
 /// Runs the bundled Python script using `nmap` to scan [ports] on [host].
 /// Returns a [PortScanSummary] containing all results.
-Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
+Future<PortScanSummary> scanPorts(String host,
+    {List<int>? ports, void Function(String message)? onError}) async {
   const script = 'port_scan.py';
   try {
     final args = <String>[script, host];
@@ -138,7 +146,9 @@ Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
     }
     final result = await Process.run(pythonExecutable, args);
     if (result.exitCode != 0) {
-      throw result.stderr.toString();
+      final msg = result.stderr.toString();
+      if (onError != null) onError(msg);
+      throw msg;
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
@@ -156,6 +166,7 @@ Future<PortScanSummary> scanPorts(String host, [List<int>? ports]) async {
     }
     return PortScanSummary(host, portList);
   } catch (e) {
+    if (onError != null) onError('Failed to run $script: $e');
     return PortScanSummary(host, []);
   }
 }
@@ -171,6 +182,7 @@ Future<List<LanDevice>> discoverLanDevices() async {
 Future<List<LanPortDevice>> scanLanWithPorts({
   String? subnet,
   List<int>? ports,
+  void Function(String message)? onError,
 }) async {
   const script = 'lan_port_scan.py';
   final args = <String>[];
@@ -183,7 +195,9 @@ Future<List<LanPortDevice>> scanLanWithPorts({
   try {
     final result = await Process.run(pythonExecutable, [script, ...args]);
     if (result.exitCode != 0) {
-      throw result.stderr.toString();
+      final msg = result.stderr.toString();
+      if (onError != null) onError(msg);
+      throw msg;
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
@@ -210,7 +224,8 @@ Future<List<LanPortDevice>> scanLanWithPorts({
       ));
     }
     return devices;
-  } catch (_) {
+  } catch (e) {
+    if (onError != null) onError('Failed to run $script: $e');
     return [];
   }
 }
@@ -335,7 +350,7 @@ Future<SecurityReport> runSecurityReport({
     return SecurityReport(
       ip,
       0.0,
-      [RiskItem('error', e.toString())],
+      [RiskItem('error', 'Failed to run $script: $e')],
       [],
       '',
       openPorts: [],
@@ -346,7 +361,7 @@ Future<SecurityReport> runSecurityReport({
 
 /// Performs diagnostics for [ip] and returns a [SecurityReport].
 Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
-  final portSummary = await scanPorts(ip, ports);
+  final portSummary = await scanPorts(ip, ports: ports);
   final sslRes = await checkSslCertificate(ip);
   final spfRes = await checkSpfRecord(ip);
   final spfFound = spfRes.startsWith('SPF record');

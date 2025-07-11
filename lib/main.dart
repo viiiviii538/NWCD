@@ -62,7 +62,12 @@ class _HomePageState extends State<HomePage> {
       _progress.clear();
     });
 
-    final speed = await diag.measureNetworkSpeed();
+    final speed = await diag.measureNetworkSpeed(onError: (msg) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('速度計測失敗: $msg')));
+      }
+    });
     setState(() => _speed = speed);
     final buffer = StringBuffer();
     if (speed != null) {
@@ -97,7 +102,13 @@ class _HomePageState extends State<HomePage> {
       final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag.scanPorts(ip).then((value) {
+      final portFuture = diag
+          .scanPorts(ip, onError: (msg) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
+        }
+      }).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
@@ -171,7 +182,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openResultPage() async {
-    final version = await diag.getWindowsVersion();
+    final version = await diag.getWindowsVersion(onError: (msg) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Windows情報取得失敗: $msg')));
+      }
+    });
     if (!mounted) return;
     final items = <DiagnosticItem>[];
 
