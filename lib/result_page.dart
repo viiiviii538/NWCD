@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/network_scan.dart' show NetworkDevice;
+import 'package:nwc_densetsu/device_table.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -39,6 +41,8 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
   final Future<String> Function()? onGenerateTopology;
+  final List<NetworkDevice> devices;
+  final List<SecurityReport> reports;
 
   const DiagnosticResultPage({
     super.key,
@@ -47,6 +51,8 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.items,
     this.portSummaries = const [],
     this.onGenerateTopology,
+    this.devices = const [],
+    this.reports = const [],
   });
 
   Color _scoreColor(int score) {
@@ -195,6 +201,23 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _deviceListSection() {
+    if (devices.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('LAN内デバイス一覧とリスクチェック',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text(
+          'LAN内に接続されているすべての機器を可視化することで、不審なデバイスの存在に気付きやすくなります。知らない機器が接続されたまま放置されると、内部侵入や情報流出の温床になる可能性があります。',
+        ),
+        const SizedBox(height: 8),
+        DeviceTable(devices: devices, reports: reports),
+      ],
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -278,6 +301,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _scoreSection('リスクスコア', riskScore),
             const SizedBox(height: 16),
             _portStatusSection(),
+            const SizedBox(height: 16),
+            _deviceListSection(),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/network_scan.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
@@ -45,5 +46,32 @@ void main() {
     expect(find.text('ポート開放状況'), findsOneWidget);
     expect(find.textContaining('3389'), findsOneWidget);
     expect(find.textContaining('危険'), findsOneWidget);
+  });
+
+  testWidgets('DiagnosticResultPage displays device list', (tester) async {
+    const devices = [
+      NetworkDevice('1.1.1.1', 'AA', 'V1', 'host1'),
+    ];
+    const reports = [
+      SecurityReport('1.1.1.1', 9, [RiskItem('risk', 'fix')], [], '',
+          openPorts: [], geoip: 'US'),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 9,
+          riskScore: 2,
+          items: [],
+          portSummaries: [],
+          devices: devices,
+          reports: reports,
+        ),
+      ),
+    );
+
+    expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
+    expect(find.text('1.1.1.1'), findsOneWidget);
+    expect(find.text('危険'), findsOneWidget);
   });
 }
