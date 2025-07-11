@@ -14,6 +14,27 @@ from urllib.request import urlopen
 # Cache for MAC prefix to vendor lookups
 _VENDOR_CACHE: dict[str, str] = {}
 
+def discover_hosts(subnet: str | None = None) -> list[dict[str, str]]:
+    """Return list of discovered hosts with IP, MAC and vendor.
+
+    If ``subnet`` is not provided, the local subnet is determined
+    automatically. ``arp-scan`` is used when available and falls back
+    to ``nmap`` otherwise.
+    """
+    subnet = subnet or _get_subnet() or "192.168.1.0/24"
+    try:
+        hosts = _run_arp_scan()
+    except Exception:
+        hosts = _run_nmap_scan(subnet)
+    for h in hosts:
+        if not h.get("vendor"):
+            h["vendor"] = _lookup_vendor(h.get("mac", ""))
+    return hosts
+
+def get_all_ips(subnet: str | None = None) -> list[str]:
+    """Return list of IP addresses for all discovered hosts."""
+    return [h["ip"] for h in discover_hosts(subnet)]
+
 def _get_subnet():
     if os.name == 'nt':
         try:
@@ -161,14 +182,7 @@ def main():
     subnet = None
     if len(sys.argv) > 1:
         subnet = sys.argv[1]
-    subnet = subnet or _get_subnet() or '192.168.1.0/24'
-    try:
-        hosts = _run_arp_scan()
-    except Exception:
-        hosts = _run_nmap_scan(subnet)
-    for h in hosts:
-        if not h.get('vendor'):
-            h['vendor'] = _lookup_vendor(h.get('mac', ''))
+    hosts = discover_hosts(subnet)
     print(json.dumps({'hosts': hosts}, ensure_ascii=False))
 
 
