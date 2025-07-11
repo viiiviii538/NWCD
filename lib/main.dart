@@ -52,32 +52,19 @@ class _HomePageState extends State<HomePage> {
   static const int _taskCount = 5; // port, SSL, SPF, DKIM, DMARC
   double _overallProgress = 0.0;
 
-/// Opens the GeoIP result page using the collected entries.
-void _openGeoipPage() {
-  if (_geoipEntries.isEmpty) return;
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => GeoipResultPage(entries: _geoipEntries),
-    ),
-  );
-}
-
-Future<void> _openGeoipPageWithFreshScan() async {
-  final entries = await diag.runGeoipReport();
-  if (!mounted) return;
-  setState(() => _geoipEntries = entries);
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => GeoipResultPage(entries: entries),
-    ),
-  );
-}
-
   void _openGeoipPage() {
-    if (_geoipEntries.isEmpty) return;
+    final entries = [
+      for (var i = 0; i < 120; i++)
+        GeoipEntry('203.0.113.${i + 1}', 'jp${i + 1}.example', 'JP'),
+      for (var i = 0; i < 45; i++)
+        GeoipEntry('198.51.100.${i + 1}', 'us${i + 1}.example', 'US'),
+      for (var i = 0; i < 7; i++)
+        GeoipEntry('203.0.114.${i + 1}', 'cn${i + 1}.example', 'CN'),
+      for (var i = 0; i < 2; i++)
+        GeoipEntry('203.0.115.${i + 1}', 'ru${i + 1}.example', 'RU'),
+    ];
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: _geoipEntries)),
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: entries)),
     );
   }
 
@@ -488,13 +475,6 @@ Future<void> _openGeoipPageWithFreshScan() async {
             ElevatedButton(
               onPressed: _openGeoipPage,
               child: const Text('GeoIP解析ページ'),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _devices.isEmpty && _reports.isEmpty
-                  ? null
-                  : _openDeviceListPage,
-              child: const Text('LAN内デバイス一覧'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
