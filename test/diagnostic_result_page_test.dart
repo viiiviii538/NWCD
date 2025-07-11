@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nwc_densetsu/result_page.dart';
+import 'package:nwc_densetsu/diagnostics.dart';
 
 void main() {
   testWidgets('DiagnosticResultPage shows statuses and actions', (tester) async {
@@ -10,12 +11,19 @@ void main() {
       DiagnosticItem(name: 'C', description: 'd', status: 'danger', action: 'fix3'),
     ];
 
+    final summaries = [
+      const PortScanSummary('1.1.1.1', [
+        PortStatus(445, 'closed', 'smb'),
+        PortStatus(3389, 'open', 'rdp'),
+      ])
+    ];
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: DiagnosticResultPage(
           securityScore: 9,
           riskScore: 2,
           items: items,
+          portSummaries: summaries,
         ),
       ),
     );
@@ -32,5 +40,12 @@ void main() {
     expect(find.text('推奨対策: fix2'), findsOneWidget);
     expect(find.text('現状: danger'), findsOneWidget);
     expect(find.text('推奨対策: fix3'), findsOneWidget);
+
+    // Port status section
+    expect(find.text('ポート開放状況'), findsOneWidget);
+    expect(find.text('3389'), findsOneWidget);
+    expect(find.text('危険（開いている）'), findsOneWidget);
+    expect(find.text('445'), findsOneWidget);
+    expect(find.text('安全（閉じている）'), findsOneWidget);
   });
 }
