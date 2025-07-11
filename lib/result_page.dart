@@ -257,6 +257,10 @@ class DiagnosticResultPage extends StatelessWidget {
       children: [
         const Text('SSL証明書の安全性チェック'),
         const SizedBox(height: 4),
+        const Text('証明書の有効期限切れ'),
+        const SizedBox(height: 4),
+        const Text('推奨対策: 証明書を更新する'),
+        const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
           DataColumn(label: Text('発行者')),
