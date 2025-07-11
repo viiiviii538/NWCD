@@ -4,7 +4,11 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../diagnostics.dart' show SecurityReport;
+import '../extended_results.dart' show LanDeviceRisk;
+import 'python_utils.dart';
 import 'file_utils.dart';
+import '../extended_results.dart' show LanDeviceRisk;
+import 'python_utils.dart';
 
 /// Generates a PDF report from [reports] using the bundled Python script
 /// and saves it to a location chosen by the user.
@@ -36,7 +40,7 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
       throw Exception(result.stderr.toString());
     }
 
-    final pdfPath = p.withoutExtension(htmlPath) + '.pdf';
+    final pdfPath = '${p.withoutExtension(htmlPath)}.pdf';
     final savePath = await getSavePath(suggestedName: 'report.pdf');
     if (savePath != null) {
       final pdfFile = File(pdfPath);
@@ -52,27 +56,38 @@ Future<void> savePdfReport(List<SecurityReport> reports) async {
     }
   }
 }
+/// Generates a network topology diagram from [devices].
+///
+/// The function creates a temporary JSON file compatible with
+/// `generate_topology.py` and invokes the script. The returned path points
+/// to the produced SVG file.
+Future<String> generateTopologyDiagram([List<LanDeviceRisk> devices = const []])
+    async {
+  final tmpDir = await Directory.systemTemp.createTemp('nwcd_topology');
+  final jsonPath = p.join(tmpDir.path, 'scan.json');
+  final outputPath = p.join(tmpDir.path, 'topology.svg');
 
-/// Runs `generate_topology.py` and returns the path to the generated diagram.
-Future<String> generateTopologyDiagram() async {
-  final tempDir = await Directory.systemTemp.createTemp('nwcd_topology');
-  final imgPath = p.join(tempDir.path, 'topology.svg');
-  try {
-    // Use existing scan output for the topology input. For now rely on the
-    // bundled sample data which mirrors the JSON produced by the scan scripts.
-    const jsonInput = 'sample_devices.json';
+  final data = {
+    'hosts': [
+      for (final d in devices)
+        {
+          'ip': d.ip,
+          if (d.vendor.isNotEmpty) 'vendor': d.vendor,
+        }
+    ]
+  };
+  await File(jsonPath).writeAsString(jsonEncode(data));
 
-    final result = await Process.run('python', [
-      'generate_topology.py',
-      jsonInput,
-      '--output',
-      imgPath,
-    ]);
-    if (result.exitCode != 0) {
-      throw Exception(result.stderr.toString());
-    }
-    return imgPath;
-  } catch (e) {
-    rethrow;
+  final result = await Process.run(pythonExecutable, [
+    'generate_topology.py',
+    jsonPath,
+    '-o',
+    outputPath,
+  ]);
+
+  if (result.exitCode != 0) {
+    throw Exception(result.stderr.toString());
   }
+
+  return outputPath;
 }
