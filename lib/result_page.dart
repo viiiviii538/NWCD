@@ -5,6 +5,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart'
     show generateTopologyDiagram;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xml/xml.dart' as xml;
+import 'package:nwc_densetsu/defense_check_section.dart';
 
 const Map<int, String> _dangerPortNotes = {
   3389: 'リモートデスクトップ接続が可能なため、攻撃の対象になりやすい',
@@ -39,6 +40,8 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<DiagnosticItem> items;
   final List<PortScanSummary> portSummaries;
   final List<SpfResult> spfResults;
+  final bool? defenderEnabled;
+  final bool? firewallEnabled;
   final Future<String> Function()? onGenerateTopology;
 
   const DiagnosticResultPage({
@@ -48,6 +51,8 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.items,
     this.portSummaries = const [],
     this.spfResults = const [],
+    this.defenderEnabled,
+    this.firewallEnabled,
     this.onGenerateTopology,
   });
 
@@ -241,6 +246,13 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
+  Widget _defenseSection() {
+    return DefenseCheckSection(
+      defenderEnabled: defenderEnabled,
+      firewallEnabled: firewallEnabled,
+    );
+  }
+
   Future<void> _saveReport(BuildContext context) async {
     try {
       final result = await Process.run(
@@ -326,6 +338,8 @@ class DiagnosticResultPage extends StatelessWidget {
             _portStatusSection(),
             const SizedBox(height: 16),
             _spfSection(),
+            const SizedBox(height: 16),
+            _defenseSection(),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
