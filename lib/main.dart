@@ -10,6 +10,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/port_constants.dart';
+import 'package:nwc_densetsu/geoip_result_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,6 +46,22 @@ class _HomePageState extends State<HomePage> {
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
   double _overallProgress = 0.0;
+
+  void _openGeoipPage() {
+    final entries = [
+      for (var i = 0; i < 120; i++)
+        GeoipEntry('203.0.113.${i + 1}', 'jp${i + 1}.example', 'JP'),
+      for (var i = 0; i < 45; i++)
+        GeoipEntry('198.51.100.${i + 1}', 'us${i + 1}.example', 'US'),
+      for (var i = 0; i < 7; i++)
+        GeoipEntry('203.0.114.${i + 1}', 'cn${i + 1}.example', 'CN'),
+      for (var i = 0; i < 2; i++)
+        GeoipEntry('203.0.115.${i + 1}', 'ru${i + 1}.example', 'RU'),
+    ];
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GeoipResultPage(entries: entries)),
+    );
+  }
 
   List<int> get _selectedPorts {
     switch (_portPreset) {
@@ -303,6 +320,11 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: _openResultPage,
               child: const Text('診断結果ページ'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _openGeoipPage,
+              child: const Text('GeoIP解析ページ'),
             ),
             const SizedBox(height: 16),
             for (final summary in _scanResults) ...[
