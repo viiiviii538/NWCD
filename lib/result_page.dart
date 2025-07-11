@@ -550,15 +550,25 @@ class DiagnosticResultPage extends StatelessWidget {
                               Icon(_statusIcon(item.status),
                                   color: _statusColor(item.status)),
                               const SizedBox(width: 8),
-                              Text(item.name,
+                              Expanded(
+                                child: Text(
+                                  item.name,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '現状: ${item.status}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _statusColor(item.status),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(item.description),
-                          const SizedBox(height: 4),
-                          Text('現状: ${item.status}'),
                           const SizedBox(height: 4),
                           Text('推奨対策: ${item.action}'),
                         ],
