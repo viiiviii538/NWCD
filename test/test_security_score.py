@@ -18,7 +18,7 @@ class CalcSecurityTest(unittest.TestCase):
     def test_single_high(self):
         res = calc_security_score({"danger_ports": ["3389"]})
         self.assertEqual(res["high_risk"], 1)
-        self.assertAlmostEqual(res["score"], 9.0, places=1)
+        self.assertAlmostEqual(res["score"], 5.5, places=1)
 
     def test_mixed_levels(self):
         data = {"danger_ports": 1, "ssl": "invalid", "open_port_count": 2}
@@ -38,43 +38,7 @@ class CalcSecurityTest(unittest.TestCase):
         }
         res = calc_security_score(data)
         self.assertEqual(res["high_risk"], 4)
-        self.assertEqual(res["score"], 6.0)
-
-    def test_os_version_points(self):
-        score, warnings = calc_security_score([], [], os_version="Windows 7")
-        self.assertEqual(score, 0.7)
-        self.assertEqual(warnings, [])
-
-    def test_http_port(self):
-        score, warnings = calc_security_score(["80"], ["JP"])
-        self.assertEqual(score, 1.0)
-        self.assertEqual(warnings, [])
-
-    def test_rdp_port_warning(self):
-        score, warnings = calc_security_score(["3389"], ["JP"])
-        self.assertEqual(score, 4.0)
-        self.assertTrue(any("RDP port open" in w for w in warnings))
-
-    def test_rdp_and_russia(self):
-        score, warnings = calc_security_score(["3389"], ["RU"])
-        self.assertEqual(score, 7.0)
-        self.assertTrue(any("RDP" in w for w in warnings))
-        self.assertTrue(any("RU" in w for w in warnings))
-
-    def test_danger_country_and_cap(self):
-        score, warnings = calc_security_score(["3389", "445"], ["CN"])
-        self.assertEqual(score, 9.0)
-        self.assertEqual(len(warnings), 2)
-
-    def test_score_capped(self):
-        ports = ["3389", "445", "23", "22", "21", "80", "443"]
-        score, _ = calc_security_score(ports, ["RU", "CN"])
-        self.assertEqual(score, 10.0)
-
-    def test_os_version_points(self):
-        score, warnings = calc_security_score([], [], os_version="Windows 7")
-        self.assertEqual(score, 0.7)
-        self.assertEqual(warnings, [])
+        self.assertEqual(res["score"], 0.0)
 
 
 if __name__ == "__main__":

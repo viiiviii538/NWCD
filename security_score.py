@@ -10,9 +10,9 @@ from typing import Any, Dict
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
 # Weighting factors for each risk level used in the final score calculation
-HIGH_WEIGHT = 1.0
-MEDIUM_WEIGHT = 0.5
-LOW_WEIGHT = 0.3
+HIGH_WEIGHT = 4.5
+MEDIUM_WEIGHT = 1.7
+LOW_WEIGHT = 0.5
 
 __all__ = ["calc_security_score"]
 
@@ -157,6 +157,31 @@ def calc_security_score(
         low += 1
 
     if data.get("ip_conflict"):
+        high += 1
+
+    # LAN security scan results (arp spoofing, netbios exposure, etc.)
+    arp = data.get("arp_spoofing")
+    if isinstance(arp, dict):
+        arp = arp.get("status")
+    if str(arp).lower() == "warning":
+        high += 1
+
+    netbios = data.get("netbios")
+    if isinstance(netbios, dict):
+        netbios = netbios.get("status")
+    if str(netbios).lower() == "warning":
+        high += 1
+
+    dhcp = data.get("dhcp")
+    if isinstance(dhcp, dict):
+        dhcp = dhcp.get("status")
+    if str(dhcp).lower() == "warning":
+        medium += 1
+
+    ext_comm = data.get("external_comm")
+    if isinstance(ext_comm, dict):
+        ext_comm = ext_comm.get("status")
+    if str(ext_comm).lower() == "warning":
         high += 1
 
     score = 10.0 - high * HIGH_WEIGHT - medium * MEDIUM_WEIGHT - low * LOW_WEIGHT
