@@ -6,7 +6,9 @@ import 'package:nwc_densetsu/diagnostics.dart';
 
 void main() {
   test('runSecurityReport parses floating score', () async {
+    late List<String> received;
     Future<ProcessResult> fakeRunner(String exe, List<String> args) async {
+      received = args;
       final data = {
         'ip': '1.2.3.4',
         'score': 6.7,
@@ -25,9 +27,11 @@ void main() {
       openPorts: const [],
       sslValid: true,
       spfValid: true,
+      utmActive: true,
       processRunner: fakeRunner,
     );
 
     expect(report.score, 6.7);
+    expect(received.last, 'true');
   });
 }

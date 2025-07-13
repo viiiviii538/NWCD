@@ -145,6 +145,7 @@ class _HomePageState extends State<HomePage> {
         ],
         sslValid: sslRes.valid,
         spfValid: spfRes.startsWith('SPF record'),
+        utmActive: hasUtm,
       );
       _reports.add(report);
       buffer.writeln('Score: ${report.score}');
