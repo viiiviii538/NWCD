@@ -143,6 +143,11 @@ class DiagnosticResultPage extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          _scoreMessage(score),
+          style: TextStyle(color: color),
+        ),
       ],
     );
   }
