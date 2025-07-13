@@ -359,7 +359,7 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
-  Widget _lanSection() {
+  Widget _lanSection(BuildContext context) {
     if (lanDevices.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,14 +375,17 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('コメント')),
         ], rows: [
           for (final d in lanDevices)
-            DataRow(cells: [
+            DataRow(
+              onSelectChanged: (_) => _showTopology(context, d.ip),
+              cells: [
               DataCell(Text(d.ip)),
               DataCell(Text(d.mac)),
               DataCell(Text(d.vendor)),
               DataCell(Text(d.name)),
               DataCell(Text(d.status)),
               DataCell(Text(d.comment)),
-            ]),
+              ],
+            ),
         ]),
       ],
     );
@@ -471,16 +474,45 @@ class DiagnosticResultPage extends StatelessWidget {
     }
   }
 
-  Future<void> _showTopology(BuildContext context) async {
+  Future<void> _showTopology(BuildContext context, [String? ip]) async {
     try {
       final generator =
           onGenerateTopology ?? () => report_utils.generateTopologyDiagram(lanDevices);
-      final path = await generator();
+      var path = await generator();
       if (!context.mounted) return;
+      if (ip != null) {
+        final svgStr = await File(path).readAsString();
+        final doc = xml.XmlDocument.parse(svgStr);
+        for (final g in doc.findAllElements('g')) {
+          if (g.getAttribute('class') == 'node' &&
+              (g.getElement('title')?.innerText ?? '').contains(ip)) {
+            final shape = g.getElement('ellipse') ?? g.getElement('polygon');
+            if (shape != null) {
+              shape.setAttribute('stroke', 'red');
+              shape.setAttribute('stroke-width', '3');
+            }
+            break;
+          }
+        }
+        final tmp = await File(path).parent.createTemp('sel');
+        final newPath = '${tmp.path}/highlight.svg';
+        await File(newPath).writeAsString(doc.toXmlString());
+        path = newPath;
+      }
 
       final nodes = await _parseSvgNodes(path);
       if (!context.mounted) return;
       final controller = TransformationController();
+      if (ip != null) {
+        final node = nodes.firstWhere(
+          (n) => n.label.contains(ip),
+          orElse: () => _SvgNode('', Rect.zero),
+        );
+        if (node.label.isNotEmpty) {
+          controller.value = Matrix4.identity()
+            ..translate(200 - node.rect.center.dx, 200 - node.rect.center.dy);
+        }
+      }
 
       await showDialog(
         context: context,
@@ -589,7 +621,7 @@ class DiagnosticResultPage extends StatelessWidget {
               const SizedBox(height: 16),
               _geoipSection(),
               const SizedBox(height: 16),
-              _lanSection(),
+              _lanSection(context),
               const SizedBox(height: 16),
               _externalCommSection(),
               const SizedBox(height: 16),
