@@ -275,6 +275,7 @@ Future<SecurityReport> runSecurityReport({
   required List<int> openPorts,
   required bool sslValid,
   required bool spfValid,
+  bool utmActive = false,
   String geoip = 'JP',
   ProcessRunner processRunner = _defaultRunner,
 }) async {
@@ -287,6 +288,7 @@ Future<SecurityReport> runSecurityReport({
       sslValid ? 'true' : 'false',
       spfValid ? 'true' : 'false',
       geoip,
+      utmActive ? 'true' : 'false',
     ]);
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {

@@ -7,9 +7,9 @@ from report_utils import calc_utm_items
 
 
 def parse_args(argv):
-    if len(argv) < 6:
+    if len(argv) < 7:
         print(
-            "Usage: security_report.py <ip> <open_ports_csv> <ssl_status> <spf_valid> <geoip>",
+            "Usage: security_report.py <ip> <open_ports_csv> <ssl_status> <spf_valid> <geoip> <utm_active>",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -18,10 +18,11 @@ def parse_args(argv):
     ssl_status = argv[3].lower()
     spf_valid = argv[4].lower() in {"1", "true", "yes"}
     geoip = argv[5]
-    return ip, ports, ssl_status, spf_valid, geoip
+    utm_active = argv[6].lower() in {"1", "true", "yes"}
+    return ip, ports, ssl_status, spf_valid, geoip, utm_active
 
 
-def calc_score(open_ports, ssl_status, spf_valid, geoip):
+def calc_score(open_ports, ssl_status, spf_valid, geoip, utm_active=False):
     """Return score, risk descriptions and UTM items."""
 
     risks = []
@@ -61,6 +62,7 @@ def calc_score(open_ports, ssl_status, spf_valid, geoip):
         "geoip": geoip,
         "ssl": ssl_status,
         "dns_fail_rate": 0.0 if spf_valid else 1.0,
+        "utm_active": utm_active,
     }
 
     res = calc_security_score(data)
@@ -70,8 +72,8 @@ def calc_score(open_ports, ssl_status, spf_valid, geoip):
 
 
 def main(argv):
-    ip, ports, ssl_status, spf_valid, geoip = parse_args(argv)
-    score, risks, utm_items = calc_score(ports, ssl_status, spf_valid, geoip)
+    ip, ports, ssl_status, spf_valid, geoip, utm_active = parse_args(argv)
+    score, risks, utm_items = calc_score(ports, ssl_status, spf_valid, geoip, utm_active)
     result = {
         "ip": ip,
         "score": score,
