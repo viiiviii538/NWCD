@@ -206,19 +206,6 @@ class _HomePageState extends State<HomePage> {
       ));
     });
 
-    final spfChecks = <SpfCheck>[];
-    _spfResults.forEach((host, res) {
-      final ok = res.startsWith('SPF record');
-      final spf = ok
-          ? res.substring(res.indexOf('SPF record') + 10).trim()
-          : '';
-      spfChecks.add(SpfCheck(
-        domain: host,
-        spf: spf,
-        status: ok ? 'ok' : 'warning',
-        comment: ok ? '' : 'missing',
-      ));
-    });
 
     final domainAuths = <DomainAuthCheck>[];
     _spfResults.forEach((host, res) {
@@ -297,7 +284,6 @@ class _HomePageState extends State<HomePage> {
           items: items,
           portSummaries: _scanResults,
           sslChecks: sslChecks,
-          spfChecks: spfChecks,
           domainAuths: domainAuths,
           geoipStats: geoipStats,
           lanDevices: lanDevices,

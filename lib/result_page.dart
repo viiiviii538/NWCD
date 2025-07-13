@@ -34,7 +34,6 @@ class DiagnosticResultPage extends StatelessWidget {
   final List<DiagnosticItem> items;
   final Future<String> Function()? onGenerateTopology;
   final List<SslCheck> sslChecks;
-  final List<SpfCheck> spfChecks;
   final List<DomainAuthCheck> domainAuths;
   final List<GeoIpStat> geoipStats;
   final List<LanDeviceRisk> lanDevices;
@@ -49,7 +48,6 @@ class DiagnosticResultPage extends StatelessWidget {
     required this.portSummaries,
     this.onGenerateTopology,
     this.sslChecks = const [],
-    this.spfChecks = const [],
     this.domainAuths = const [],
     this.geoipStats = const [],
     this.lanDevices = const [],
@@ -282,30 +280,6 @@ class DiagnosticResultPage extends StatelessWidget {
     );
   }
 
-  Widget _spfSection() {
-    if (spfChecks.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('SPFレコードの設定状況'),
-        const SizedBox(height: 4),
-        DataTable(columns: const [
-          DataColumn(label: Text('ドメイン')),
-          DataColumn(label: Text('SPF')),
-          DataColumn(label: Text('状態')),
-          DataColumn(label: Text('コメント')),
-        ], rows: [
-          for (final c in spfChecks)
-            DataRow(cells: [
-              DataCell(Text(c.domain)),
-              DataCell(Text(c.spf)),
-              DataCell(Text(c.status)),
-              DataCell(Text(c.comment)),
-            ]),
-        ]),
-      ],
-    );
-  }
 
   Widget _domainAuthSection() {
     if (domainAuths.isEmpty) return const SizedBox.shrink();
@@ -582,8 +556,6 @@ class DiagnosticResultPage extends StatelessWidget {
               _portSection(),
               const SizedBox(height: 16),
               _sslSection(),
-              const SizedBox(height: 16),
-              _spfSection(),
               const SizedBox(height: 16),
               _domainAuthSection(),
               const SizedBox(height: 16),
