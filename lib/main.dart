@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
-import 'package:nwc_densetsu/diagnostics.dart'
-    show PortScanSummary, SecurityReport, SslResult;
 import 'package:nwc_densetsu/network_scan.dart' as net;
-import 'package:nwc_densetsu/network_scan.dart'
-    show NetworkDevice;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
@@ -37,10 +33,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _output = '';
-  List<PortScanSummary> _scanResults = [];
-  List<NetworkDevice> _devices = <NetworkDevice>[];
-  List<SecurityReport> _reports = [];
-  final Map<String, SslResult> _sslResults = {};
+  List<diag.PortScanSummary> _scanResults = [];
+  List<net.NetworkDevice> _devices = <net.NetworkDevice>[];
+  List<diag.SecurityReport> _reports = [];
+  final Map<String, diag.SslResult> _sslResults = {};
   final Map<String, String> _spfResults = {};
   diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
@@ -52,7 +48,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _runLanScan() async {
     setState(() {
       _lanScanning = true;
-      _devices = <NetworkDevice>[];
+      _devices = <net.NetworkDevice>[];
       _scanResults = [];
       _reports = [];
       _sslResults.clear();
@@ -123,8 +119,8 @@ class _HomePageState extends State<HomePage> {
 
       final results = await Future.wait([portFuture, sslFuture, spfFuture]);
 
-      final summary = results[0] as PortScanSummary;
-      final sslRes = results[1] as SslResult;
+      final summary = results[0] as diag.PortScanSummary;
+      final sslRes = results[1] as diag.SslResult;
       final spfRes = results[2] as String;
 
       _scanResults.add(summary);
@@ -239,7 +235,7 @@ class _HomePageState extends State<HomePage> {
     final lanDevices = <LanDeviceRisk>[];
     for (final dev in _devices) {
       final summary = _scanResults.firstWhere((s) => s.host == dev.ip,
-          orElse: () => const PortScanSummary('', []));
+          orElse: () => const diag.PortScanSummary('', []));
       final open = [for (final p in summary.results) if (p.state == 'open') p.port];
       lanDevices.add(LanDeviceRisk(
         ip: dev.ip,
@@ -449,7 +445,7 @@ class _HomePageState extends State<HomePage> {
                     DataColumn(label: Text('Vendor')),
                   ],
                   rows: [
-                    for (final NetworkDevice d in _devices)
+                    for (final net.NetworkDevice d in _devices)
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
@@ -475,7 +471,7 @@ class _HomePageState extends State<HomePage> {
                           DataColumn(label: Text('Vendor')),
                         ],
                         rows: _devices
-                            .map((NetworkDevice? d) => DataRow(cells: [
+                            .map((net.NetworkDevice? d) => DataRow(cells: [
                                   DataCell(Text(d?.ip ?? '')),
                                   DataCell(Text(d?.mac ?? '')),
                                   DataCell(Text(d?.vendor ?? '')),
@@ -508,7 +504,7 @@ String _riskState(int score) {
 }
 
 class ScoreChart extends StatelessWidget {
-  final List<SecurityReport> reports;
+  final List<diag.SecurityReport> reports;
   const ScoreChart({super.key, required this.reports});
 
   @override
