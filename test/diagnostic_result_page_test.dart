@@ -48,6 +48,9 @@ void main() {
     expect(find.text('危険（開いている）'), findsOneWidget);
     expect(find.text('445'), findsOneWidget);
     expect(find.text('安全（閉じている）'), findsOneWidget);
+    expect(find.text('rdp'), findsOneWidget);
+    expect(find.text('smb'), findsOneWidget);
+    expect(find.text('1/2 ポート開放'), findsOneWidget);
   });
 
   testWidgets('extended result sections are visible when data provided',
@@ -57,13 +60,6 @@ void main() {
           domain: 'example.com',
           issuer: 'CA',
           expiry: '2025',
-          status: 'ok',
-          comment: '')
-    ];
-    const spf = [
-      SpfCheck(
-          domain: 'example.com',
-          spf: 'v=spf1',
           status: 'ok',
           comment: '')
     ];
@@ -106,7 +102,6 @@ void main() {
           items: [],
           portSummaries: [],
           sslChecks: ssl,
-          spfChecks: spf,
           domainAuths: auth,
           geoipStats: geo,
           lanDevices: devices,
@@ -118,7 +113,6 @@ void main() {
     );
 
     expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
-    expect(find.text('SPFレコードの設定状況'), findsOneWidget);
     expect(find.text('ドメインの送信元検証設定'), findsOneWidget);
     expect(find.text('GeoIP解析：通信先の国別リスクチェック'), findsOneWidget);
     expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
@@ -150,6 +144,35 @@ void main() {
           vendor: 'C',
           name: 'D3',
           status: 'safe',
+  testWidgets('LAN device summary shows status counts', (tester) async {
+    const devices = [
+      LanDeviceRisk(
+          ip: '1',
+          mac: 'm1',
+          vendor: 'v',
+          name: 'n1',
+          status: 'safe',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '2',
+          mac: 'm2',
+          vendor: 'v',
+          name: 'n2',
+          status: 'warning',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '3',
+          mac: 'm3',
+          vendor: 'v',
+          name: 'n3',
+          status: 'danger',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '4',
+          mac: 'm4',
+          vendor: 'v',
+          name: 'n4',
+          status: 'danger',
           comment: ''),
     ];
 

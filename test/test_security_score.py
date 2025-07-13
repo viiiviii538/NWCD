@@ -40,6 +40,14 @@ class CalcSecurityTest(unittest.TestCase):
         self.assertEqual(res["high_risk"], 4)
         self.assertEqual(res["score"], 0.0)
 
+    def test_utm_bonus(self):
+        data = {"danger_ports": ["3389"], "utm_active": True}
+        res = calc_security_score(data)
+        expected = 10 - HIGH_WEIGHT + 2.0
+        if expected > 10:
+            expected = 10.0
+        self.assertAlmostEqual(res["score"], expected, places=1)
+
 
 if __name__ == "__main__":
     unittest.main()

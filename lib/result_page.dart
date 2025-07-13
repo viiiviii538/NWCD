@@ -34,7 +34,6 @@ class DiagnosticResultPage extends StatefulWidget {
   final List<DiagnosticItem> items;
   final Future<String> Function()? onGenerateTopology;
   final List<SslCheck> sslChecks;
-  final List<SpfCheck> spfChecks;
   final List<DomainAuthCheck> domainAuths;
   final List<GeoIpStat> geoipStats;
   final List<LanDeviceRisk> lanDevices;
@@ -49,7 +48,6 @@ class DiagnosticResultPage extends StatefulWidget {
     required this.portSummaries,
     this.onGenerateTopology,
     this.sslChecks = const [],
-    this.spfChecks = const [],
     this.domainAuths = const [],
     this.geoipStats = const [],
     this.lanDevices = const [],
@@ -134,6 +132,19 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       default:
         return Icons.help;
     }
+  }
+
+  IconData _iconForService(String service) {
+    const mapping = {
+      'http': Icons.http,
+      'https': Icons.lock,
+      'ssh': Icons.terminal,
+      'ftp': Icons.cloud_upload,
+      'smtp': Icons.mail,
+      'rdp': Icons.desktop_windows,
+      'smb': Icons.folder,
+    };
+    return mapping[service.toLowerCase()] ?? Icons.device_hub;
   }
 
   Widget _scoreSection(String label, int score) {
@@ -249,50 +260,73 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                 b.results.where((r) => r.state == 'open').length.compareTo(
                     a.results.where((r) => r.state == 'open').length))) ...[
           Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '${s.results.where((r) => r.state == 'open').length}/${s.results.length} ポート開放'),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
               columns: const [
                 DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('サービス')),
                 DataColumn(label: Text('状態')),
                 DataColumn(label: Text('補足')),
               ],
               rows: [
-                for (final r in [...s.results]
-                    ..sort((a, b) => a.state == b.state
-                        ? 0
-                        : (a.state == 'open' ? -1 : 1)))
-                  DataRow(
-                    color: WidgetStateProperty.all(
-                      useColor
-                          ? r.state == 'open' && dangerPortNotes.containsKey(r.port)
-                              ? Colors.redAccent.withAlpha((0.2 * 255).toInt())
-                              : r.state == 'open'
-                                  ? Colors.green.withAlpha((0.2 * 255).toInt())
-                                  : Colors.grey.withAlpha((0.2 * 255).toInt())
-                          : Colors.grey.withAlpha((0.2 * 255).toInt()),
+for (final r in [...s.results]
+  ..sort((a, b) => a.state == b.state ? 0 : (a.state == 'open' ? -1 : 1))) {
+  DataRow(
+    color: WidgetStateProperty.all(
+      useColor
+        ? r.state == 'open' && dangerPortNotes.containsKey(r.port)
+            ? Colors.redAccent.withAlpha((0.2 * 255).toInt())
+            : r.state == 'open'
+                ? Colors.green.withAlpha((0.2 * 255).toInt())
+                : Colors.grey.withAlpha((0.2 * 255).toInt())
+        : Colors.grey.withAlpha((0.2 * 255).toInt()),
+    ),
+    cells: [
+      DataCell(Text(r.port.toString())),
+      DataCell(
+        r.service.isNotEmpty
+            ? Row(
+                children: [
+                  Icon(_iconForService(r.service), size: 20),
+                  const SizedBox(width: 4),
+                  Text(r.service),
+                ],
+              )
+            : const Text('-'),
+      ),
+    ],
+  );
+}
+
                     ),
-                    cells: [
-                      DataCell(Text(r.port.toString())),
-                      DataCell(Text(
-                        r.state == 'open'
-                            ? (dangerPortNotes.containsKey(r.port)
-                                ? '危険（開いている）'
-                                : '安全（開いている）')
-                            : '安全（閉じている）',
-                      )),
-                      DataCell(
-                        dangerPortNotes[r.port] != null
-                            ? Text(dangerPortNotes[r.port]!)
-                            : const Text('-'),
-                      ),
-                    ],
-                  ),
+                    DataCell(
+                      r.state == 'open'
+                          ? (dangerPortNotes.containsKey(r.port)
+                              ? '危険（開いている）'
+                              : '安全（開いている）')
+                          : '安全（閉じている）',
+                    ),
+                    DataCell(
+                      dangerPortNotes[r.port] != null
+                          ? Text(dangerPortNotes[r.port]!)
+                          : const Text('-'),
+                    ),
+                  ]),
               ],
             ),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+            style: TextStyle(fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+        ],
       ],
-    ]);
+    );
   }
 
   Widget _sslSection() {
@@ -403,8 +437,17 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     );
   }
 
-  Widget _lanSection() {
-    if (widget.lanDevices.isEmpty) return const SizedBox.shrink();
+
+  Widget _lanSection(BuildContext context) {
+    if (lanDevices.isEmpty) return const SizedBox.shrink();
+    final counts = <String, int>{'safe': 0, 'warning': 0, 'danger': 0};
+    for (final d in lanDevices) {
+      var s = d.status;
+      if (s == 'ok') s = 'safe';
+      if (counts.containsKey(s)) counts[s] = counts[s]! + 1;
+    }
+    final summary =
+        '${counts['safe']} safe / ${counts['warning']} warning / ${counts['danger']} danger';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -439,15 +482,18 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final d in _filteredDevices)
-            DataRow(cells: [
+          for (final d in lanDevices)
+            DataRow(
+              onSelectChanged: (_) => _showTopology(context, d.ip),
+              cells: [
               DataCell(Text(d.ip)),
               DataCell(Text(d.mac)),
               DataCell(Text(d.vendor)),
               DataCell(Text(d.name)),
               DataCell(Text(d.status)),
               DataCell(Text(d.comment)),
-            ]),
+              ],
+            ),
         ]),
       ],
     );
@@ -536,16 +582,45 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     }
   }
 
-  Future<void> _showTopology(BuildContext context) async {
+  Future<void> _showTopology(BuildContext context, [String? ip]) async {
     try {
       final generator = widget.onGenerateTopology ??
           () => report_utils.generateTopologyDiagram(widget.lanDevices);
       final path = await generator();
       if (!context.mounted) return;
+      if (ip != null) {
+        final svgStr = await File(path).readAsString();
+        final doc = xml.XmlDocument.parse(svgStr);
+        for (final g in doc.findAllElements('g')) {
+          if (g.getAttribute('class') == 'node' &&
+              (g.getElement('title')?.innerText ?? '').contains(ip)) {
+            final shape = g.getElement('ellipse') ?? g.getElement('polygon');
+            if (shape != null) {
+              shape.setAttribute('stroke', 'red');
+              shape.setAttribute('stroke-width', '3');
+            }
+            break;
+          }
+        }
+        final tmp = await File(path).parent.createTemp('sel');
+        final newPath = '${tmp.path}/highlight.svg';
+        await File(newPath).writeAsString(doc.toXmlString());
+        path = newPath;
+      }
 
       final nodes = await _parseSvgNodes(path);
       if (!context.mounted) return;
       final controller = TransformationController();
+      if (ip != null) {
+        final node = nodes.firstWhere(
+          (n) => n.label.contains(ip),
+          orElse: () => _SvgNode('', Rect.zero),
+        );
+        if (node.label.isNotEmpty) {
+          controller.value = Matrix4.identity()
+            ..translate(200 - node.rect.center.dx, 200 - node.rect.center.dy);
+        }
+      }
 
       await showDialog(
         context: context,
@@ -648,13 +723,11 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               const SizedBox(height: 16),
               _sslSection(),
               const SizedBox(height: 16),
-              _spfSection(),
-              const SizedBox(height: 16),
               _domainAuthSection(),
               const SizedBox(height: 16),
               _geoipSection(),
               const SizedBox(height: 16),
-              _lanSection(),
+              _lanSection(context),
               const SizedBox(height: 16),
               _externalCommSection(),
               const SizedBox(height: 16),

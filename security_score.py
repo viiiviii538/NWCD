@@ -13,6 +13,7 @@ from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 HIGH_WEIGHT = 4.5
 MEDIUM_WEIGHT = 1.7
 LOW_WEIGHT = 0.5
+UTM_BONUS = 2.0
 
 __all__ = ["calc_security_score"]
 
@@ -138,6 +139,8 @@ def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
         high += 1
 
     score = 10.0 - high * HIGH_WEIGHT - medium * MEDIUM_WEIGHT - low * LOW_WEIGHT
+    if data.get("utm_active"):
+        score += UTM_BONUS
     score = max(0.0, min(10.0, score))
 
     return {

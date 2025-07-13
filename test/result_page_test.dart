@@ -93,4 +93,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SvgPicture), findsOneWidget);
   });
+
+  testWidgets('Tapping device row opens topology', (tester) async {
+    const devices = [
+      LanDeviceRisk(
+          ip: '192.168.1.2',
+          mac: '00:11',
+          vendor: 'Test',
+          name: 'd',
+          status: 'ok',
+          comment: '')
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 4,
+          items: const [],
+          portSummaries: const [],
+          lanDevices: devices,
+          onGenerateTopology: () async {
+            return report_utils.generateTopologyDiagram(devices);
+          },
+        ),
+      ),
+    );
+
+    expect(find.text('192.168.1.2'), findsOneWidget);
+    await tester.tap(find.text('192.168.1.2'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SvgPicture), findsOneWidget);
+  });
 }

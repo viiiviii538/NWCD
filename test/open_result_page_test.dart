@@ -20,5 +20,7 @@ void main() {
 
     expect(find.text('ポート開放状況'), findsOneWidget);
     expect(find.textContaining('80'), findsOneWidget);
+    expect(find.text('http'), findsOneWidget);
+    expect(find.text('1/1 ポート開放'), findsOneWidget);
   });
 }

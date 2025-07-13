@@ -13,19 +13,6 @@ class SslCheck {
       required this.comment});
 }
 
-class SpfCheck {
-  final String domain;
-  final String spf;
-  final String status;
-  final String comment;
-
-  const SpfCheck(
-      {required this.domain,
-      required this.spf,
-      required this.status,
-      required this.comment});
-}
-
 class DomainAuthCheck {
   final String domain;
   final bool spf;
