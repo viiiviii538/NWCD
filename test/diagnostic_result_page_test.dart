@@ -127,4 +127,50 @@ void main() {
     expect(find.text('Windows バージョン'), findsOneWidget);
     expect(find.text(version), findsOneWidget);
   });
+
+  testWidgets('LAN device summary shows status counts', (tester) async {
+    const devices = [
+      LanDeviceRisk(
+          ip: '1',
+          mac: 'm1',
+          vendor: 'v',
+          name: 'n1',
+          status: 'safe',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '2',
+          mac: 'm2',
+          vendor: 'v',
+          name: 'n2',
+          status: 'warning',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '3',
+          mac: 'm3',
+          vendor: 'v',
+          name: 'n3',
+          status: 'danger',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '4',
+          mac: 'm4',
+          vendor: 'v',
+          name: 'n4',
+          status: 'danger',
+          comment: ''),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          items: [],
+          portSummaries: [],
+          lanDevices: devices,
+        ),
+      ),
+    );
+
+    expect(find.text('1 safe / 1 warning / 2 danger'), findsOneWidget);
+  });
 }
