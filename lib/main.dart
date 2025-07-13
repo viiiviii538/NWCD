@@ -361,7 +361,7 @@ class _HomePageState extends State<HomePage> {
                   rows: [
                     for (final r in summary.results)
                       DataRow(
-                        color: WidgetStateProperty.all(
+                        color: MaterialStateProperty.all(
                           useColor
                               ? (r.state == 'open'
                                   ? ([23, 445].contains(r.port)
@@ -396,7 +396,7 @@ class _HomePageState extends State<HomePage> {
                   rows: [
                     for (final r in _reports)
                       DataRow(
-                        color: WidgetStateProperty.all(
+                        color: MaterialStateProperty.all(
                           useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                         ),
                         cells: [
