@@ -63,13 +63,6 @@ void main() {
           status: 'ok',
           comment: '')
     ];
-    const spf = [
-      SpfCheck(
-          domain: 'example.com',
-          spf: 'v=spf1',
-          status: 'ok',
-          comment: '')
-    ];
     const auth = [
       DomainAuthCheck(
           domain: 'example.com',
@@ -109,7 +102,6 @@ void main() {
           items: [],
           portSummaries: [],
           sslChecks: ssl,
-          spfChecks: spf,
           domainAuths: auth,
           geoipStats: geo,
           lanDevices: devices,
@@ -121,7 +113,6 @@ void main() {
     );
 
     expect(find.text('SSL証明書の安全性チェック'), findsOneWidget);
-    expect(find.text('SPFレコードの設定状況'), findsOneWidget);
     expect(find.text('ドメインの送信元検証設定'), findsOneWidget);
     expect(find.text('GeoIP解析：通信先の国別リスクチェック'), findsOneWidget);
     expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
