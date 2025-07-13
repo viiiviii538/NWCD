@@ -127,4 +127,55 @@ void main() {
     expect(find.text('Windows バージョン'), findsOneWidget);
     expect(find.text(version), findsOneWidget);
   });
+
+  testWidgets('LAN device filter dropdown filters list', (tester) async {
+    const devices = [
+      LanDeviceRisk(
+          ip: '1.1.1.1',
+          mac: '00:11',
+          vendor: 'A',
+          name: 'D1',
+          status: 'warning',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '1.1.1.2',
+          mac: '00:22',
+          vendor: 'B',
+          name: 'D2',
+          status: 'danger',
+          comment: ''),
+      LanDeviceRisk(
+          ip: '1.1.1.3',
+          mac: '00:33',
+          vendor: 'C',
+          name: 'D3',
+          status: 'safe',
+          comment: ''),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          items: [],
+          portSummaries: [],
+          lanDevices: devices,
+        ),
+      ),
+    );
+
+    // default shows all devices
+    expect(find.text('1.1.1.1'), findsOneWidget);
+    expect(find.text('1.1.1.2'), findsOneWidget);
+    expect(find.text('1.1.1.3'), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Warning').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1.1.1.1'), findsOneWidget);
+    expect(find.text('1.1.1.2'), findsNothing);
+    expect(find.text('1.1.1.3'), findsNothing);
+  });
 }

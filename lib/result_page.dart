@@ -28,7 +28,7 @@ class DiagnosticItem {
   });
 }
 
-class DiagnosticResultPage extends StatelessWidget {
+class DiagnosticResultPage extends StatefulWidget {
   final double securityScore;
   final List<PortScanSummary> portSummaries;
   final List<DiagnosticItem> items;
@@ -57,6 +57,44 @@ class DiagnosticResultPage extends StatelessWidget {
     this.defenseStatus = const [],
     this.windowsVersion = '',
   });
+
+  @override
+  State<DiagnosticResultPage> createState() => _DiagnosticResultPageState();
+}
+
+class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
+  String _deviceFilter = 'all';
+  late List<LanDeviceRisk> _filteredDevices;
+
+  @override
+  void initState() {
+    super.initState();
+    _applyFilter();
+  }
+
+  void _applyFilter() {
+    _filteredDevices = [...widget.lanDevices];
+    if (_deviceFilter == 'warning') {
+      _filteredDevices =
+          _filteredDevices.where((d) => d.status == 'warning').toList();
+    } else if (_deviceFilter == 'danger') {
+      _filteredDevices =
+          _filteredDevices.where((d) => d.status == 'danger').toList();
+    }
+    _filteredDevices.sort((a, b) => _statusRank(a.status)
+        .compareTo(_statusRank(b.status)));
+  }
+
+  int _statusRank(String status) {
+    switch (status) {
+      case 'danger':
+        return 0;
+      case 'warning':
+        return 1;
+      default:
+        return 2;
+    }
+  }
 
   Color _scoreColor(int score) {
     if (!useColor) return Colors.black;
@@ -196,7 +234,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _portSection() {
-    if (portSummaries.isEmpty) return const SizedBox.shrink();
+    if (widget.portSummaries.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,7 +244,10 @@ class DiagnosticResultPage extends StatelessWidget {
           '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
         ),
         const SizedBox(height: 8),
-        for (final s in portSummaries) ...[
+        for (final s in [...widget.portSummaries]
+            ..sort((a, b) =>
+                b.results.where((r) => r.state == 'open').length.compareTo(
+                    a.results.where((r) => r.state == 'open').length))) ...[
           Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -217,7 +258,10 @@ class DiagnosticResultPage extends StatelessWidget {
                 DataColumn(label: Text('補足')),
               ],
               rows: [
-                for (final r in s.results)
+                for (final r in [...s.results]
+                    ..sort((a, b) => a.state == b.state
+                        ? 0
+                        : (a.state == 'open' ? -1 : 1)))
                   DataRow(
                     color: WidgetStateProperty.all(
                       useColor
@@ -252,7 +296,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _sslSection() {
-    if (sslChecks.isEmpty) return const SizedBox.shrink();
+    if (widget.sslChecks.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -269,7 +313,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final c in sslChecks)
+          for (final c in widget.sslChecks)
             DataRow(cells: [
               DataCell(Text(c.domain)),
               DataCell(Text(c.issuer)),
@@ -283,7 +327,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _spfSection() {
-    if (spfChecks.isEmpty) return const SizedBox.shrink();
+    if (widget.spfChecks.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -295,7 +339,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final c in spfChecks)
+          for (final c in widget.spfChecks)
             DataRow(cells: [
               DataCell(Text(c.domain)),
               DataCell(Text(c.spf)),
@@ -308,7 +352,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _domainAuthSection() {
-    if (domainAuths.isEmpty) return const SizedBox.shrink();
+    if (widget.domainAuths.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -322,7 +366,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final c in domainAuths)
+          for (final c in widget.domainAuths)
             DataRow(cells: [
               DataCell(Text(c.domain)),
               DataCell(Text(c.spf ? '✅' : '❌')),
@@ -337,7 +381,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _geoipSection() {
-    if (geoipStats.isEmpty) return const SizedBox.shrink();
+    if (widget.geoipStats.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -348,7 +392,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('通信数')),
           DataColumn(label: Text('状態')),
         ], rows: [
-          for (final g in geoipStats)
+          for (final g in widget.geoipStats)
             DataRow(cells: [
               DataCell(Text(g.country)),
               DataCell(Text(g.count.toString())),
@@ -360,12 +404,33 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _lanSection() {
-    if (lanDevices.isEmpty) return const SizedBox.shrink();
+    if (widget.lanDevices.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('LAN内デバイス一覧とリスクチェック'),
         const SizedBox(height: 4),
+        Row(
+          children: [
+            const Text('Filter:'),
+            const SizedBox(width: 8),
+            DropdownButton<String>(
+              value: _deviceFilter,
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text('All')),
+                DropdownMenuItem(value: 'warning', child: Text('Warning')),
+                DropdownMenuItem(value: 'danger', child: Text('Danger')),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() {
+                  _deviceFilter = v;
+                  _applyFilter();
+                });
+              },
+            ),
+          ],
+        ),
         DataTable(columns: const [
           DataColumn(label: Text('IPアドレス')),
           DataColumn(label: Text('MACアドレス')),
@@ -374,7 +439,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final d in lanDevices)
+          for (final d in _filteredDevices)
             DataRow(cells: [
               DataCell(Text(d.ip)),
               DataCell(Text(d.mac)),
@@ -389,7 +454,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _externalCommSection() {
-    if (externalComms.isEmpty) return const SizedBox.shrink();
+    if (widget.externalComms.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -402,7 +467,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final c in externalComms)
+          for (final c in widget.externalComms)
             DataRow(cells: [
               DataCell(Text(c.domain)),
               DataCell(Text(c.protocol)),
@@ -416,7 +481,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _defenseSection() {
-    if (defenseStatus.isEmpty) return const SizedBox.shrink();
+    if (widget.defenseStatus.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -427,7 +492,7 @@ class DiagnosticResultPage extends StatelessWidget {
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final d in defenseStatus)
+          for (final d in widget.defenseStatus)
             DataRow(cells: [
               DataCell(Text(d.feature)),
               DataCell(Text(d.status)),
@@ -439,13 +504,13 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Widget _windowsVersionSection() {
-    if (windowsVersion.isEmpty) return const SizedBox.shrink();
+    if (widget.windowsVersion.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Windows バージョン'),
         const SizedBox(height: 4),
-        Text(windowsVersion),
+        Text(widget.windowsVersion),
       ],
     );
   }
@@ -473,8 +538,8 @@ class DiagnosticResultPage extends StatelessWidget {
 
   Future<void> _showTopology(BuildContext context) async {
     try {
-      final generator =
-          onGenerateTopology ?? () => report_utils.generateTopologyDiagram(lanDevices);
+      final generator = widget.onGenerateTopology ??
+          () => report_utils.generateTopologyDiagram(widget.lanDevices);
       final path = await generator();
       if (!context.mounted) return;
 
@@ -531,14 +596,14 @@ class DiagnosticResultPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _scoreSection('セキュリティスコア', securityScore.toInt()),
+              _scoreSection('セキュリティスコア', widget.securityScore.toInt()),
               const SizedBox(height: 16),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: items.length,
+                itemCount: widget.items.length,
                 itemBuilder: (context, index) {
-                  final item = items[index];
+                  final item = widget.items[index];
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     child: Padding(
