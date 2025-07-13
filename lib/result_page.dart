@@ -281,7 +281,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                     a.results.where((r) => r.state == 'open').length))) ...[
           Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(
-            '${s.results.where((r) => r.state == 'open').length}/${s.results.length} ポート開放'),
+              '${s.results.where((r) => r.state == 'open').length}/${s.results.length} ポート開放'),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
@@ -292,49 +292,52 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                 DataColumn(label: Text('補足')),
               ],
               rows: [
-for (final r in [...s.results]
-  ..sort((a, b) => a.state == b.state ? 0 : (a.state == 'open' ? -1 : 1))) {
-  DataRow(
-    color: WidgetStateProperty.all(
-      useColor
-        ? r.state == 'open' && dangerPortNotes.containsKey(r.port)
-            ? Colors.redAccent.withAlpha((0.2 * 255).toInt())
-            : r.state == 'open'
-                ? Colors.green.withAlpha((0.2 * 255).toInt())
-                : Colors.grey.withAlpha((0.2 * 255).toInt())
-        : Colors.grey.withAlpha((0.2 * 255).toInt()),
-    ),
-    cells: [
-      DataCell(Text(r.port.toString())),
-      DataCell(
-        r.service.isNotEmpty
-            ? Row(
-                children: [
-                  Icon(_iconForService(r.service), size: 20),
-                  const SizedBox(width: 4),
-                  Text(r.service),
-                ],
-              )
-            : const Text('-'),
-      ),
-    ],
-  );
-}
-
+                for (final r in [...s.results]
+                    ..sort((a, b) => a.state == b.state
+                        ? 0
+                        : (a.state == 'open' ? -1 : 1)))
+                  DataRow(
+                    color: WidgetStateProperty.all(
+                      useColor
+                          ? r.state == 'open' &&
+                                  dangerPortNotes.containsKey(r.port)
+                              ? Colors.redAccent
+                                  .withAlpha((0.2 * 255).toInt())
+                              : r.state == 'open'
+                                  ? Colors.green
+                                      .withAlpha((0.2 * 255).toInt())
+                                  : Colors.grey
+                                      .withAlpha((0.2 * 255).toInt())
+                          : Colors.grey.withAlpha((0.2 * 255).toInt()),
                     ),
-                    DataCell(
-                      r.state == 'open'
-                          ? (dangerPortNotes.containsKey(r.port)
-                              ? '危険（開いている）'
-                              : '安全（開いている）')
-                          : '安全（閉じている）',
-                    ),
-                    DataCell(
-                      dangerPortNotes[r.port] != null
-                          ? Text(dangerPortNotes[r.port]!)
-                          : const Text('-'),
-                    ),
-                  ]),
+                    cells: [
+                      DataCell(Text(r.port.toString())),
+                      DataCell(
+                        r.service.isNotEmpty
+                            ? Row(
+                                children: [
+                                  Icon(_iconForService(r.service),
+                                      size: 20),
+                                  const SizedBox(width: 4),
+                                  Text(r.service),
+                                ],
+                              )
+                            : const Text('-'),
+                      ),
+                      DataCell(
+                        r.state == 'open'
+                            ? (dangerPortNotes.containsKey(r.port)
+                                ? '危険（開いている）'
+                                : '安全（開いている）')
+                            : '安全（閉じている）',
+                      ),
+                      DataCell(
+                        dangerPortNotes[r.port] != null
+                            ? Text(dangerPortNotes[r.port]!)
+                            : const Text('-'),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -468,9 +471,9 @@ for (final r in [...s.results]
 
 
   Widget _lanSection(BuildContext context) {
-    if (lanDevices.isEmpty) return const SizedBox.shrink();
+    if (widget.lanDevices.isEmpty) return const SizedBox.shrink();
     final counts = <String, int>{'safe': 0, 'warning': 0, 'danger': 0};
-    for (final d in lanDevices) {
+    for (final d in widget.lanDevices) {
       var s = d.status;
       if (s == 'ok') s = 'safe';
       if (counts.containsKey(s)) counts[s] = counts[s]! + 1;
@@ -502,6 +505,8 @@ for (final r in [...s.results]
                 });
               },
             ),
+            const SizedBox(width: 8),
+            Text(summary),
           ],
         ),
         DataTable(columns: const [
@@ -512,7 +517,7 @@ for (final r in [...s.results]
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
         ], rows: [
-          for (final d in lanDevices)
+          for (final d in _filteredDevices)
             DataRow(
               onSelectChanged: (_) => _showTopology(context, d.ip),
               cells: [
