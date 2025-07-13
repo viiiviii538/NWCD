@@ -48,6 +48,9 @@ void main() {
     expect(find.text('危険（開いている）'), findsOneWidget);
     expect(find.text('445'), findsOneWidget);
     expect(find.text('安全（閉じている）'), findsOneWidget);
+    expect(find.text('rdp'), findsOneWidget);
+    expect(find.text('smb'), findsOneWidget);
+    expect(find.text('1/2 ポート開放'), findsOneWidget);
   });
 
   testWidgets('extended result sections are visible when data provided',

@@ -98,6 +98,19 @@ class DiagnosticResultPage extends StatelessWidget {
     }
   }
 
+  IconData _iconForService(String service) {
+    const mapping = {
+      'http': Icons.http,
+      'https': Icons.lock,
+      'ssh': Icons.terminal,
+      'ftp': Icons.cloud_upload,
+      'smtp': Icons.mail,
+      'rdp': Icons.desktop_windows,
+      'smb': Icons.folder,
+    };
+    return mapping[service.toLowerCase()] ?? Icons.device_hub;
+  }
+
   Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
@@ -202,53 +215,59 @@ class DiagnosticResultPage extends StatelessWidget {
       children: [
         const Text('ポート開放状況'),
         const SizedBox(height: 4),
-        const Text(
-          '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
-        ),
-        const SizedBox(height: 8),
         for (final s in portSummaries) ...[
           Text(s.host, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '${s.results.where((r) => r.state == 'open').length}/${s.results.length} ポート開放'),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
               columns: const [
                 DataColumn(label: Text('ポート')),
+                DataColumn(label: Text('サービス')),
                 DataColumn(label: Text('状態')),
                 DataColumn(label: Text('補足')),
               ],
               rows: [
                 for (final r in s.results)
-                  DataRow(
-                    color: WidgetStateProperty.all(
-                      useColor
-                          ? r.state == 'open' && dangerPortNotes.containsKey(r.port)
-                              ? Colors.redAccent.withAlpha((0.2 * 255).toInt())
-                              : r.state == 'open'
-                                  ? Colors.green.withAlpha((0.2 * 255).toInt())
-                                  : Colors.grey.withAlpha((0.2 * 255).toInt())
-                          : Colors.grey.withAlpha((0.2 * 255).toInt()),
+                  DataRow(cells: [
+                    DataCell(Text(r.port.toString())),
+                    DataCell(
+                      r.service.isNotEmpty
+                          ? Row(
+                              children: [
+                                Icon(_iconForService(r.service), size: 20),
+                                const SizedBox(width: 4),
+                                Text(r.service),
+                              ],
+                            )
+                          : const Text('-'),
                     ),
-                    cells: [
-                      DataCell(Text(r.port.toString())),
-                      DataCell(Text(
-                        r.state == 'open'
-                            ? (dangerPortNotes.containsKey(r.port)
-                                ? '危険（開いている）'
-                                : '安全（開いている）')
-                            : '安全（閉じている）',
-                      )),
-                      DataCell(
-                        dangerPortNotes[r.port] != null
-                            ? Text(dangerPortNotes[r.port]!)
-                            : const Text('-'),
-                      ),
-                    ],
-                  ),
+                    DataCell(
+                      r.state == 'open'
+                          ? (dangerPortNotes.containsKey(r.port)
+                              ? '危険（開いている）'
+                              : '安全（開いている）')
+                          : '安全（閉じている）',
+                    ),
+                    DataCell(
+                      dangerPortNotes[r.port] != null
+                          ? Text(dangerPortNotes[r.port]!)
+                          : const Text('-'),
+                    ),
+                  ]),
               ],
             ),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
+            style: TextStyle(fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+        ],
       ],
-    ]);
+    );
   }
 
   Widget _sslSection() {
