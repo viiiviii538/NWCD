@@ -144,6 +144,35 @@ void main() {
           vendor: 'C',
           name: 'D3',
           status: 'safe',
+          comment: ''),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DiagnosticResultPage(
+          securityScore: 5,
+          items: [],
+          portSummaries: [],
+          lanDevices: devices,
+        ),
+      ),
+    );
+
+    // default shows all devices
+    expect(find.text('1.1.1.1'), findsOneWidget);
+    expect(find.text('1.1.1.2'), findsOneWidget);
+    expect(find.text('1.1.1.3'), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Warning').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1.1.1.1'), findsOneWidget);
+    expect(find.text('1.1.1.2'), findsNothing);
+    expect(find.text('1.1.1.3'), findsNothing);
+  });
+
   testWidgets('LAN device summary shows status counts', (tester) async {
     const devices = [
       LanDeviceRisk(
@@ -187,18 +216,6 @@ void main() {
       ),
     );
 
-    // default shows all devices
-    expect(find.text('1.1.1.1'), findsOneWidget);
-    expect(find.text('1.1.1.2'), findsOneWidget);
-    expect(find.text('1.1.1.3'), findsOneWidget);
-
-    await tester.tap(find.byType(DropdownButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Warning').last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('1.1.1.1'), findsOneWidget);
-    expect(find.text('1.1.1.2'), findsNothing);
-    expect(find.text('1.1.1.3'), findsNothing);
+    expect(find.text('1 safe / 1 warning / 2 danger'), findsOneWidget);
   });
 }
