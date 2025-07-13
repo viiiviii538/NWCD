@@ -147,6 +147,18 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     return mapping[service.toLowerCase()] ?? Icons.device_hub;
   }
 
+  Widget _wrapSection(Widget child) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: child,
+    );
+  }
+
   Widget _scoreSection(String label, int score) {
     final color = _scoreColor(score);
     IconData icon;
@@ -157,12 +169,13 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     } else {
       icon = Icons.error;
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        const SizedBox(height: 4),
-        Container(
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label),
+          const SizedBox(height: 4),
+          Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             // ignore: deprecated_member_use
@@ -186,7 +199,8 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
           _scoreMessage(score),
           style: TextStyle(color: color),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -251,10 +265,11 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
   Widget _portSection() {
     if (widget.portSummaries.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('ポート開放状況'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('ポート開放状況'),
         const SizedBox(height: 4),
         const Text(
           '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
@@ -331,15 +346,17 @@ for (final r in [...s.results]
           const SizedBox(height: 8),
         ],
       ],
+    ),
     );
   }
 
   Widget _sslSection() {
     if (widget.sslChecks.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('SSL証明書の安全性チェック'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('SSL証明書の安全性チェック'),
         const SizedBox(height: 4),
         const Text('証明書の有効期限切れ'),
         const SizedBox(height: 4),
@@ -362,15 +379,17 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
   Widget _spfSection() {
     if (widget.spfChecks.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('SPFレコードの設定状況'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('SPFレコードの設定状況'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
@@ -387,15 +406,17 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
   Widget _domainAuthSection() {
     if (widget.domainAuths.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('ドメインの送信元検証設定'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('ドメインの送信元検証設定'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
@@ -416,15 +437,17 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
   Widget _geoipSection() {
     if (widget.geoipStats.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('GeoIP解析：通信先の国別リスクチェック'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('GeoIP解析：通信先の国別リスクチェック'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('国名')),
@@ -439,6 +462,7 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
@@ -453,10 +477,11 @@ for (final r in [...s.results]
     }
     final summary =
         '${counts['safe']} safe / ${counts['warning']} warning / ${counts['danger']} danger';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('LAN内デバイス一覧とリスクチェック'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('LAN内デバイス一覧とリスクチェック'),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -501,15 +526,17 @@ for (final r in [...s.results]
             ),
         ]),
       ],
+    ),
     );
   }
 
   Widget _externalCommSection() {
     if (widget.externalComms.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('外部通信の暗号化状況'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('外部通信の暗号化状況'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('宛先ドメイン')),
@@ -528,15 +555,17 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
   Widget _defenseSection() {
     if (widget.defenseStatus.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('端末の防御機能の有効性チェック'),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('端末の防御機能の有効性チェック'),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('保護機能')),
@@ -551,18 +580,21 @@ for (final r in [...s.results]
             ]),
         ]),
       ],
+    ),
     );
   }
 
   Widget _windowsVersionSection() {
     if (widget.windowsVersion.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Windows バージョン'),
-        const SizedBox(height: 4),
-        Text(widget.windowsVersion),
+    return _wrapSection(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Windows バージョン'),
+          const SizedBox(height: 4),
+          Text(widget.windowsVersion),
       ],
+    ),
     );
   }
 
