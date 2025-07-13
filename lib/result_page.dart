@@ -181,6 +181,11 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             ],
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          _scoreMessage(score),
+          style: TextStyle(color: color),
+        ),
       ],
     );
   }
