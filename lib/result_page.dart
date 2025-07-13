@@ -297,7 +297,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                         ? 0
                         : (a.state == 'open' ? -1 : 1)))
                   DataRow(
-                    color: WidgetStateProperty.all(
+                    color: MaterialStateProperty.all(
                       useColor
                           ? r.state == 'open' &&
                                   dangerPortNotes.containsKey(r.port)
@@ -386,32 +386,6 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     );
   }
 
-  Widget _spfSection() {
-    if (widget.spfChecks.isEmpty) return const SizedBox.shrink();
-    return _wrapSection(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('SPFレコードの設定状況'),
-        const SizedBox(height: 4),
-        DataTable(columns: const [
-          DataColumn(label: Text('ドメイン')),
-          DataColumn(label: Text('SPF')),
-          DataColumn(label: Text('状態')),
-          DataColumn(label: Text('コメント')),
-        ], rows: [
-          for (final c in widget.spfChecks)
-            DataRow(cells: [
-              DataCell(Text(c.domain)),
-              DataCell(Text(c.spf)),
-              DataCell(Text(c.status)),
-              DataCell(Text(c.comment)),
-            ]),
-        ]),
-      ],
-    ),
-    );
-  }
 
   Widget _domainAuthSection() {
     if (widget.domainAuths.isEmpty) return const SizedBox.shrink();
@@ -628,7 +602,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     try {
       final generator = widget.onGenerateTopology ??
           () => report_utils.generateTopologyDiagram(widget.lanDevices);
-      final path = await generator();
+      var path = await generator();
       if (!context.mounted) return;
       if (ip != null) {
         final svgStr = await File(path).readAsString();
@@ -838,7 +812,7 @@ class ResultPage extends StatelessWidget {
             rows: [
               for (final r in reports)
                 DataRow(
-                  color: WidgetStateProperty.all(
+                  color: MaterialStateProperty.all(
                     useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                   ),
                   cells: [
