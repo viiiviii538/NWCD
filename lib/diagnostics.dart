@@ -270,6 +270,10 @@ Future<String> checkSpfRecord(String domain) async {
   }
 }
 
+/// Runs the `security_report.py` script and parses the result.
+///
+/// When [utmActive] is true, a small bonus is applied to the resulting score
+/// to account for the presence of unified threat management equipment.
 Future<SecurityReport> runSecurityReport({
   required String ip,
   required List<int> openPorts,
@@ -362,7 +366,8 @@ Future<SecurityReport> runSecurityReport({
 }
 
 /// Performs diagnostics for [ip] and returns a [SecurityReport].
-Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
+Future<SecurityReport> analyzeHost(String ip,
+    {List<int>? ports, bool utmActive = false}) async {
   final portSummary = await scanPorts(ip, ports: ports);
   final sslRes = await checkSslCertificate(ip);
   final spfRes = await checkSpfRecord(ip);
@@ -373,6 +378,7 @@ Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
       if (p.state == 'open') p.port],
     sslValid: sslRes.valid,
     spfValid: spfFound,
+    utmActive: utmActive,
   );
   return report;
 }
