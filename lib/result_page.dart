@@ -361,11 +361,20 @@ class DiagnosticResultPage extends StatelessWidget {
 
   Widget _lanSection() {
     if (lanDevices.isEmpty) return const SizedBox.shrink();
+    final counts = <String, int>{'safe': 0, 'warning': 0, 'danger': 0};
+    for (final d in lanDevices) {
+      var s = d.status;
+      if (s == 'ok') s = 'safe';
+      if (counts.containsKey(s)) counts[s] = counts[s]! + 1;
+    }
+    final summary =
+        '${counts['safe']} safe / ${counts['warning']} warning / ${counts['danger']} danger';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('LAN内デバイス一覧とリスクチェック'),
         const SizedBox(height: 4),
+        Text(summary),
         DataTable(columns: const [
           DataColumn(label: Text('IPアドレス')),
           DataColumn(label: Text('MACアドレス')),
