@@ -72,6 +72,7 @@ class DiagnosticResultPage extends StatelessWidget {
   }
 
   Color _statusColor(String status) {
+    if (!useColor) return Colors.black;
     switch (status) {
       case 'safe':
         return Colors.green;
@@ -219,13 +220,13 @@ class DiagnosticResultPage extends StatelessWidget {
                 for (final r in s.results)
                   DataRow(
                     color: WidgetStateProperty.all(
-                      r.state == 'open' && dangerPortNotes.containsKey(r.port)
-                          ? Colors.redAccent.withAlpha((0.2 * 255).toInt()) 
-                          : r.state == 'open'
-                              ? Colors.green.withAlpha((0.2 * 255).toInt()) 
-
-                              : Colors.grey.withAlpha((0.2 * 255).toInt()) 
-
+                      useColor
+                          ? r.state == 'open' && dangerPortNotes.containsKey(r.port)
+                              ? Colors.redAccent.withAlpha((0.2 * 255).toInt())
+                              : r.state == 'open'
+                                  ? Colors.green.withAlpha((0.2 * 255).toInt())
+                                  : Colors.grey.withAlpha((0.2 * 255).toInt())
+                          : Colors.grey.withAlpha((0.2 * 255).toInt()),
                     ),
                     cells: [
                       DataCell(Text(r.port.toString())),
