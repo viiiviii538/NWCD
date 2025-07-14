@@ -96,6 +96,7 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 ```bash
 python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 ```
+`--script` を省略した場合は `vuln` スクリプトが自動的に指定され、脆弱性チェックが行われます。
 
 ## LAN デバイス一覧取得
 

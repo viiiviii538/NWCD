@@ -24,6 +24,8 @@ def run_scan(
         cmd.append("-sV")
     if os_detect:
         cmd.append("-O")
+    if scripts is None:
+        scripts = ["vuln"]
     if scripts:
         cmd += ["--script", ",".join(scripts)]
     if not ports:
@@ -62,7 +64,10 @@ def main():
     parser.add_argument("port_list", nargs="?", help="Comma separated ports")
     parser.add_argument("--service", action="store_true", help="Enable service version detection (-sV)")
     parser.add_argument("--os", action="store_true", help="Enable OS detection (-O)")
-    parser.add_argument("--script", help="Comma separated nmap scripts")
+    parser.add_argument(
+        "--script",
+        help="Comma separated nmap scripts (default: vuln)",
+    )
     args = parser.parse_args()
 
     ports = args.port_list.split(',') if args.port_list else []

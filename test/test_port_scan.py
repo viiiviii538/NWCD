@@ -10,7 +10,7 @@ class PortScanScriptTest(unittest.TestCase):
             m.return_value = MagicMock(returncode=0, stdout=xml)
             port_scan.run_scan('1.1.1.1', [])
             m.assert_called_with([
-                'nmap', '-p-', '-oX', '-', '1.1.1.1'
+                'nmap', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
 
     def test_run_scan_with_options(self):
@@ -28,7 +28,16 @@ class PortScanScriptTest(unittest.TestCase):
             m.return_value = MagicMock(returncode=0, stdout=xml)
             port_scan.run_scan('fe80::1', [])
             m.assert_called_with([
-                'nmap', '-6', '-p-', '-oX', '-', 'fe80::1'
+                'nmap', '-6', '--script', 'vuln', '-p-', '-oX', '-', 'fe80::1'
+            ], capture_output=True, text=True)
+
+    def test_run_scan_custom_script_overrides_default(self):
+        xml = "<nmaprun></nmaprun>"
+        with patch('subprocess.run') as m:
+            m.return_value = MagicMock(returncode=0, stdout=xml)
+            port_scan.run_scan('1.1.1.1', [], scripts=['http-enum'])
+            m.assert_called_with([
+                'nmap', '--script', 'http-enum', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
 
 if __name__ == '__main__':
