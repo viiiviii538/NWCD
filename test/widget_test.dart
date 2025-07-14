@@ -15,10 +15,10 @@ void main() {
     // Build the app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that the main title and LAN scan button are present.
+    // Verify that the main title and key action buttons are present.
     expect(find.text('NWCD'), findsOneWidget);
     expect(find.text('LANスキャン'), findsOneWidget);
     expect(find.text('レポート保存'), findsOneWidget);
-    expect(find.byType(DropdownButton<String>), findsOneWidget);
+    expect(find.text('診断結果ページ'), findsOneWidget);
   });
 }
