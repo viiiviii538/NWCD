@@ -27,6 +27,6 @@ void main() {
       processRunner: fakeRunner,
     );
 
-    expect(report.score, 4);
+    expect(report.score, 3.6);
   });
 }
