@@ -626,6 +626,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          'セキュリティソフトやファイアウォールなど端末に備わる防御機能が有効か確認します。無効の場合、不正侵入やマルウェア感染のリスクが高まります。',
+        ),
+        const SizedBox(height: 8),
         DataTable(columns: const [
           DataColumn(label: Text('保護機能')),
           DataColumn(label: Text('状態')),
