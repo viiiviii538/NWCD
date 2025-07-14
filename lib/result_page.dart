@@ -271,7 +271,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
         children: [
           const Text(
             'ポート開放状況',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
         const Text(
