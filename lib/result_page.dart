@@ -439,7 +439,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ドメインの送信元検証設定'),
+          const Text(
+            'ドメインの送信元検証設定',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
