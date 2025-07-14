@@ -59,7 +59,10 @@ class SecurityReport {
   final String path;
   final List<int> openPorts;
   final String geoip;
-  final bool utmActive;
+  final bool _utmActive;
+
+  /// Whether unified threat management is enabled for this host.
+  bool get utmActive => _utmActive;
 
   const SecurityReport(
     this.ip,
@@ -69,8 +72,8 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
-    this.utmActive = false,
-  });
+    bool utmActive = false,
+  }) : _utmActive = utmActive;
 }
 
 class NetworkSpeed {
