@@ -492,7 +492,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
   Widget _lanSection(BuildContext context) {
     if (widget.lanDevices.isEmpty) return const SizedBox.shrink();
-    final counts = <String, int>{'safe': 0, 'warning': 0, 'danger': 0};
+    final counts = <String, int>{};
+    counts['safe'] = 0;
+    counts['warning'] = 0;
+    counts['danger'] = 0;
     for (final d in widget.lanDevices) {
       var s = d.status;
       if (s == 'ok') s = 'safe';
