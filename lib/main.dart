@@ -100,10 +100,46 @@ class _HomePageState extends State<HomePage> {
       buffer.writeln();
     }
 
+    const installCmds = '''
+# Debian/Ubuntu
+sudo apt install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+
+# Fedora
+sudo dnf install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+
+# macOS (Homebrew)
+brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+
+# Windows
+winget install -e --id Nmap.Nmap      # nmap
+winget install -e --id Graphviz.Graphviz  # graphviz
+winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
+pip install speedtest-cli
+# arp-scan は Windows 版が存在しないため省略
+''';
+
     final devices = await net.scanNetwork(onError: (msg) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('LANスキャン失敗: $msg')));
+        if (msg.startsWith('Missing scanners:')) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('必要なツールが見つかりません'),
+              content: SingleChildScrollView(
+                child: SelectableText('$msg\n\n$installCmds'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('LANスキャン失敗: $msg')));
+        }
       }
     });
     setState(() {
