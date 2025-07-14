@@ -594,6 +594,14 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          '宛先ドメインや通信プロトコルと、その通信が暗号化されているかを一覧表示します。',
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          '暗号化されていない通信では内容を傍受・改ざんされるリスクがあります。',
+        ),
+        const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('宛先ドメイン')),
           DataColumn(label: Text('通信プロトコル')),
