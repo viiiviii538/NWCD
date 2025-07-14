@@ -3,7 +3,7 @@
 import argparse
 import json
 
-from discover_hosts import _get_subnet, _run_arp_scan, _run_nmap_scan, _lookup_vendor
+from discover_hosts import _get_subnet, _run_nmap_scan, _lookup_vendor
 from port_scan import run_scan
 from concurrent.futures import ThreadPoolExecutor
 
@@ -15,10 +15,7 @@ DEFAULT_PORTS = [
 
 def gather_hosts(subnet: str):
     """Return list of hosts with ip, mac and vendor."""
-    try:
-        hosts = _run_arp_scan()
-    except Exception:
-        hosts = _run_nmap_scan(subnet)
+    hosts = _run_nmap_scan(subnet)
     for h in hosts:
         if not h.get("vendor"):
             h["vendor"] = _lookup_vendor(h.get("mac", ""))

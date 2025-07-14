@@ -5,7 +5,7 @@ import shutil
 import sys
 from typing import List
 
-TOOLS = ["arp-scan", "nmap"]
+TOOLS = ["nmap"]
 
 def check_missing_tools() -> List[str]:
     """Return list of missing tools from TOOLS."""

@@ -102,20 +102,19 @@ class _HomePageState extends State<HomePage> {
 
     const installCmds = '''
 # Debian/Ubuntu
-sudo apt install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+sudo apt install nmap speedtest-cli graphviz wkhtmltopdf
 
 # Fedora
-sudo dnf install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+sudo dnf install nmap speedtest-cli graphviz wkhtmltopdf
 
 # macOS (Homebrew)
-brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+brew install nmap speedtest-cli graphviz wkhtmltopdf
 
 # Windows
 winget install -e --id Nmap.Nmap      # nmap
 winget install -e --id Graphviz.Graphviz  # graphviz
 winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
 pip install speedtest-cli
-# arp-scan は Windows 版が存在しないため省略
 ''';
 
     final devices = await net.scanNetwork(onError: (msg) {

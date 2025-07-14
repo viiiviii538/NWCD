@@ -18,14 +18,10 @@ def discover_hosts(subnet: str | None = None) -> list[dict[str, str]]:
     """Return list of discovered hosts with IP, MAC and vendor.
 
     If ``subnet`` is not provided, the local subnet is determined
-    automatically. ``arp-scan`` is used when available and falls back
-    to ``nmap`` otherwise.
+    automatically. ``nmap`` is used for host discovery.
     """
     subnet = subnet or _get_subnet() or "192.168.1.0/24"
-    try:
-        hosts = _run_arp_scan()
-    except Exception:
-        hosts = _run_nmap_scan(subnet)
+    hosts = _run_nmap_scan(subnet)
     for h in hosts:
         if not h.get("vendor"):
             h["vendor"] = _lookup_vendor(h.get("mac", ""))
@@ -98,24 +94,6 @@ def _get_subnet():
     return None
 
 
-def _run_arp_scan():
-    try:
-        proc = subprocess.run(['arp-scan', '--localnet'], capture_output=True, text=True)
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr.strip())
-        results = []
-        for line in proc.stdout.splitlines():
-            parts = line.split()  # whitespace
-            if len(parts) >= 2 and IP_RE.fullmatch(parts[0]):
-                vendor = ""
-                if len(parts) >= 3:
-                    vendor = " ".join(parts[2:])
-                results.append({'ip': parts[0], 'mac': parts[1], 'vendor': vendor})
-        if results:
-            return results
-    except Exception:
-        pass
-    raise RuntimeError('arp-scan failed')
 
 
 def _run_nmap_scan(subnet):

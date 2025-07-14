@@ -5,8 +5,7 @@
 ## 必要なソフトウェア
 
 本ツールは内部で Python スクリプトを呼び出し、LAN 内デバイスの探索には
-`arp-scan` または `nmap` を利用します。`arp-scan` が無い環境では `nmap`
-のみで動作するため、Windows では追加のインストールは必須ではありません。
+`nmap` を利用します。Windows でも `nmap` のインストールが必要です。
 Python **3.10 以上** といずれかのコマンドがインストールされていることを確認して
 ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
 解釈できず、付属スクリプトが実行できません。
@@ -16,7 +15,7 @@ LAN セキュリティ診断 (`lan_security_check.py`) では `arp`, `nmap`, `up
 `ufw` を呼び出します。これらのユーティリティが存在しない場合、該当する
 チェックは自動的にスキップされます。
 
-また、`nmap` や `arp-scan` の実行ファイルがシステムの `PATH` に含まれている必要
+また、`nmap` の実行ファイルがシステムの `PATH` に含まれている必要
 があります。次のように入力して認識されるか確認してください。
 
 ```bash
@@ -28,24 +27,23 @@ nmap -V  # または Windows では where nmap
 
 ### 主要ツールのインストール例
 
-以下は `nmap`, `arp-scan`, `speedtest-cli` を導入する際の主なコマンド例です。
+以下は `nmap` と `speedtest-cli` を導入する際の主なコマンド例です。
 
 ```bash
 # Debian/Ubuntu
-sudo apt install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+sudo apt install nmap speedtest-cli graphviz wkhtmltopdf
 
 # Fedora
-sudo dnf install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+sudo dnf install nmap speedtest-cli graphviz wkhtmltopdf
 
 # macOS (Homebrew)
-brew install nmap arp-scan speedtest-cli graphviz wkhtmltopdf
+brew install nmap speedtest-cli graphviz wkhtmltopdf
 
 # Windows
 winget install -e --id Nmap.Nmap      # nmap
 winget install -e --id Graphviz.Graphviz  # graphviz
 winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
-pip install speedtest-cli      
-# arp-scan は Windows 版が存在しないため省略
+pip install speedtest-cli
 ```
 
 
@@ -74,7 +72,7 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 環境では `--pdf` オプションを指定しても PDF 出力はスキップされます。
 
 ## できること
-- **LANスキャン** ボタンを押すと `arp-scan` または `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
+- **LANスキャン** ボタンを押すと `nmap` を使って LAN 内のデバイスを検出し、見つかった各 IP へ自動で診断を実行します。
 - 診断中は "診断中..." の表示と、各ホスト進捗に加えて全体バーで完了状況が分かります。
 - 結果はスクロール可能な領域に表示され、セキュリティスコアは大きな文字で示されます。
 - 診断結果画面右上の「レポート保存」ボタンを押すと、`report_YYYY-MM-DD_HH-MM.txt` という名前のファイルが出力されます。
@@ -105,21 +103,21 @@ python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 
 ## LAN デバイス一覧取得
 
-`discover_hosts.py` は `arp-scan --localnet` または `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。
+`discover_hosts.py` は `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。
 
 ### PATH の確認
 
-`discover_hosts.py` が外部ツールとして呼び出す `nmap` または `arp-scan` は PATH に含まれている必要があります。次のコマンドで認識されるか確認してください。
+`discover_hosts.py` が外部ツールとして呼び出す `nmap` は PATH に含まれている必要があります。次のコマンドで認識されるか確認してください。
 
 ```bash
-nmap -V # または arp-scan --version
+nmap -V
 ```
 
 表示されない場合はインストール先を PATH に追加してください。
 
 ### IPv6 スキャン
 
-`discover_hosts.py` と `lan_port_scan.py` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。`arp-scan` は IPv4 専用のため、IPv6 では常に `nmap` が使用されます。
+`discover_hosts.py` と `lan_port_scan.py` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。
 
 
 ## LAN + Port Scan
