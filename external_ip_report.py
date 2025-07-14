@@ -93,7 +93,10 @@ def main():
         try:
             reader = geoip2.database.Reader(args.geoip_db)
         except Exception:
+            print("GeoIP database not found \u2013 country information disabled.")
             reader = None
+    else:
+        print("GeoIP database not found \u2013 country information disabled.")
 
     conns = get_external_connections()
     results = []

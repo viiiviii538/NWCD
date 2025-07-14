@@ -159,7 +159,10 @@ def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, An
         try:
             reader = geoip2.database.Reader(geoip_db)
         except Exception:
+            print("GeoIP database not found \u2013 country information disabled.")
             reader = None
+    else:
+        print("GeoIP database not found \u2013 country information disabled.")
     suspicious = []
     country_counts: Dict[str, int] = {}
     for ip, _ in conns:
