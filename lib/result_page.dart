@@ -105,6 +105,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       ip: d.ip,
       mac: d.mac,
       vendor: d.vendor,
+      os: d.os,
       name: name,
       status: d.status,
       comment: d.comment,
@@ -548,6 +549,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
           DataColumn(label: Text('IPアドレス')),
           DataColumn(label: Text('MACアドレス')),
           DataColumn(label: Text('ベンダー名')),
+          DataColumn(label: Text('OS')),
           DataColumn(label: Text('機器名')),
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
@@ -559,6 +561,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               DataCell(Text(d.ip)),
               DataCell(Text(d.mac)),
               DataCell(Text(d.vendor)),
+              DataCell(Text(d.os)),
               DataCell(
                 TextField(
                   controller: _nameControllers[d.ip],

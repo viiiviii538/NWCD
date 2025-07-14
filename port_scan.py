@@ -37,6 +37,7 @@ def run_scan(
         raise RuntimeError(proc.stderr.strip())
     root = ET.fromstring(proc.stdout)
     results = []
+    os_name = ""
     for port in root.findall('.//port'):
         portid = port.get('portid')
         state_elem = port.find('state')
@@ -53,7 +54,11 @@ def run_scan(
                     [s for s in [product, version, extrainfo] if s]
                 ).strip()
         results.append(item)
-    return results
+    if os_detect:
+        m = root.find('.//osmatch')
+        if m is not None:
+            os_name = m.get('name', '')
+    return {"os": os_name, "ports": results}
 
 
 def main():
@@ -80,7 +85,7 @@ def main():
             os_detect=args.os,
             scripts=scripts,
         )
-        print(json.dumps({'host': args.host, 'ports': res}))
+        print(json.dumps({'host': args.host, 'os': res['os'], 'ports': res['ports']}))
     except Exception as e:
         print(json.dumps({'error': str(e)}))
         sys.exit(1)

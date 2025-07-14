@@ -8,37 +8,48 @@ class PortScanScriptTest(unittest.TestCase):
         xml = "<nmaprun></nmaprun>"
         with patch('subprocess.run') as m:
             m.return_value = MagicMock(returncode=0, stdout=xml)
-            port_scan.run_scan('1.1.1.1', [])
+            res = port_scan.run_scan('1.1.1.1', [])
             m.assert_called_with([
                 'nmap', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
+            assert 'ports' in res
 
     def test_run_scan_with_options(self):
         xml = "<nmaprun></nmaprun>"
         with patch('subprocess.run') as m:
             m.return_value = MagicMock(returncode=0, stdout=xml)
-            port_scan.run_scan('1.1.1.1', [], service=True, os_detect=True, scripts=['vuln'])
+            res = port_scan.run_scan('1.1.1.1', [], service=True, os_detect=True, scripts=['vuln'])
             m.assert_called_with([
                 'nmap', '-sV', '-O', '--script', 'vuln', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
+            assert 'ports' in res
 
     def test_run_scan_ipv6_adds_flag(self):
         xml = "<nmaprun></nmaprun>"
         with patch('subprocess.run') as m:
             m.return_value = MagicMock(returncode=0, stdout=xml)
-            port_scan.run_scan('fe80::1', [])
+            res = port_scan.run_scan('fe80::1', [])
             m.assert_called_with([
                 'nmap', '-6', '--script', 'vuln', '-p-', '-oX', '-', 'fe80::1'
             ], capture_output=True, text=True)
+            assert 'ports' in res
 
     def test_run_scan_custom_script_overrides_default(self):
         xml = "<nmaprun></nmaprun>"
         with patch('subprocess.run') as m:
             m.return_value = MagicMock(returncode=0, stdout=xml)
-            port_scan.run_scan('1.1.1.1', [], scripts=['http-enum'])
+            res = port_scan.run_scan('1.1.1.1', [], scripts=['http-enum'])
             m.assert_called_with([
                 'nmap', '--script', 'http-enum', '-p-', '-oX', '-', '1.1.1.1'
             ], capture_output=True, text=True)
+            assert 'ports' in res
+
+    def test_run_scan_parses_os(self):
+        xml = "<nmaprun><host><os><osmatch name='Microsoft Windows 11' /></os></host></nmaprun>"
+        with patch('subprocess.run') as m:
+            m.return_value = MagicMock(returncode=0, stdout=xml)
+            res = port_scan.run_scan('1.1.1.1', [], os_detect=True)
+            self.assertEqual(res['os'], 'Microsoft Windows 11')
 
 if __name__ == '__main__':
     unittest.main()

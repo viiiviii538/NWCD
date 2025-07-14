@@ -42,6 +42,7 @@ class LanDeviceRisk {
   final String ip;
   final String mac;
   final String vendor;
+  final String os;
   final String name;
   final String status;
   final String comment;
@@ -50,6 +51,7 @@ class LanDeviceRisk {
       {required this.ip,
       required this.mac,
       required this.vendor,
+      this.os = '',
       required this.name,
       required this.status,
       required this.comment});

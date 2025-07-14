@@ -27,8 +27,9 @@ class PortStatus {
 class PortScanSummary {
   final String host;
   final List<PortStatus> results;
+  final String os;
 
-  const PortScanSummary(this.host, this.results);
+  const PortScanSummary(this.host, this.results, [this.os = '']);
 
   bool get hasOpen =>
       results.any((r) => r.state.toLowerCase() == 'open');
@@ -177,7 +178,8 @@ Future<PortScanSummary> scanPorts(String host,
             item['service'] ?? ''));
       }
     }
-    return PortScanSummary(host, portList);
+    final os = data['os']?.toString() ?? '';
+    return PortScanSummary(host, portList, os);
   } catch (e) {
     if (onError != null) onError('Failed to run $script: $e');
     return PortScanSummary(host, []);
@@ -246,8 +248,12 @@ Future<List<LanPortDevice>> scanLanWithPorts({
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
-    final socket = await SecureSocket.connect(host, 443,
-        timeout: const Duration(seconds: 5));
+    final socket = await SecureSocket.connect(
+      host,
+      443,
+      timeout: const Duration(seconds: 5),
+      onBadCertificate: (_) => true,
+    );
     final cert = socket.peerCertificate;
     socket.destroy();
     if (cert == null) {
