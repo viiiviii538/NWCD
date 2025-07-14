@@ -9,6 +9,7 @@ import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/extended_results.dart';
+import 'package:nwc_densetsu/history_page.dart';
 import 'config.dart';
 
 void main() {
@@ -20,9 +21,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'NWCD',
-      home: HomePage(),
+      home: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('NWCD'),
+            bottom: const TabBar(tabs: [
+              Tab(text: '診断'),
+              Tab(text: '履歴'),
+            ]),
+          ),
+          body: const TabBarView(
+            children: [
+              HomePage(),
+              HistoryPage(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -158,11 +176,16 @@ class _HomePageState extends State<HomePage> {
       setState(() => _progress.remove(ip));
     }
 
+    final path = await report_utils.saveHistoryReports(_reports);
     setState(() {
       _output = buffer.toString();
       _lanScanning = false;
       _devices = devices;
     });
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('結果保存: $path')));
+    }
   }
 
 
