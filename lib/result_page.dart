@@ -470,7 +470,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('GeoIP解析：通信先の国別リスクチェック'),
+          const Text(
+            'GeoIP解析：通信先の国別リスクチェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('国名')),
