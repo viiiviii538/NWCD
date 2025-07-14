@@ -2,7 +2,11 @@
 import sys
 import json
 
-from security_score import calc_security_score
+from security_score import (
+    calc_security_score,
+    DANGER_PORTS,
+    COUNTERMEASURES,
+)
 from report_utils import calc_utm_items
 
 
@@ -30,32 +34,40 @@ def calc_score(open_ports, ssl_status, spf_valid, geoip, utm_active=False):
         risks.append(
             {
                 "risk": "Open ports: " + ",".join(open_ports),
-                "counter": "Close unused ports or enable a firewall",
+                "counter": COUNTERMEASURES.get(
+                    "open_ports", "Close unused ports or enable a firewall"
+                ),
             }
         )
     if ssl_status in {"invalid", "self-signed"}:
         risks.append(
             {
                 "risk": f"SSL certificate {ssl_status}",
-                "counter": "Install a valid SSL certificate",
+                "counter": COUNTERMEASURES.get(
+                    "ssl_invalid", "Install a valid SSL certificate"
+                ),
             }
         )
     if not spf_valid:
         risks.append(
             {
                 "risk": "SPF record missing",
-                "counter": "Configure an SPF record",
+                "counter": COUNTERMEASURES.get(
+                    "spf_missing", "Configure an SPF record"
+                ),
             }
         )
     if geoip and geoip.upper() != "JP":
         risks.append(
             {
                 "risk": f"GeoIP location {geoip}",
-                "counter": "Review foreign traffic or use web filtering",
+                "counter": COUNTERMEASURES.get(
+                    "foreign_geoip", "Review foreign traffic or use web filtering"
+                ),
             }
         )
 
-    danger_list = [p for p in open_ports if p in {"3389", "445", "23"}]
+    danger_list = [p for p in open_ports if p in DANGER_PORTS]
     data = {
         "danger_ports": danger_list,
         "open_port_count": len(open_ports),

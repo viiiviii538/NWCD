@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from common_constants import DANGER_COUNTRIES, SAFE_COUNTRIES
 
@@ -15,12 +15,92 @@ MEDIUM_WEIGHT = 1.7
 LOW_WEIGHT = 0.5
 UTM_BONUS = 2.0
 
-__all__ = ["calc_security_score"]
+# Ports considered especially dangerous. Used by security_report.py
+DANGER_PORTS = {"3389", "445", "23"}
+
+# Default texts describing how to mitigate each risk type
+COUNTERMEASURES = {
+    "open_ports": "Close unused ports or enable a firewall",
+    "ssl_invalid": "Install a valid SSL certificate",
+    "spf_missing": "Configure an SPF record",
+    "foreign_geoip": "Review foreign traffic or use web filtering",
+}
+
+__all__ = ["calc_security_score", "load_config", "DANGER_PORTS", "COUNTERMEASURES"]
 
 # Limits applied to individual metrics
 PORT_SCORE_CAP = 6.0
 COUNTRY_SCORE_CAP = 4.0
 OS_VERSION_POINTS = 0.7
+
+# Base configuration merged with any loaded from file
+_DEFAULT_CONFIG = {
+    "danger_ports": list(DANGER_PORTS),
+    "weights": {
+        "high": HIGH_WEIGHT,
+        "medium": MEDIUM_WEIGHT,
+        "low": LOW_WEIGHT,
+    },
+    "utm_bonus": UTM_BONUS,
+    "countermeasures": COUNTERMEASURES.copy(),
+}
+
+# Holds the active configuration in effect
+CONFIG = _DEFAULT_CONFIG.copy()
+
+
+def load_config(path: Optional[str] = None) -> None:
+    """Load YAML/JSON config overriding default constants.
+
+    Passing ``None`` resets all values back to the defaults.
+    """
+
+    global HIGH_WEIGHT, MEDIUM_WEIGHT, LOW_WEIGHT, UTM_BONUS
+    global DANGER_PORTS, COUNTERMEASURES, CONFIG
+
+    cfg = _DEFAULT_CONFIG.copy()
+
+    if path:
+        with open(path, "r", encoding="utf-8") as f:
+            if path.endswith(('.yaml', '.yml')):
+                try:
+                    import yaml  # type: ignore
+                except Exception as exc:  # pragma: no cover - error path
+                    raise ImportError("PyYAML required for YAML configs") from exc
+                data = yaml.safe_load(f) or {}
+            else:
+                data = json.load(f) or {}
+        if isinstance(data, dict):
+            if "danger_ports" in data:
+                cfg["danger_ports"] = [str(p) for p in data["danger_ports"]]
+            if "weights" in data and isinstance(data["weights"], dict):
+                cfg["weights"].update({
+                    k: float(v) for k, v in data["weights"].items()
+                    if k in {"high", "medium", "low"}
+                })
+            if "utm_bonus" in data:
+                cfg["utm_bonus"] = float(data["utm_bonus"])
+            if "countermeasures" in data and isinstance(data["countermeasures"], dict):
+                cfg["countermeasures"].update({
+                    str(k): str(v) for k, v in data["countermeasures"].items()
+                })
+
+    CONFIG = cfg
+
+    HIGH_WEIGHT = float(cfg["weights"]["high"])
+    MEDIUM_WEIGHT = float(cfg["weights"]["medium"])
+    LOW_WEIGHT = float(cfg["weights"]["low"])
+    UTM_BONUS = float(cfg.get("utm_bonus", UTM_BONUS))
+
+    # Update sets/dicts in place so existing imports see new values
+    DANGER_PORTS.clear()
+    DANGER_PORTS.update(str(p) for p in cfg.get("danger_ports", []))
+    COUNTERMEASURES.clear()
+    COUNTERMEASURES.update(cfg.get("countermeasures", {}))
+
+# Initialize module-level constants
+load_config(None)
+
 
 
 def calc_security_score(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -170,3 +250,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
