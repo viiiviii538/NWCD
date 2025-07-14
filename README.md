@@ -64,6 +64,11 @@ pip install speedtest-cli
 ```bash
 pip install -r requirements.txt
 ```
+GeoIP 解析を利用するスクリプトでは、上記パッケージに加えて
+MaxMind 提供の `GeoLite2-Country.mmdb` データベースが必要です。これは
+<https://dev.maxmind.com/geoip/geoip2/geolite2/> からダウンロードし、
+リポジトリ直下に配置するか、別の場所に置いた場合は後述の
+`--geoip-db` オプションでパスを指定してください。
 PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または `weasyprint` の
 いずれかがシステムにインストールされている必要があります。どちらも存在しない
 環境では `--pdf` オプションを指定しても PDF 出力はスキップされます。
@@ -268,7 +273,12 @@ python network_speed.py
 python external_ip_report.py
 ```
 
-GeoIP データベースを指定する場合は `--geoip-db` オプションを利用してください。
+GeoIP データベースを指定する場合は `--geoip-db` オプションを利用してください。例
+として、データベースをリポジトリ外に保存した場合は次のように実行できます。
+
+```bash
+python external_ip_report.py --geoip-db /path/to/GeoLite2-Country.mmdb
+```
 
 ## LANセキュリティ診断
 
