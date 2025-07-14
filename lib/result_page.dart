@@ -448,6 +448,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          'SPF/DKIM/DMARC の設定状況を取得し、未設定のドメインはなりすましメール送信に悪用される恐れがあります。',
+        ),
+        const SizedBox(height: 8),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
           DataColumn(label: Text('SPF')),
@@ -482,6 +486,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          '通信先IPの国情報を取得し、国別に通信数を集計します。リスクの高い国との通信が多い場合、情報漏洩やマルウェア感染につながる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
         DataTable(columns: const [
           DataColumn(label: Text('国名')),
           DataColumn(label: Text('通信数')),
@@ -522,6 +530,12 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          'LAN 内に接続されているデバイス情報を取得し、\n'
+          'リスクレベルを可視化します。未管理や脆弱な端末が存在すると、\n'
+          'ネットワーク全体が攻撃にさらされる可能性があります。',
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             const Text('Filter:'),
@@ -593,6 +607,14 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             '外部通信の暗号化状況',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
+        const SizedBox(height: 4),
+        const Text(
+          '宛先ドメインや通信プロトコルと、その通信が暗号化されているかを一覧表示します。',
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          '暗号化されていない通信では内容を傍受・改ざんされるリスクがあります。',
+        ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('宛先ドメイン')),
