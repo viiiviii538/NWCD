@@ -134,6 +134,26 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     }
   }
 
+  String _sslStatusText(String status) {
+    switch (status) {
+      case 'ok':
+        return '安全';
+      case 'warning':
+        return '警告';
+      default:
+        return status;
+    }
+  }
+
+  String _sslCommentText(String comment) {
+    switch (comment) {
+      case 'invalid':
+        return '証明書が無効です';
+      default:
+        return comment;
+    }
+  }
+
   IconData _iconForService(String service) {
     const mapping = {
       'http': Icons.http,
@@ -374,8 +394,8 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               DataCell(Text(c.domain)),
               DataCell(Text(c.issuer)),
               DataCell(Text(c.expiry)),
-              DataCell(Text(c.status)),
-              DataCell(Text(c.comment)),
+              DataCell(Text(_sslStatusText(c.status))),
+              DataCell(Text(_sslCommentText(c.comment))),
             ]),
         ]),
       ],
