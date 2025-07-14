@@ -448,6 +448,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          'SPF/DKIM/DMARC の設定状況を取得し、未設定のドメインはなりすましメール送信に悪用される恐れがあります。',
+        ),
+        const SizedBox(height: 8),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
           DataColumn(label: Text('SPF')),
