@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
-import 'diagnostics.dart';
+// Import using the package URI to ensure the same library instance is used
+// across the project.
+import 'package:nwc_densetsu/diagnostics.dart';
 import 'utils/report_utils.dart' as report_utils;
 import 'result_page.dart';
 
