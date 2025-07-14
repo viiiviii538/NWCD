@@ -3,7 +3,10 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import '../diagnostics.dart' show SecurityReport;
+// Use package import to avoid creating a separate library instance for
+// `diagnostics.dart`. This ensures that types like `SecurityReport` are
+// identical across the application.
+import 'package:nwc_densetsu/diagnostics.dart' show SecurityReport, RiskItem;
 import '../extended_results.dart' show LanDeviceRisk;
 import 'python_utils.dart';
 import 'file_utils.dart';
