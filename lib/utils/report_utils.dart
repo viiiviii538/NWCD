@@ -89,3 +89,65 @@ Future<String> generateTopologyDiagram([List<LanDeviceRisk> devices = const []])
 
   return outputPath;
 }
+
+/// Saves [reports] to `history/YYYYMMDD_HHMM.json` and returns the file path.
+Future<String> saveHistoryReports(List<SecurityReport> reports) async {
+  final historyDir = Directory(p.join(Directory.current.path, 'history'));
+  await historyDir.create(recursive: true);
+  final now = DateTime.now();
+  final stamp =
+      '${now.year.toString().padLeft(4, '0')}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+  final path = p.join(historyDir.path, '$stamp.json');
+  final list = [
+    for (final r in reports)
+      {
+        'ip': r.ip,
+        'score': r.score,
+        'utmItems': r.utmItems,
+        'risks': [
+          for (final risk in r.risks)
+            {'description': risk.description, 'countermeasure': risk.countermeasure}
+        ],
+        'open_ports': r.openPorts,
+        'geoip': r.geoip,
+        'utmActive': r.utmActive,
+      }
+  ];
+  await File(path).writeAsString(jsonEncode(list));
+  return path;
+}
+
+/// Loads scan results from [path] previously saved with [saveHistoryReports].
+List<SecurityReport> loadHistoryReports(String path) {
+  final file = File(path);
+  if (!file.existsSync()) return [];
+  final data = jsonDecode(file.readAsStringSync());
+  if (data is! List) return [];
+  final reports = <SecurityReport>[];
+  for (final item in data) {
+    if (item is Map<String, dynamic>) {
+      final risks = <RiskItem>[];
+      if (item['risks'] is List) {
+        for (final r in item['risks']) {
+          if (r is Map) {
+            risks.add(RiskItem(
+              r['description']?.toString() ?? '',
+              r['countermeasure']?.toString() ?? '',
+            ));
+          }
+        }
+      }
+      reports.add(SecurityReport(
+        item['ip']?.toString() ?? '',
+        (item['score'] as num?)?.toDouble() ?? 0.0,
+        risks,
+        [for (final u in item['utmItems'] ?? []) u.toString()],
+        '',
+        openPorts: [for (final p in item['open_ports'] ?? []) int.tryParse(p.toString()) ?? 0],
+        geoip: item['geoip']?.toString() ?? '',
+        utmActive: item['utmActive'] == true,
+      ));
+    }
+  }
+  return reports;
+}
