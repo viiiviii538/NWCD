@@ -405,7 +405,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('SSL証明書の安全性チェック'),
+          const Text(
+            'SSL証明書の安全性チェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         const Text('証明書の有効期限切れ'),
         const SizedBox(height: 4),
