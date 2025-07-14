@@ -516,7 +516,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('LAN内デバイス一覧とリスクチェック'),
+          const Text(
+            'LAN内デバイス一覧とリスクチェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         Row(
           children: [
