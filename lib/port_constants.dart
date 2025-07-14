@@ -30,7 +30,7 @@ const List<int> fullPorts = [
 /// If a scanned device has any of these ports open, the corresponding
 /// description can be shown in the UI as a warning message.
 const Map<int, String> dangerPortNotes = {
-  3389: 'RDP ポートが開いていると乗っ取りの恐れがあります',
-  445: 'SMB ポートは脆弱性悪用の標的となりやすいです',
+  3389: '外部公開された RDP ポートは乗っ取りの危険性が極めて高いです',
+  445: 'SMB ポートをインターネットに公開すると脆弱性悪用の標的になります',
   23: 'Telnet は暗号化されないため危険です',
 };
