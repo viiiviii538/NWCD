@@ -615,7 +615,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('端末の防御機能の有効性チェック'),
+          const Text(
+            '端末の防御機能の有効性チェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('保護機能')),
