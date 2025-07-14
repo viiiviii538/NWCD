@@ -4,7 +4,7 @@ import 'package:nwc_densetsu/progress_list.dart';
 
 void main() {
   testWidgets('progress list renders entries', (tester) async {
-    final progress = {'1.1.1.1': 2, '2.2.2.2': 1};
+    const progress = {'1.1.1.1': 2, '2.2.2.2': 1};
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

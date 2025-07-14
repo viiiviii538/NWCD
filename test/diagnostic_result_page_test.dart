@@ -12,7 +12,7 @@ void main() {
       DiagnosticItem(name: 'C', description: 'd', status: 'danger', action: 'fix3'),
     ];
 
-    final summaries = [
+    const summaries = [
       const PortScanSummary('1.1.1.1', [
         PortStatus(445, 'closed', 'smb'),
         PortStatus(3389, 'open', 'rdp'),

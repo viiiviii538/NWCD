@@ -5,7 +5,7 @@ import 'package:nwc_densetsu/diagnostics.dart';
 
 void main() {
   testWidgets('ScoreChart renders', (WidgetTester tester) async {
-    final reports = [
+    const reports = [
       const SecurityReport('1.1.1.1', 9.0, <RiskItem>[], [], '',
           openPorts: [80], geoip: 'US'),
       const SecurityReport('2.2.2.2', 3.0, <RiskItem>[], [], '',
