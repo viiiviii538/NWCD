@@ -65,7 +65,13 @@ class FakeExecutor:
         return FakeFuture(fn, *args, **kwargs)
 
 
+def _fake_as_completed(fs):
+    for f in fs:
+        yield f
+
+
 class LanPortScanConcurrencyTest(unittest.TestCase):
+    @patch('lan_port_scan.as_completed', _fake_as_completed)
     @patch('lan_port_scan.ThreadPoolExecutor', FakeExecutor)
     @patch('lan_port_scan.gather_hosts')
     def test_concurrent_execution(self, mock_gather):
