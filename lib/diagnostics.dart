@@ -59,6 +59,7 @@ class SecurityReport {
   final String path;
   final List<int> openPorts;
   final String geoip;
+  final bool utmActive;
 
   const SecurityReport(
     this.ip,
@@ -68,6 +69,7 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
+    this.utmActive = false,
   });
 }
 
@@ -304,6 +306,7 @@ Future<SecurityReport> runSecurityReport({
         '',
         openPorts: [],
         geoip: '',
+        utmActive: utmActive,
       );
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
@@ -351,6 +354,7 @@ Future<SecurityReport> runSecurityReport({
       data['path']?.toString() ?? '',
       openPorts: ports,
       geoip: country,
+      utmActive: utmActive,
     );
   } catch (e) {
     return SecurityReport(
@@ -361,6 +365,7 @@ Future<SecurityReport> runSecurityReport({
       '',
       openPorts: [],
       geoip: '',
+      utmActive: utmActive,
     );
   }
 }
