@@ -14,9 +14,26 @@ class NetworkDevice {
 }
 
 /// Runs the LAN discovery script and returns a list of devices.
-Future<List<NetworkDevice>> scanNetwork({void Function(String message)? onError}) async {
+Future<List<NetworkDevice>> scanNetwork(
+    {void Function(String message)? onError}) async {
+  const checkScript = 'scanner_check.py';
   const script = 'discover_hosts.py';
   try {
+    final check = await Process.run(pythonExecutable, [checkScript]);
+    if (check.exitCode != 0) {
+      try {
+        final data = jsonDecode(check.stdout.toString()) as Map<String, dynamic>;
+        final missing = (data['missing'] as List<dynamic>).join(', ');
+        final msg = 'Missing scanners: $missing';
+        stderr.writeln(msg);
+        if (onError != null) onError(msg);
+      } catch (_) {
+        final msg = 'Required scanners not found';
+        stderr.writeln(msg);
+        if (onError != null) onError(msg);
+      }
+      return [];
+    }
     final result = await Process.run(pythonExecutable, [script]);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
