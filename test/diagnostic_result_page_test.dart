@@ -116,6 +116,12 @@ void main() {
     expect(find.text('ドメインの送信元検証設定'), findsOneWidget);
     expect(find.text('GeoIP解析：通信先の国別リスクチェック'), findsOneWidget);
     expect(find.text('LAN内デバイス一覧とリスクチェック'), findsOneWidget);
+    expect(
+        find.text(
+            'LAN 内に接続されているデバイス情報を取得し,\n'
+            'リスクレベルを可視化します。未管理や脆弱な端末が存在すると,\n'
+            'ネットワーク全体が攻撃にさらされる可能性があります。'),
+        findsOneWidget);
     expect(find.text('外部通信の暗号化状況'), findsOneWidget);
     expect(find.text('端末の防御機能の有効性チェック'), findsOneWidget);
     expect(find.text('Windows バージョン'), findsOneWidget);
