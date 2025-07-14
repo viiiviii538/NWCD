@@ -46,6 +46,7 @@ class LanDeviceRisk {
   final String name;
   final String status;
   final String comment;
+  final String note;
 
   const LanDeviceRisk(
       {required this.ip,
@@ -54,7 +55,8 @@ class LanDeviceRisk {
       this.os = '',
       required this.name,
       required this.status,
-      required this.comment});
+      required this.comment,
+      this.note = ''});
 }
 
 class ExternalCommInfo {

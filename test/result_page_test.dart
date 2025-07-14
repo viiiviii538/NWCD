@@ -64,7 +64,8 @@ void main() {
           vendor: 'Test',
           name: 'd',
           status: 'ok',
-          comment: '')
+          comment: '',
+          note: '')
     ];
 
     var called = false;
@@ -98,7 +99,8 @@ void main() {
           vendor: 'Test',
           name: 'd',
           status: 'ok',
-          comment: '')
+          comment: '',
+          note: '')
     ];
 
     var called = false;
