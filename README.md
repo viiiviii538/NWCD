@@ -136,6 +136,7 @@ python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
     "ip": "192.168.1.10",
     "mac": "AA:BB:CC:DD:EE:FF",
     "vendor": "Acme",
+    "os": "Microsoft Windows 10",
     "ports": [
       {"port": "22", "state": "open", "service": "ssh"}
     ]

@@ -27,8 +27,9 @@ class PortStatus {
 class PortScanSummary {
   final String host;
   final List<PortStatus> results;
+  final String os;
 
-  const PortScanSummary(this.host, this.results);
+  const PortScanSummary(this.host, this.results, [this.os = '']);
 
   bool get hasOpen =>
       results.any((r) => r.state.toLowerCase() == 'open');
@@ -177,7 +178,8 @@ Future<PortScanSummary> scanPorts(String host,
             item['service'] ?? ''));
       }
     }
-    return PortScanSummary(host, portList);
+    final os = data['os']?.toString() ?? '';
+    return PortScanSummary(host, portList, os);
   } catch (e) {
     if (onError != null) onError('Failed to run $script: $e');
     return PortScanSummary(host, []);
