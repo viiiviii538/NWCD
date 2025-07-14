@@ -155,7 +155,7 @@ pip install speedtest-cli
       buffer.writeln(pingRes);
 
       final portFuture = diag
-          .scanPorts(ip, onError: (msg) {
+          .scanPorts(ip, osDetect: true, onError: (msg) {
         if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
@@ -299,6 +299,7 @@ pip install speedtest-cli
           (s) => s.host == dev.ip,
           orElse: () => const diag.PortScanSummary('', []));
       final open = [for (final p in summary.results) if (p.state == 'open') p.port];
+      final note = summary.os.contains('Windows') ? summary.os : '';
       lanDevices.add(LanDeviceRisk(
         ip: dev.ip,
         mac: dev.mac,
@@ -307,6 +308,7 @@ pip install speedtest-cli
         name: dev.vendor,
         status: open.isEmpty ? 'ok' : 'warning',
         comment: open.isEmpty ? '' : 'open: ${open.join(',')}',
+        note: note,
       ));
     }
 
