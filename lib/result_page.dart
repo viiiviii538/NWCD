@@ -324,12 +324,14 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                               )
                             : const Text('-'),
                       ),
-                      DataCell(
-                        r.state == 'open'
-                            ? (dangerPortNotes.containsKey(r.port)
-                                ? '危険（開いている）'
-                                : '安全（開いている）')
-                            : '安全（閉じている）',
+                     DataCell(
+                        Text(
+                          r.state == 'open'
+                              ? (dangerPortNotes.containsKey(r.port)
+                                  ? '危険（開いている）'
+                                  : '安全（開いている）')
+                              : '安全（閉じている）',
+                        ),
                       ),
                       DataCell(
                         dangerPortNotes[r.port] != null
