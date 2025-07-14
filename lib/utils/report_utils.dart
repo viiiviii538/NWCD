@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import '../diagnostics.dart' show SecurityReport;
+import '../diagnostics.dart' show SecurityReport, RiskItem;
 import '../extended_results.dart' show LanDeviceRisk;
 import 'python_utils.dart';
 import 'file_utils.dart';
