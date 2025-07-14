@@ -482,6 +482,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          '通信先IPの国情報を取得し、国別に通信数を集計します。リスクの高い国との通信が多い場合、情報漏洩やマルウェア感染につながる恐れがあります。',
+        ),
+        const SizedBox(height: 8),
         DataTable(columns: const [
           DataColumn(label: Text('国名')),
           DataColumn(label: Text('通信数')),
