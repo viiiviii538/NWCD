@@ -295,13 +295,15 @@ pip install speedtest-cli
 
     final lanDevices = <LanDeviceRisk>[];
     for (final dev in _devices) {
-      final summary = _scanResults.firstWhere((s) => s.host == dev.ip,
+      final summary = _scanResults.firstWhere(
+          (s) => s.host == dev.ip,
           orElse: () => const diag.PortScanSummary('', []));
       final open = [for (final p in summary.results) if (p.state == 'open') p.port];
       lanDevices.add(LanDeviceRisk(
         ip: dev.ip,
         mac: dev.mac,
         vendor: dev.vendor,
+        os: summary.os,
         name: dev.vendor,
         status: open.isEmpty ? 'ok' : 'warning',
         comment: open.isEmpty ? '' : 'open: ${open.join(',')}',

@@ -52,7 +52,8 @@ def scan_hosts(
                 "ip": h.get("ip", ""),
                 "mac": h.get("mac", ""),
                 "vendor": h.get("vendor", ""),
-                "ports": scanned,
+                "os": scanned.get("os", ""),
+                "ports": scanned.get("ports", []),
             })
     return results
 
