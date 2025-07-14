@@ -109,6 +109,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       name: name,
       status: d.status,
       comment: d.comment,
+      note: d.note,
     );
     _applyFilter();
   }
@@ -565,6 +566,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
           DataColumn(label: Text('機器名')),
           DataColumn(label: Text('状態')),
           DataColumn(label: Text('コメント')),
+          DataColumn(label: Text('備考')),
         ], rows: [
           for (final d in _filteredDevices)
             DataRow(
@@ -587,6 +589,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               ),
               DataCell(Text(d.status)),
               DataCell(Text(d.comment)),
+              DataCell(Text(d.note)),
               ],
             ),
         ]),

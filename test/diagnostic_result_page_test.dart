@@ -80,7 +80,8 @@ void main() {
           vendor: 'Acme',
           name: 'Dev',
           status: 'ok',
-          comment: '')
+          comment: '',
+          note: '')
     ];
     const comms = [
       ExternalCommInfo(
@@ -136,21 +137,24 @@ void main() {
           vendor: 'A',
           name: 'D1',
           status: 'warning',
-          comment: ''),
+          comment: '',
+          note: ''),
       LanDeviceRisk(
           ip: '1.1.1.2',
           mac: '00:22',
           vendor: 'B',
           name: 'D2',
           status: 'danger',
-          comment: ''),
+          comment: '',
+          note: ''),
       LanDeviceRisk(
           ip: '1.1.1.3',
           mac: '00:33',
           vendor: 'C',
           name: 'D3',
           status: 'safe',
-          comment: ''),
+          comment: '',
+          note: ''),
     ];
 
     await tester.pumpWidget(
@@ -187,28 +191,32 @@ void main() {
           vendor: 'v',
           name: 'n1',
           status: 'safe',
-          comment: ''),
+          comment: '',
+          note: ''),
       LanDeviceRisk(
           ip: '2',
           mac: 'm2',
           vendor: 'v',
           name: 'n2',
           status: 'warning',
-          comment: ''),
+          comment: '',
+          note: ''),
       LanDeviceRisk(
           ip: '3',
           mac: 'm3',
           vendor: 'v',
           name: 'n3',
           status: 'danger',
-          comment: ''),
+          comment: '',
+          note: ''),
       LanDeviceRisk(
           ip: '4',
           mac: 'm4',
           vendor: 'v',
           name: 'n4',
           status: 'danger',
-          comment: ''),
+          comment: '',
+          note: ''),
     ];
 
     await tester.pumpWidget(

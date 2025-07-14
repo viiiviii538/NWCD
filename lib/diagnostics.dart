@@ -149,14 +149,20 @@ Future<String?> getWindowsVersion({void Function(String message)? onError}) asyn
 }
 
 /// Runs the bundled Python script using `nmap` to scan [ports] on [host].
+/// When [osDetect] is true, OS detection (`-O`) is enabled.
 /// Returns a [PortScanSummary] containing all results.
 Future<PortScanSummary> scanPorts(String host,
-    {List<int>? ports, void Function(String message)? onError}) async {
+    {List<int>? ports,
+    bool osDetect = false,
+    void Function(String message)? onError}) async {
   const script = 'port_scan.py';
   try {
     final args = <String>[script, host];
     if (ports != null && ports.isNotEmpty) {
       args.add(ports.join(','));
+    }
+    if (osDetect) {
+      args.add('--os');
     }
     final result = await Process.run(pythonExecutable, args);
     if (result.exitCode != 0) {
