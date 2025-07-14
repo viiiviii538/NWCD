@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nwc_densetsu/diagnostics.dart' as diag;
 import 'package:nwc_densetsu/network_scan.dart' as net;
+// The diagnostics and network_scan libraries are imported with aliases only.
+// Avoid using `show`/`hide` so that all named parameters like `utmActive`
+// remain available during development.
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
