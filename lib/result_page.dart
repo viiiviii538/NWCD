@@ -580,7 +580,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('外部通信の暗号化状況'),
+          const Text(
+            '外部通信の暗号化状況',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('宛先ドメイン')),
