@@ -269,7 +269,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ポート開放状況'),
+          const Text(
+            'ポート開放状況',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         const Text(
           '特定のポートが開いていると、攻撃対象となる範囲が広がり、不正アクセスやマルウェア侵入の経路になる恐れがあります。',
