@@ -56,9 +56,21 @@ class _HistoryPageState extends State<HistoryPage> {
     return RefreshIndicator(
       onRefresh: _loadFiles,
       child: ListView.builder(
-        itemCount: _files.length,
+        itemCount: _files.length + 1,
         itemBuilder: (context, index) {
-          final f = _files[index];
+          if (index == 0) {
+            return Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () {
+                  DefaultTabController.of(context)?.animateTo(0);
+                },
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('ホームに戻る'),
+              ),
+            );
+          }
+          final f = _files[index - 1];
           final name = p.basename(f.path);
           return ListTile(
             title: Text(name),
