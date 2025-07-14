@@ -51,6 +51,10 @@ class RiskItem {
   const RiskItem(this.description, this.countermeasure);
 }
 
+/// Result of running [runSecurityReport].
+///
+/// The [utmActive] flag indicates whether unified threat management equipment
+/// was detected during the scan.
 class SecurityReport {
   final String ip;
   final double score;
@@ -64,6 +68,10 @@ class SecurityReport {
   /// Whether unified threat management is enabled for this host.
   bool get utmActive => _utmActive;
 
+  /// Create a new [SecurityReport].
+  ///
+  /// The [openPorts], [geoip] and [utmActive] parameters are optional and will
+  /// default to empty values when omitted.
   const SecurityReport(
     this.ip,
     this.score,
@@ -275,10 +283,11 @@ Future<String> checkSpfRecord(String domain) async {
   }
 }
 
-/// Runs the `security_report.py` script and parses the result.
+/// Runs the bundled Python script `security_report.py` and parses the output.
 ///
-/// When [utmActive] is true, a small bonus is applied to the resulting score
-/// to account for the presence of unified threat management equipment.
+/// The optional [utmActive] flag mirrors the `utm_active` argument passed to the
+/// Python script. When true, a small bonus is added to the final security score
+/// to account for unified threat management hardware present on the network.
 Future<SecurityReport> runSecurityReport({
   required String ip,
   required List<int> openPorts,
