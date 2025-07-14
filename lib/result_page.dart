@@ -405,7 +405,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('SSL証明書の安全性チェック'),
+          const Text(
+            'SSL証明書の安全性チェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         const Text('証明書の有効期限切れ'),
         const SizedBox(height: 4),
@@ -439,7 +442,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ドメインの送信元検証設定'),
+          const Text(
+            'ドメインの送信元検証設定',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('ドメイン')),
@@ -470,7 +476,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('GeoIP解析：通信先の国別リスクチェック'),
+          const Text(
+            'GeoIP解析：通信先の国別リスクチェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('国名')),
@@ -507,7 +516,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('LAN内デバイス一覧とリスクチェック'),
+          const Text(
+            'LAN内デバイス一覧とリスクチェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -574,7 +586,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('外部通信の暗号化状況'),
+          const Text(
+            '外部通信の暗号化状況',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('宛先ドメイン')),
@@ -603,7 +618,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('端末の防御機能の有効性チェック'),
+          const Text(
+            '端末の防御機能の有効性チェック',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 4),
         DataTable(columns: const [
           DataColumn(label: Text('保護機能')),
