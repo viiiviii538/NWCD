@@ -7,7 +7,7 @@ import 'package:nwc_densetsu/diagnostics.dart';
 void main() {
   test('runSecurityReport converts float score from JSON', () async {
     Future<ProcessResult> fakeRunner(String exe, List<String> args) async {
-      final data = {
+      const data = {
         'ip': '8.8.8.8',
         'score': 3.6,
         'risks': [],

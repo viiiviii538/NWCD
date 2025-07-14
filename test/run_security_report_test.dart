@@ -9,7 +9,7 @@ void main() {
     late List<String> received;
     Future<ProcessResult> fakeRunner(String exe, List<String> args) async {
       received = args;
-      final data = {
+      const data = {
         'ip': '1.2.3.4',
         'score': 6.7,
         'risks': [],
