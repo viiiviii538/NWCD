@@ -246,8 +246,12 @@ Future<List<LanPortDevice>> scanLanWithPorts({
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
-    final socket = await SecureSocket.connect(host, 443,
-        timeout: const Duration(seconds: 5));
+    final socket = await SecureSocket.connect(
+      host,
+      443,
+      timeout: const Duration(seconds: 5),
+      onBadCertificate: (_) => true,
+    );
     final cert = socket.peerCertificate;
     socket.destroy();
     if (cert == null) {
