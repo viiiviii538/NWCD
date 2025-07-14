@@ -28,6 +28,11 @@ class CalcScoreTest(unittest.TestCase):
         self.assertTrue(all('counter' in r for r in risks))
         self.assertEqual(utm, ['firewall'])
 
+    def test_utm_bonus(self):
+        base_score, _, _ = calc_score(['3389'], 'valid', True, 'JP', utm_active=False)
+        bonus_score, _, _ = calc_score(['3389'], 'valid', True, 'JP', utm_active=True)
+        self.assertAlmostEqual(bonus_score, base_score + 2.0, places=1)
+
 
 if __name__ == '__main__':
     unittest.main()
