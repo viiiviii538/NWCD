@@ -62,16 +62,30 @@ class DiagnosticResultPage extends StatefulWidget {
 
 class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
   String _deviceFilter = 'all';
+  late List<LanDeviceRisk> _lanDevices;
   late List<LanDeviceRisk> _filteredDevices;
+  final Map<String, TextEditingController> _nameControllers = {};
 
   @override
   void initState() {
     super.initState();
+    _lanDevices = [...widget.lanDevices];
+    for (final d in _lanDevices) {
+      _nameControllers[d.ip] = TextEditingController(text: d.name);
+    }
     _applyFilter();
   }
 
+  @override
+  void dispose() {
+    for (final c in _nameControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   void _applyFilter() {
-    _filteredDevices = [...widget.lanDevices];
+    _filteredDevices = [..._lanDevices];
     if (_deviceFilter == 'warning') {
       _filteredDevices =
           _filteredDevices.where((d) => d.status == 'warning').toList();
@@ -81,6 +95,21 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     }
     _filteredDevices.sort((a, b) => _statusRank(a.status)
         .compareTo(_statusRank(b.status)));
+  }
+
+  void _updateDeviceName(String ip, String name) {
+    final index = _lanDevices.indexWhere((d) => d.ip == ip);
+    if (index == -1) return;
+    final d = _lanDevices[index];
+    _lanDevices[index] = LanDeviceRisk(
+      ip: d.ip,
+      mac: d.mac,
+      vendor: d.vendor,
+      name: name,
+      status: d.status,
+      comment: d.comment,
+    );
+    _applyFilter();
   }
 
   int _statusRank(String status) {
@@ -515,7 +544,17 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               DataCell(Text(d.ip)),
               DataCell(Text(d.mac)),
               DataCell(Text(d.vendor)),
-              DataCell(Text(d.name)),
+              DataCell(
+                TextField(
+                  controller: _nameControllers[d.ip],
+                  decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                  onChanged: (v) {
+                    setState(() {
+                      _updateDeviceName(d.ip, v);
+                    });
+                  },
+                ),
+              ),
               DataCell(Text(d.status)),
               DataCell(Text(d.comment)),
               ],
