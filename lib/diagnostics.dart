@@ -301,7 +301,7 @@ Future<SecurityReport> runSecurityReport({
       return SecurityReport(
         ip,
         0.0,
-        [const RiskItem('error', 'No output from security_report.py')],
+        [RiskItem('error', 'No output from security_report.py')],
         [],
         '',
         openPorts: [],
