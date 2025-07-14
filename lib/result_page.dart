@@ -522,6 +522,12 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 4),
+        const Text(
+          'LAN 内に接続されているデバイス情報を取得し、\n'
+          'リスクレベルを可視化します。未管理や脆弱な端末が存在すると、\n'
+          'ネットワーク全体が攻撃にさらされる可能性があります。',
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             const Text('Filter:'),
