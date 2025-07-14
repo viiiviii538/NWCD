@@ -400,45 +400,13 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     );
   }
 
-  Widget _sslSection() {
-    if (widget.sslChecks.isEmpty) return const SizedBox.shrink();
-    return _wrapSection(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'SSL証明書の安全性チェック',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-        const SizedBox(height: 4),
-        const Text('証明書の有効期限切れ'),
-        const SizedBox(height: 4),
-        const Text('推奨対策: 証明書を更新する'),
-        const SizedBox(height: 4),
-        DataTable(columns: const [
-          DataColumn(label: Text('ドメイン')),
-          DataColumn(label: Text('発行者')),
-          DataColumn(label: Text('有効期限')),
-          DataColumn(label: Text('状態')),
-          DataColumn(label: Text('コメント')),
-        ], rows: [
-          for (final c in widget.sslChecks)
-            DataRow(cells: [
-              DataCell(Text(c.domain)),
-              DataCell(Text(c.issuer)),
-              DataCell(Text(c.expiry)),
-              DataCell(Text(_sslStatusText(c.status))),
-              DataCell(Text(_sslCommentText(c.comment))),
-            ]),
-        ]),
-      ],
-    ),
-    );
-  }
+
 
 
   Widget _domainAuthSection() {
-    if (widget.domainAuths.isEmpty) return const SizedBox.shrink();
+    if (widget.domainAuths.isEmpty && widget.sslChecks.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return _wrapSection(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,31 +415,61 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             'ドメインの送信元検証設定',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-        const SizedBox(height: 4),
-        const Text(
-          'SPF/DKIM/DMARC の設定状況を取得し、未設定のドメインはなりすましメール送信に悪用される恐れがあります。',
-        ),
-        const SizedBox(height: 8),
-        DataTable(columns: const [
-          DataColumn(label: Text('ドメイン')),
-          DataColumn(label: Text('SPF')),
-          DataColumn(label: Text('DKIM')),
-          DataColumn(label: Text('DMARC')),
-          DataColumn(label: Text('状態')),
-          DataColumn(label: Text('コメント')),
-        ], rows: [
-          for (final c in widget.domainAuths)
-            DataRow(cells: [
-              DataCell(Text(c.domain)),
-              DataCell(Text(c.spf ? '✅' : '❌')),
-              DataCell(Text(c.dkim ? '✅' : '❌')),
-              DataCell(Text(c.dmarc ? '✅' : '❌')),
-              DataCell(Text(c.status)),
-              DataCell(Text(c.comment)),
+          const SizedBox(height: 4),
+          const Text(
+            'SPF/DKIM/DMARC の設定状況を取得し、未設定のドメインはなりすましメール送信に悪用される恐れがあります。',
+          ),
+          if (widget.domainAuths.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            DataTable(columns: const [
+              DataColumn(label: Text('ドメイン')),
+              DataColumn(label: Text('SPF')),
+              DataColumn(label: Text('DKIM')),
+              DataColumn(label: Text('DMARC')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ], rows: [
+              for (final c in widget.domainAuths)
+                DataRow(cells: [
+                  DataCell(Text(c.domain)),
+                  DataCell(Text(c.spf ? '✅' : '❌')),
+                  DataCell(Text(c.dkim ? '✅' : '❌')),
+                  DataCell(Text(c.dmarc ? '✅' : '❌')),
+                  DataCell(Text(c.status)),
+                  DataCell(Text(c.comment)),
+                ]),
             ]),
-        ]),
-      ],
-    ),
+          ],
+          if (widget.sslChecks.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'SSL証明書の安全性チェック',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            const Text('証明書の有効期限切れ'),
+            const SizedBox(height: 4),
+            const Text('推奨対策: 証明書を更新する'),
+            const SizedBox(height: 4),
+            DataTable(columns: const [
+              DataColumn(label: Text('ドメイン')),
+              DataColumn(label: Text('発行者')),
+              DataColumn(label: Text('有効期限')),
+              DataColumn(label: Text('状態')),
+              DataColumn(label: Text('コメント')),
+            ], rows: [
+              for (final c in widget.sslChecks)
+                DataRow(cells: [
+                  DataCell(Text(c.domain)),
+                  DataCell(Text(c.issuer)),
+                  DataCell(Text(c.expiry)),
+                  DataCell(Text(_sslStatusText(c.status))),
+                  DataCell(Text(_sslCommentText(c.comment))),
+                ]),
+            ]),
+          ],
+        ],
+      ),
     );
   }
 
@@ -838,8 +836,6 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               ),
               const SizedBox(height: 16),
               _portSection(),
-              const SizedBox(height: 16),
-              _sslSection(),
               const SizedBox(height: 16),
               _domainAuthSection(),
               const SizedBox(height: 16),
