@@ -171,8 +171,9 @@ RDP ポート (3389) が開いている、またはロシアなど危険国と�
 HIGH_WEIGHT = 4.5
 MEDIUM_WEIGHT = 1.7
 LOW_WEIGHT = 0.5
+UTM_BONUS = 2.0
 ```
-数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。
+数値が小さいほどリスクが高く、0 から 10 の範囲に丸められます。utm_active が true の場合は計算後に 2.0 のボーナスを加算してから丸めます。
 
 例として Python から直接呼び出す場合は次の通りです。
 
@@ -183,11 +184,16 @@ result = calc_security_score({
     "danger_ports": ["3389"],
     "geoip": "RU",
     "ssl": "invalid",
+    "utm_active": true,
     "open_port_count": 3,
 })
 print(result["score"], result["high_risk"])
 ```
 
+コマンドラインから UTM スイッチを有効にするには次のように実行します:
+```bash
+python security_report.py 192.168.1.10 80,443 valid true JP true
+```
 
 ## HTML レポート生成
 
