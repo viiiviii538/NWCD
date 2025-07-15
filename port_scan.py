@@ -6,12 +6,17 @@ import xml.etree.ElementTree as ET
 import ipaddress
 
 
+SCAN_TIMEOUT = 60
+
+
 def run_scan(
     host: str,
     ports: list[str] | None = None,
     service: bool = False,
     os_detect: bool = False,
     scripts: list[str] | None = None,
+    *,
+    timeout: int = SCAN_TIMEOUT,
 ) -> list[dict[str, str]]:
     cmd = ["nmap"]
     try:
@@ -32,7 +37,12 @@ def run_scan(
         cmd += ["-p-", "-oX", "-", host]
     else:
         cmd += ["-p", ",".join(ports), "-oX", "-", host]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("nmap scan timed out")
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip())
     root = ET.fromstring(proc.stdout)

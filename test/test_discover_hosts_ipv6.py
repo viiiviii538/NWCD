@@ -8,7 +8,12 @@ class DiscoverHostsIPv6Test(unittest.TestCase):
         with patch('subprocess.run') as m:
             m.return_value = MagicMock(returncode=0, stdout=xml)
             res = discover_hosts._run_nmap_scan('fe80::/64')
-            m.assert_called_with(['nmap', '-6', '-sn', 'fe80::/64', '-oX', '-'], capture_output=True, text=True)
+            m.assert_called_with(
+                ['nmap', '-6', '-sn', 'fe80::/64', '-oX', '-'],
+                capture_output=True,
+                text=True,
+                timeout=discover_hosts.SCAN_TIMEOUT,
+            )
             self.assertEqual(res[0]['ip'], 'fe80::1')
             self.assertEqual(res[0]['mac'], '00:11:22:33:44:55')
 
