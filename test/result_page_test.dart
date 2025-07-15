@@ -9,9 +9,9 @@ void main() {
   testWidgets('ResultPage displays scores and items', (WidgetTester tester) async {
     const reports = [
       SecurityReport('1.1.1.1', 9, [RiskItem('risk1', 'fix1')], [], '',
-          openPorts: [80], geoip: 'US'),
+          openPorts: [80], geoip: 'US', utmActive: false),
       SecurityReport('2.2.2.2', 4, [RiskItem('risk2', 'fix2')], [], '',
-          openPorts: [22], geoip: 'JP'),
+          openPorts: [22], geoip: 'JP', utmActive: false),
     ];
 
     await tester.pumpWidget(
