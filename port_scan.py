@@ -4,6 +4,61 @@ import sys
 import subprocess
 import xml.etree.ElementTree as ET
 import ipaddress
+import selectors
+import time
+
+
+def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
+    """Run nmap command and return stdout. If progress_timeout is provided,
+    terminate the process if no output is received within the timeout."""
+    if progress_timeout is None:
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(proc.stderr.strip())
+        return proc.stdout
+
+    with subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    ) as proc:
+        selector = selectors.DefaultSelector()
+        selector.register(proc.stdout, selectors.EVENT_READ)
+        selector.register(proc.stderr, selectors.EVENT_READ)
+        last_update = time.time()
+        stdout_parts: list[str] = []
+        stderr_parts: list[str] = []
+        while True:
+            events = selector.select(timeout=1)
+            if events:
+                for key, _ in events:
+                    line = key.fileobj.readline()
+                    if not line:
+                        continue
+                    last_update = time.time()
+                    if key.fileobj is proc.stdout:
+                        stdout_parts.append(line)
+                    else:
+                        stderr_parts.append(line)
+            else:
+                if progress_timeout and time.time() - last_update > progress_timeout:
+                    proc.kill()
+                    raise RuntimeError("nmap scan stalled")
+
+            if proc.poll() is not None:
+                stdout_parts.append(proc.stdout.read() or "")
+                stderr_parts.append(proc.stderr.read() or "")
+                break
+
+        selector.unregister(proc.stdout)
+        selector.unregister(proc.stderr)
+        ret = proc.wait()
+        stderr_output = "".join(stderr_parts)
+        if ret != 0:
+            raise RuntimeError(stderr_output.strip())
+        return "".join(stdout_parts)
 
 
 def run_scan(
@@ -12,6 +67,7 @@ def run_scan(
     service: bool = False,
     os_detect: bool = False,
     scripts: list[str] | None = None,
+    progress_timeout: float | None = 60.0,
 ) -> list[dict[str, str]]:
     cmd = ["nmap"]
     try:
@@ -28,14 +84,14 @@ def run_scan(
         scripts = ["vuln"]
     if scripts:
         cmd += ["--script", ",".join(scripts)]
+    if progress_timeout is not None:
+        cmd += ["--stats-every", "5s"]
     if not ports:
         cmd += ["-p-", "-oX", "-", host]
     else:
         cmd += ["-p", ",".join(ports), "-oX", "-", host]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip())
-    root = ET.fromstring(proc.stdout)
+    output = _exec_nmap(cmd, progress_timeout)
+    root = ET.fromstring(output)
     results = []
     os_name = ""
     for port in root.findall('.//port'):
