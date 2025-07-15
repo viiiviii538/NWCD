@@ -10,6 +10,8 @@ import os
 IP_RE = re.compile(r'(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+')
 from pathlib import Path
 from urllib.request import urlopen
+from urllib.error import URLError
+import socket
 
 # Cache for MAC prefix to vendor lookups
 _VENDOR_CACHE: dict[str, str] = {}
@@ -147,11 +149,12 @@ def _lookup_vendor(mac):
             pass
 
     try:
-        with urlopen(f'https://api.macvendors.com/{mac}') as resp:
+        # Limit HTTP request time so vendor lookup does not block scanning
+        with urlopen(f'https://api.macvendors.com/{mac}', timeout=3) as resp:
             vendor = resp.read().decode('utf-8')
             _VENDOR_CACHE[prefix] = vendor
             return vendor
-    except Exception:
+    except (URLError, socket.timeout):
         _VENDOR_CACHE[prefix] = ''
         return ''
 
