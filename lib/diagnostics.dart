@@ -71,8 +71,9 @@ class SecurityReport {
 
   /// Create a new [SecurityReport].
   ///
-  /// The [openPorts], [geoip] and [utmActive] parameters are optional and will
-  /// default to empty values when omitted.
+  /// The [openPorts] and [geoip] parameters are optional and will default to
+  /// empty values when omitted. The [utmActive] flag must be explicitly
+  /// provided.
   const SecurityReport(
     this.ip,
     this.score,
@@ -81,7 +82,7 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
-    bool utmActive = false,
+    required bool utmActive,
   }) : _utmActive = utmActive;
 }
 
