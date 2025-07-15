@@ -59,5 +59,11 @@ class PortScanScriptTest(unittest.TestCase):
             res = port_scan.run_scan('1.1.1.1', [], os_detect=True)
             self.assertEqual(res['os'], 'Microsoft Windows 11')
 
+    def test_run_scan_timeout_error(self):
+        with patch('subprocess.run') as m:
+            m.side_effect = subprocess.TimeoutExpired(cmd='nmap', timeout=1)
+            with self.assertRaises(RuntimeError):
+                port_scan.run_scan('1.1.1.1', [], timeout=1)
+
 if __name__ == '__main__':
     unittest.main()

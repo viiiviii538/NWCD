@@ -98,7 +98,10 @@ def _get_subnet():
 
 
 
-def _run_nmap_scan(subnet):
+SCAN_TIMEOUT = 60
+
+
+def _run_nmap_scan(subnet, *, timeout: int = SCAN_TIMEOUT):
     cmd = ['nmap']
     try:
         if ipaddress.ip_network(subnet, strict=False).version == 6:
@@ -107,7 +110,12 @@ def _run_nmap_scan(subnet):
         if ':' in subnet:
             cmd.append('-6')
     cmd += ['-sn', subnet, '-oX', '-']
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError('nmap host discovery timed out')
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip())
     root = ET.fromstring(proc.stdout)

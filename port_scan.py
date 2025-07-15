@@ -61,6 +61,9 @@ def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
         return "".join(stdout_parts)
 
 
+SCAN_TIMEOUT = 60
+
+
 def run_scan(
     host: str,
     ports: list[str] | None = None,

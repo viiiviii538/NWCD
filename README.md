@@ -100,10 +100,12 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 ```
 `--script` を省略した場合は `vuln` スクリプトが自動的に指定され、脆弱性チェックが行われます。
+`nmap` 実行には 60 秒のタイムアウトを設けており、極端に時間がかかる場合は自動で終了します。
 
 ## LAN デバイス一覧取得
 
 `discover_hosts.py` は `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。オンライン取得時は 3 秒のタイムアウトを設けており、応答がない場合はベンダー名は空欄となります。
+`nmap` によるホスト探索も 60 秒のタイムアウトを設定しており、異常に時間がかかる場合は失敗として扱われます。
 
 ### PATH の確認
 
@@ -207,12 +209,13 @@ python security_report.py 192.168.1.10 80,443 valid true JP true
 
 `generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。
 `--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+`--csv` を指定すると同時に CSV 形式のレポートも出力します。
 PDF 出力には `wkhtmltopdf` (pdfkit) もしくは `weasyprint` をインストールしておく必要があります。
 
 実行例:
 
 ```bash
-python generate_html_report.py devices.json -o report.html --pdf
+python generate_html_report.py devices.json -o report.html --pdf --csv report.csv
 ```
 
 入力 JSON の例:
@@ -353,7 +356,7 @@ flutter test
 - `lan_port_scan.py`
 - `network_speed.py`
 - `security_report.py`
-- `generate_html_report.py`
+- `generate_html_report.py` (CSV 出力も可能)
 - `generate_topology.py`
 
 ### 配布手順例
