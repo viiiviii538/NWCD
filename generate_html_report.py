@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import html
+import csv
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -145,6 +146,48 @@ def generate_html_report(devices: List[Dict[str, Any]]) -> str:
     return generate_html(devices)
 
 
+def _extract_devices(data: Any) -> List[Dict[str, Any]]:
+    if isinstance(data, dict) and "devices" in data:
+        return list(data.get("devices", []))
+    return list(data)
+
+
+def generate_csv_rows(devices: List[Dict[str, Any]]) -> List[List[str]]:
+    rows = []
+    for dev in devices:
+        name = dev.get("device") or dev.get("ip") or "unknown"
+        ports = [str(p) for p in dev.get("open_ports", [])]
+        countries = _collect_countries(dev)
+        danger_list = [p for p in ports if p in {"3389", "445", "23"}]
+        data = {
+            "danger_ports": danger_list,
+            "geoip": countries[0] if countries else "",
+            "open_port_count": len(ports),
+            "ssl": dev.get("ssl", "valid"),
+            "dns_fail_rate": 0.0,
+        }
+        res = calc_security_score(data)
+        score = res["score"]
+        utm = calc_utm_items(score, ports, countries)
+        rows.append([
+            name,
+            str(score),
+            ",".join(ports),
+            ",".join(countries),
+            ",".join(utm),
+        ])
+    return rows
+
+
+def save_csv_report(devices: List[Dict[str, Any]], path: str) -> None:
+    header = ["device", "score", "open_ports", "countries", "utm_items"]
+    rows = generate_csv_rows(devices)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(rows)
+
+
 def convert_to_pdf(html_path: Path, pdf_path: Path) -> None:
     if pdfkit:
         pdfkit.from_file(str(html_path), str(pdf_path))
@@ -159,6 +202,7 @@ def main() -> None:
     parser.add_argument("input", help="Input JSON file with scan data")
     parser.add_argument("-o", "--output", default="scan_report.html", help="Output HTML file")
     parser.add_argument("--pdf", action="store_true", help="Also generate PDF if possible")
+    parser.add_argument("--csv", help="Also generate CSV report to this file")
     args = parser.parse_args()
 
     with open(args.input, "r", encoding="utf-8") as f:
@@ -168,6 +212,10 @@ def main() -> None:
     out_path = Path(args.output)
     out_path.write_text(html_data, encoding="utf-8")
     print(f"HTML report written to {out_path}")
+
+    if args.csv:
+        save_csv_report(_extract_devices(data), args.csv)
+        print(f"CSV report written to {args.csv}")
 
     if args.pdf:
         pdf_path = out_path.with_suffix(".pdf")

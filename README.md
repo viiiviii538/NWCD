@@ -207,12 +207,13 @@ python security_report.py 192.168.1.10 80,443 valid true JP true
 
 `generate_html_report.py` を使うと、デバイス情報から HTML 形式のレポートを作成できます。
 `--pdf` オプションを指定すると、`pdfkit` または `weasyprint` が利用可能な環境では PDF も生成します。
+`--csv` を指定すると同時に CSV 形式のレポートも出力します。
 PDF 出力には `wkhtmltopdf` (pdfkit) もしくは `weasyprint` をインストールしておく必要があります。
 
 実行例:
 
 ```bash
-python generate_html_report.py devices.json -o report.html --pdf
+python generate_html_report.py devices.json -o report.html --pdf --csv report.csv
 ```
 
 入力 JSON の例:
@@ -353,7 +354,7 @@ flutter test
 - `lan_port_scan.py`
 - `network_speed.py`
 - `security_report.py`
-- `generate_html_report.py`
+- `generate_html_report.py` (CSV 出力も可能)
 - `generate_topology.py`
 
 ### 配布手順例
