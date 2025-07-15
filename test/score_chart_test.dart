@@ -7,9 +7,9 @@ void main() {
   testWidgets('ScoreChart renders', (WidgetTester tester) async {
     const reports = [
       const SecurityReport('1.1.1.1', 9.0, <RiskItem>[], [], '',
-          openPorts: [80], geoip: 'US'),
+          openPorts: [80], geoip: 'US', utmActive: false),
       const SecurityReport('2.2.2.2', 3.0, <RiskItem>[], [], '',
-          openPorts: [22], geoip: 'JP'),
+          openPorts: [22], geoip: 'JP', utmActive: false),
     ];
     await tester.pumpWidget(
       MaterialApp(home: Scaffold(body: ScoreChart(reports: reports))),
