@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:nwc_densetsu/diagnostics.dart' as diag;
-import 'package:nwc_densetsu/network_scan.dart' as net;
-// The diagnostics and network_scan libraries are imported with aliases only.
-// Avoid using `show`/`hide` so that all named parameters like `utmActive`
-// remain available during development.
+import 'package:nwc_densetsu/diagnostics.dart';
+import 'package:nwc_densetsu/network_scan.dart';
+// The diagnostics and network_scan libraries are imported directly rather than
+// using `show`/`hide` or aliases so that all named parameters like `utmActive`
+// remain visible to the analyzer.
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
@@ -54,12 +54,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _output = '';
-  List<diag.PortScanSummary> _scanResults = [];
-  List<net.NetworkDevice> _devices = <net.NetworkDevice>[];
-  List<diag.SecurityReport> _reports = [];
-  final Map<String, diag.SslResult> _sslResults = {};
+  List<PortScanSummary> _scanResults = [];
+  List<NetworkDevice> _devices = <NetworkDevice>[];
+  List<SecurityReport> _reports = [];
+  final Map<String, SslResult> _sslResults = {};
   final Map<String, String> _spfResults = {};
-  diag.NetworkSpeed? _speed;
+  NetworkSpeed? _speed;
   bool _lanScanning = false;
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _runLanScan() async {
     setState(() {
       _lanScanning = true;
-      _devices = <net.NetworkDevice>[];
+      _devices = <NetworkDevice>[];
       _scanResults = [];
       _reports = [];
       _sslResults.clear();
@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
       _progress.clear();
     });
 
-    final speed = await diag.measureNetworkSpeed(onError: (msg) {
+    final speed = await measureNetworkSpeed(onError: (msg) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('速度計測失敗: $msg')));
@@ -117,7 +117,7 @@ winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
 pip install speedtest-cli
 ''';
 
-    final devices = await net.scanNetwork(onError: (msg) {
+    final devices = await scanNetwork(onError: (msg) {
       if (mounted) {
         if (msg.startsWith('Missing scanners:')) {
           showDialog(
@@ -151,11 +151,10 @@ pip install speedtest-cli
     for (final d in devices) {
       final ip = d.ip;
       buffer.writeln('--- $ip ---');
-      final pingRes = await diag.runPing(ip);
+      final pingRes = await runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = diag
-          .scanPorts(ip, osDetect: true, onError: (msg) {
+      final portFuture = scanPorts(ip, osDetect: true, onError: (msg) {
         if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
@@ -164,19 +163,19 @@ pip install speedtest-cli
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
-      final sslFuture = diag.checkSslCertificate(ip).then((value) {
+      final sslFuture = checkSslCertificate(ip).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
-      final spfFuture = diag.checkSpfRecord(ip).then((value) {
+      final spfFuture = checkSpfRecord(ip).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
 
       final results = await Future.wait([portFuture, sslFuture, spfFuture]);
 
-      final summary = results[0] as diag.PortScanSummary;
-      final sslRes = results[1] as diag.SslResult;
+      final summary = results[0] as PortScanSummary;
+      final sslRes = results[1] as SslResult;
       final spfRes = results[2] as String;
 
       _scanResults.add(summary);
@@ -189,7 +188,7 @@ pip install speedtest-cli
       buffer.writeln(sslRes.message);
       buffer.writeln(spfRes);
 
-      final report = await diag.runSecurityReport(
+      final report = await runSecurityReport(
         ip: ip,
         openPorts: [
           for (final r in summary.results)
@@ -240,7 +239,7 @@ pip install speedtest-cli
   }
 
   Future<void> _openResultPage() async {
-    final version = await diag.getWindowsVersion(onError: (msg) {
+    final version = await getWindowsVersion(onError: (msg) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Windows情報取得失敗: $msg')));
@@ -297,7 +296,7 @@ pip install speedtest-cli
     for (final dev in _devices) {
       final summary = _scanResults.firstWhere(
           (s) => s.host == dev.ip,
-          orElse: () => const diag.PortScanSummary('', []));
+          orElse: () => const PortScanSummary('', []));
       final open = [for (final p in summary.results) if (p.state == 'open') p.port];
       final note = summary.os.contains('Windows') ? summary.os : '';
       lanDevices.add(LanDeviceRisk(
@@ -510,7 +509,7 @@ pip install speedtest-cli
                     DataColumn(label: Text('Vendor')),
                   ],
                   rows: [
-                    for (final net.NetworkDevice d in _devices)
+                    for (final NetworkDevice d in _devices)
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
@@ -536,7 +535,7 @@ pip install speedtest-cli
                           DataColumn(label: Text('Vendor')),
                         ],
                         rows: _devices
-                            .map((net.NetworkDevice? d) => DataRow(cells: [
+                            .map((NetworkDevice? d) => DataRow(cells: [
                                   DataCell(Text(d?.ip ?? '')),
                                   DataCell(Text(d?.mac ?? '')),
                                   DataCell(Text(d?.vendor ?? '')),
@@ -569,7 +568,7 @@ String _riskState(int score) {
 }
 
 class ScoreChart extends StatelessWidget {
-  final List<diag.SecurityReport> reports;
+  final List<SecurityReport> reports;
   const ScoreChart({super.key, required this.reports});
 
   @override
