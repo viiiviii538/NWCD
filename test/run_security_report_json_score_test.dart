@@ -24,6 +24,7 @@ void main() {
       openPorts: const [],
       sslValid: true,
       spfValid: true,
+      utmActive: false,
       processRunner: fakeRunner,
     );
 
