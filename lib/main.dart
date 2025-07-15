@@ -10,6 +10,7 @@ import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/extended_results.dart';
 import 'package:nwc_densetsu/history_page.dart';
+import 'package:nwc_densetsu/port_constants.dart';
 import 'config.dart';
 
 void main() {
@@ -154,12 +155,17 @@ pip install speedtest-cli
       final pingRes = await runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = scanPorts(ip, osDetect: true, onError: (msg) {
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
-        }
-      }).then((value) {
+      final portFuture = scanPorts(
+        ip,
+        ports: defaultPortList,
+        osDetect: true,
+        onError: (msg) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
+          }
+        },
+      ).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
