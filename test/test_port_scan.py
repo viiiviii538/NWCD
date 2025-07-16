@@ -1,6 +1,7 @@
 import unittest
 import subprocess
 from unittest.mock import patch
+import subprocess
 import port_scan
 
 
