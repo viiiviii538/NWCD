@@ -17,7 +17,7 @@ class NetworkDevice {
 Future<List<NetworkDevice>> scanNetwork(
     {void Function(String message)? onError}) async {
   const checkScript = 'scanner_check.py';
-  const script = 'discover_hosts.py';
+  const script = 'nwcd_cli.py';
   try {
     final check = await Process.run(pythonExecutable, [checkScript]);
     if (check.exitCode != 0) {
@@ -34,7 +34,7 @@ Future<List<NetworkDevice>> scanNetwork(
       }
       return [];
     }
-    final result = await Process.run(pythonExecutable, [script]);
+    final result = await Process.run(pythonExecutable, [script, 'discover-hosts']);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
       final err = msg.isEmpty
@@ -46,8 +46,8 @@ Future<List<NetworkDevice>> scanNetwork(
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
-      stderr.writeln('discover_hosts.py produced no output');
-      if (onError != null) onError('Empty output from discover_hosts.py');
+      stderr.writeln('nwcd_cli.py discover-hosts produced no output');
+      if (onError != null) onError('Empty output from nwcd_cli.py discover-hosts');
       return [];
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
