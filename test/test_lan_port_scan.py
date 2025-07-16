@@ -39,6 +39,8 @@ def test_ipv6_hosts(mock_nmap, mock_scan):
         os_detect=False,
         scripts=None,
         progress_timeout=lan_port_scan.SCAN_TIMEOUT,
+        timing=None,
+        fast=True,
     )
     assert res[0]['ip'] == 'fe80::1'
 
@@ -59,6 +61,7 @@ class FakeExecutor:
     def __init__(self, *args, **kwargs):
         FakeExecutor.instance = self
         self.submitted = []
+        self.max_workers = kwargs.get("max_workers")
 
     def __enter__(self):
         return self
@@ -97,6 +100,21 @@ class LanPortScanConcurrencyTest(unittest.TestCase):
             self.assertEqual(mock_run.call_count, 2)
             self.assertEqual(len(FakeExecutor.instance.submitted), 2)
             self.assertTrue(all(c == 2 for c in call_counts))
+
+
+class LanPortScanDisableFastTest(unittest.TestCase):
+    @patch('lan_port_scan.as_completed', _fake_as_completed)
+    @patch('lan_port_scan.ThreadPoolExecutor', FakeExecutor)
+    @patch('lan_port_scan.gather_hosts')
+    def test_disable_fast_sequential(self, mock_gather):
+        mock_gather.return_value = [
+            {'ip': '1.1.1.1', 'mac': '', 'vendor': ''},
+            {'ip': '1.1.1.2', 'mac': '', 'vendor': ''},
+        ]
+        with patch('lan_port_scan.run_scan', return_value={'os': '', 'ports': []}) as mock_run:
+            lan_port_scan.scan_hosts('1.1.1.0/24', ['80'], fast=False)
+            self.assertEqual(mock_run.call_count, 2)
+            self.assertEqual(FakeExecutor.instance.max_workers, 1)
 
 if __name__ == '__main__':
     unittest.main()

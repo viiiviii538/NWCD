@@ -54,6 +54,22 @@ class PortScanScriptTest(unittest.TestCase):
             )
             self.assertIn('ports', res)
 
+    def test_run_scan_with_timing(self):
+        xml = "<nmaprun></nmaprun>"
+        with patch('port_scan._exec_nmap') as m:
+            m.return_value = xml
+            port_scan.run_scan('1.1.1.1', [], timing=4)
+            called_cmd = m.call_args[0][0]
+            self.assertIn('-T4', called_cmd)
+
+    def test_run_scan_fast_defaults_timing(self):
+        xml = "<nmaprun></nmaprun>"
+        with patch('port_scan._exec_nmap') as m:
+            m.return_value = xml
+            port_scan.run_scan('1.1.1.1', [], fast=True)
+            called_cmd = m.call_args[0][0]
+            self.assertIn('-T4', called_cmd)
+
     def test_run_scan_parses_os(self):
         xml = "<nmaprun><host><os><osmatch name='Microsoft Windows 11' /></os></host></nmaprun>"
         with patch('port_scan._exec_nmap') as m:
