@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:nwc_densetsu/diagnostics.dart';
-import 'package:nwc_densetsu/network_scan.dart';
-// The diagnostics and network_scan libraries are imported directly rather than
-// using `show`/`hide` or aliases so that all named parameters like `utmActive`
-// remain visible to the analyzer.
+import 'package:nwc_densetsu/diagnostics.dart' as diag;
+import 'package:nwc_densetsu/network_scan.dart' as net;
+// The diagnostics and network_scan libraries are imported with aliases only.
+// Avoid using `show`/`hide` so that all named parameters like `utmActive`
+// remain available during development.
 import 'package:fl_chart/fl_chart.dart';
 import 'package:nwc_densetsu/utils/report_utils.dart' as report_utils;
 import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/extended_results.dart';
-import 'package:nwc_densetsu/history_page.dart';
-import 'package:nwc_densetsu/port_constants.dart';
 import 'config.dart';
 
 void main() {
@@ -22,26 +20,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'NWCD',
-      home: DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('NWCD'),
-            bottom: const TabBar(tabs: [
-              Tab(text: '診断'),
-              Tab(text: '履歴'),
-            ]),
-          ),
-          body: const TabBarView(
-            children: [
-              HomePage(),
-              HistoryPage(),
-            ],
-          ),
-        ),
-      ),
+      home: HomePage(),
     );
   }
 }
@@ -55,12 +36,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _output = '';
-  List<PortScanSummary> _scanResults = [];
-  List<NetworkDevice> _devices = <NetworkDevice>[];
-  List<SecurityReport> _reports = [];
-  final Map<String, SslResult> _sslResults = {};
+  List<diag.PortScanSummary> _scanResults = [];
+  List<net.NetworkDevice> _devices = <net.NetworkDevice>[];
+  List<diag.SecurityReport> _reports = [];
+  final Map<String, diag.SslResult> _sslResults = {};
   final Map<String, String> _spfResults = {};
-  NetworkSpeed? _speed;
+  diag.NetworkSpeed? _speed;
   bool _lanScanning = false;
   final Map<String, int> _progress = {};
   static const int _taskCount = 3; // port, SSL, SPF
@@ -70,7 +51,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _runLanScan() async {
     setState(() {
       _lanScanning = true;
-      _devices = <NetworkDevice>[];
+      _devices = <net.NetworkDevice>[];
       _scanResults = [];
       _reports = [];
       _sslResults.clear();
@@ -80,7 +61,7 @@ class _HomePageState extends State<HomePage> {
       _progress.clear();
     });
 
-    final speed = await measureNetworkSpeed(onError: (msg) {
+    final speed = await diag.measureNetworkSpeed(onError: (msg) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('速度計測失敗: $msg')));
@@ -101,45 +82,10 @@ class _HomePageState extends State<HomePage> {
       buffer.writeln();
     }
 
-    const installCmds = '''
-# Debian/Ubuntu
-sudo apt install nmap speedtest-cli graphviz wkhtmltopdf
-
-# Fedora
-sudo dnf install nmap speedtest-cli graphviz wkhtmltopdf
-
-# macOS (Homebrew)
-brew install nmap speedtest-cli graphviz wkhtmltopdf
-
-# Windows
-winget install -e --id Nmap.Nmap      # nmap
-winget install -e --id Graphviz.Graphviz  # graphviz
-winget install -e --id wkhtmltopdf.wkhtmltopdf  # wkhtmltopdf
-pip install speedtest-cli
-''';
-
-    final devices = await scanNetwork(onError: (msg) {
+    final devices = await net.scanNetwork(onError: (msg) {
       if (mounted) {
-        if (msg.startsWith('Missing scanners:')) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('必要なツールが見つかりません'),
-              content: SingleChildScrollView(
-                child: SelectableText('$msg\n\n$installCmds'),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('LANスキャン失敗: $msg')));
-        }
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('LANスキャン失敗: $msg')));
       }
     });
     setState(() {
@@ -152,36 +98,32 @@ pip install speedtest-cli
     for (final d in devices) {
       final ip = d.ip;
       buffer.writeln('--- $ip ---');
-      final pingRes = await runPing(ip);
+      final pingRes = await diag.runPing(ip);
       buffer.writeln(pingRes);
 
-      final portFuture = scanPorts(
-        ip,
-        ports: defaultPortList,
-        osDetect: true,
-        onError: (msg) {
-          if (mounted) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
-          }
-        },
-      ).then((value) {
+      final portFuture = diag
+          .scanPorts(ip, onError: (msg) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('ポートスキャン失敗: $msg')));
+        }
+      }).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
-      final sslFuture = checkSslCertificate(ip).then((value) {
+      final sslFuture = diag.checkSslCertificate(ip).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
-      final spfFuture = checkSpfRecord(ip).then((value) {
+      final spfFuture = diag.checkSpfRecord(ip).then((value) {
         setState(() => _progress[ip] = (_progress[ip] ?? 0) + 1);
         return value;
       });
 
       final results = await Future.wait([portFuture, sslFuture, spfFuture]);
 
-      final summary = results[0] as PortScanSummary;
-      final sslRes = results[1] as SslResult;
+      final summary = results[0] as diag.PortScanSummary;
+      final sslRes = results[1] as diag.SslResult;
       final spfRes = results[2] as String;
 
       _scanResults.add(summary);
@@ -194,7 +136,7 @@ pip install speedtest-cli
       buffer.writeln(sslRes.message);
       buffer.writeln(spfRes);
 
-      final report = await runSecurityReport(
+      final report = await diag.runSecurityReport(
         ip: ip,
         openPorts: [
           for (final r in summary.results)
@@ -216,16 +158,11 @@ pip install speedtest-cli
       setState(() => _progress.remove(ip));
     }
 
-    final path = await report_utils.saveHistoryReports(_reports);
     setState(() {
       _output = buffer.toString();
       _lanScanning = false;
       _devices = devices;
     });
-    if (mounted && path.isNotEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('結果保存: $path')));
-    }
   }
 
 
@@ -245,7 +182,7 @@ pip install speedtest-cli
   }
 
   Future<void> _openResultPage() async {
-    final version = await getWindowsVersion(onError: (msg) {
+    final version = await diag.getWindowsVersion(onError: (msg) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Windows情報取得失敗: $msg')));
@@ -300,20 +237,16 @@ pip install speedtest-cli
 
     final lanDevices = <LanDeviceRisk>[];
     for (final dev in _devices) {
-      final summary = _scanResults.firstWhere(
-          (s) => s.host == dev.ip,
-          orElse: () => const PortScanSummary('', []));
+      final summary = _scanResults.firstWhere((s) => s.host == dev.ip,
+          orElse: () => const diag.PortScanSummary('', []));
       final open = [for (final p in summary.results) if (p.state == 'open') p.port];
-      final note = summary.os.contains('Windows') ? summary.os : '';
       lanDevices.add(LanDeviceRisk(
         ip: dev.ip,
         mac: dev.mac,
         vendor: dev.vendor,
-        os: summary.os,
         name: dev.vendor,
         status: open.isEmpty ? 'ok' : 'warning',
         comment: open.isEmpty ? '' : 'open: ${open.join(',')}',
-        note: note,
       ));
     }
 
@@ -431,7 +364,7 @@ pip install speedtest-cli
                   rows: [
                     for (final r in summary.results)
                       DataRow(
-                        color: MaterialStateProperty.all(
+                        color: WidgetStateProperty.all(
                           useColor
                               ? (r.state == 'open'
                                   ? ([23, 445].contains(r.port)
@@ -466,7 +399,7 @@ pip install speedtest-cli
                   rows: [
                     for (final r in _reports)
                       DataRow(
-                        color: MaterialStateProperty.all(
+                        color: WidgetStateProperty.all(
                           useColor ? _scoreColor(r.score.toInt()) : Colors.grey,
                         ),
                         cells: [
@@ -515,7 +448,7 @@ pip install speedtest-cli
                     DataColumn(label: Text('Vendor')),
                   ],
                   rows: [
-                    for (final NetworkDevice d in _devices)
+                    for (final net.NetworkDevice d in _devices)
                       DataRow(cells: [
                         DataCell(Text(d.ip)),
                         DataCell(Text(d.mac)),
@@ -541,7 +474,7 @@ pip install speedtest-cli
                           DataColumn(label: Text('Vendor')),
                         ],
                         rows: _devices
-                            .map((NetworkDevice? d) => DataRow(cells: [
+                            .map((net.NetworkDevice? d) => DataRow(cells: [
                                   DataCell(Text(d?.ip ?? '')),
                                   DataCell(Text(d?.mac ?? '')),
                                   DataCell(Text(d?.vendor ?? '')),
@@ -574,7 +507,7 @@ String _riskState(int score) {
 }
 
 class ScoreChart extends StatelessWidget {
-  final List<SecurityReport> reports;
+  final List<diag.SecurityReport> reports;
   const ScoreChart({super.key, required this.reports});
 
   @override
