@@ -239,11 +239,11 @@ python generate_html_report.py devices.json -o report.html --pdf --csv report.cs
 
 ## Firewall チェック
 
-`firewall_check.py` は Windows Defender のリアルタイム保護状態と、
-Windows または Linux ファイアウォールの有効/無効を確認します。
+`system_utils.py firewall-status` を実行すると、Windows Defender のリアルタイム
+保護状態とファイアウォールの有効/無効を確認できます。
 
 ```bash
-python firewall_check.py
+python system_utils.py firewall-status
 ```
 
 出力例:
@@ -256,12 +256,12 @@ Windows 以外の環境では `defender_enabled` が `null` となります。
 
 ## ネットワーク速度測定
 
-`network_speed.py` は `speedtest-cli` を利用してダウンロード速度、アップロード速度、
-および ping を計測します。
+`system_utils.py network-speed` は `speedtest-cli` を利用してダウンロード速度、
+アップロード速度、および ping を計測します。
 LAN スキャン時に計測され、結果は画面にも表示されます。
 
 ```bash
-python network_speed.py
+python system_utils.py network-speed
 ```
 
 出力例:
@@ -349,21 +349,21 @@ flutter test
 ## リリースバンドルに含めるファイル
 
 デスクトップ版を配布する際は、リポジトリ直下の Python スクリプトをすべて実行
-ファイルと同じディレクトリに配置してください。`flutter build windows` や
-`flutter build linux` で作成したバンドルにこれらを含めないと、アプリから外部ス
-クリプトを呼び出せなくなります。主なスクリプトは次の通りです。
+ファイルと同じディレクトリに配置してください。`flutter build windows` で作成した
+バンドルにこれらを含めないと、アプリから外部スクリプトを呼び出せなくなります。
+主なスクリプトは次の通りです。
 
 - `discover_hosts.py`
 - `port_scan.py`
 - `lan_port_scan.py`
-- `network_speed.py`
+- `system_utils.py`
 - `security_report.py`
 - `generate_html_report.py` (CSV 出力も可能)
 - `generate_topology.py`
 
 ### 配布手順例
 
-1. `flutter build windows` もしくは `flutter build linux` を実行します。
+1. `flutter build windows` を実行します。
 2. 生成されたバンドルのディレクトリに、リポジトリ直下の `*.py` ファイルをすべて
    コピーします。
 

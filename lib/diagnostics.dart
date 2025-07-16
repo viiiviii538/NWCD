@@ -92,11 +92,11 @@ Future<String> runPing([String host = 'google.com']) async {
   }
 }
 
-/// Measures network speed using the `network_speed.py` script.
+/// Measures network speed using the `system_utils.py` script.
 Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onError}) async {
-  const script = 'network_speed.py';
+  const script = 'system_utils.py';
   try {
-    final result = await Process.run(pythonExecutable, [script]);
+    final result = await Process.run(pythonExecutable, [script, 'network-speed']);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
       if (onError != null && msg.isNotEmpty) onError(msg);
@@ -104,7 +104,7 @@ Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onErro
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
-      const msg = 'network_speed.py produced no output';
+      const msg = 'system_utils.py produced no output';
       if (onError != null) onError(msg);
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
