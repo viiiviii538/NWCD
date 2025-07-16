@@ -3,8 +3,8 @@
 import argparse
 import json
 
-from discover_hosts import _get_subnet, _run_nmap_scan, _lookup_vendor
-from port_scan import run_scan, SCAN_TIMEOUT
+from network_utils import _get_subnet, _run_nmap_scan, _lookup_vendor, SCAN_TIMEOUT
+from port_scan import run_scan
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DEFAULT_PORTS = [

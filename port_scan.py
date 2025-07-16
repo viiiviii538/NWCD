@@ -7,6 +7,8 @@ import ipaddress
 import selectors
 import time
 
+from network_utils import SCAN_TIMEOUT
+
 
 def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
     """Run nmap command and return stdout. If progress_timeout is provided,
@@ -64,7 +66,6 @@ def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
         return "".join(stdout_parts)
 
 
-SCAN_TIMEOUT = 60
 
 
 def run_scan(

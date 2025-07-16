@@ -8,7 +8,7 @@ import re
 from typing import Dict, List, Any
 import sys
 
-from discover_hosts import _get_subnet
+from network_utils import _get_subnet
 
 from external_ip_report import (
     get_external_connections,
