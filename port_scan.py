@@ -12,7 +12,10 @@ def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
     """Run nmap command and return stdout. If progress_timeout is provided,
     terminate the process if no output is received within the timeout."""
     if progress_timeout is None:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=SCAN_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("nmap scan timed out")
         if proc.returncode != 0:
             raise RuntimeError(proc.stderr.strip())
         return proc.stdout
