@@ -43,7 +43,7 @@ def scan_hosts(
                 service=service,
                 os_detect=os_detect,
                 scripts=scripts,
-                timeout=SCAN_TIMEOUT,
+                progress_timeout=SCAN_TIMEOUT,
             )
             future_to_host[future] = h
 
