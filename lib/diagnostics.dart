@@ -27,9 +27,8 @@ class PortStatus {
 class PortScanSummary {
   final String host;
   final List<PortStatus> results;
-  final String os;
 
-  const PortScanSummary(this.host, this.results, [this.os = '']);
+  const PortScanSummary(this.host, this.results);
 
   bool get hasOpen =>
       results.any((r) => r.state.toLowerCase() == 'open');
@@ -52,10 +51,6 @@ class RiskItem {
   const RiskItem(this.description, this.countermeasure);
 }
 
-/// Result of running [runSecurityReport].
-///
-/// The [utmActive] flag indicates whether unified threat management equipment
-/// was detected during the scan.
 class SecurityReport {
   final String ip;
   final double score;
@@ -66,16 +61,6 @@ class SecurityReport {
   final String geoip;
   final bool utmActive;
 
-  /// Whether unified threat management is enabled for this host.
-  ///
-  /// When `true`, unified threat management equipment was detected during
-  /// the scan.
-
-  /// Create a new [SecurityReport].
-  ///
-  /// The [openPorts] and [geoip] parameters are optional and will default to
-  /// empty values when omitted. The [utmActive] flag must be explicitly
-  /// provided.
   const SecurityReport(
     this.ip,
     this.score,
@@ -119,9 +104,8 @@ Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onErro
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
-      final msg = 'network_speed.py produced no output';
+      const msg = 'network_speed.py produced no output';
       if (onError != null) onError(msg);
-      return null;
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
     final down = (data['download'] as num).toDouble();
@@ -152,20 +136,14 @@ Future<String?> getWindowsVersion({void Function(String message)? onError}) asyn
 }
 
 /// Runs the bundled Python script using `nmap` to scan [ports] on [host].
-/// When [osDetect] is true, OS detection (`-O`) is enabled.
 /// Returns a [PortScanSummary] containing all results.
 Future<PortScanSummary> scanPorts(String host,
-    {List<int>? ports,
-    bool osDetect = false,
-    void Function(String message)? onError}) async {
+    {List<int>? ports, void Function(String message)? onError}) async {
   const script = 'port_scan.py';
   try {
     final args = <String>[script, host];
     if (ports != null && ports.isNotEmpty) {
       args.add(ports.join(','));
-    }
-    if (osDetect) {
-      args.add('--os');
     }
     final result = await Process.run(pythonExecutable, args);
     if (result.exitCode != 0) {
@@ -187,8 +165,7 @@ Future<PortScanSummary> scanPorts(String host,
             item['service'] ?? ''));
       }
     }
-    final os = data['os']?.toString() ?? '';
-    return PortScanSummary(host, portList, os);
+    return PortScanSummary(host, portList);
   } catch (e) {
     if (onError != null) onError('Failed to run $script: $e');
     return PortScanSummary(host, []);
@@ -257,12 +234,8 @@ Future<List<LanPortDevice>> scanLanWithPorts({
 /// Fetches SSL certificate information from the host.
 Future<SslResult> checkSslCertificate(String host) async {
   try {
-    final socket = await SecureSocket.connect(
-      host,
-      443,
-      timeout: const Duration(seconds: 5),
-      onBadCertificate: (_) => true,
-    );
+    final socket = await SecureSocket.connect(host, 443,
+        timeout: const Duration(seconds: 5));
     final cert = socket.peerCertificate;
     socket.destroy();
     if (cert == null) {
@@ -298,17 +271,12 @@ Future<String> checkSpfRecord(String domain) async {
   }
 }
 
-/// Runs the bundled Python script `security_report.py` and parses the output.
-///
-/// The optional [utmActive] flag mirrors the `utm_active` argument passed to the
-/// Python script. When true, a small bonus is added to the final security score
-/// to account for unified threat management hardware present on the network.
 Future<SecurityReport> runSecurityReport({
   required String ip,
   required List<int> openPorts,
   required bool sslValid,
   required bool spfValid,
-  bool utmActive = false,
+  required bool utmActive,
   String geoip = 'JP',
   ProcessRunner processRunner = _defaultRunner,
 }) async {
@@ -321,14 +289,13 @@ Future<SecurityReport> runSecurityReport({
       sslValid ? 'true' : 'false',
       spfValid ? 'true' : 'false',
       geoip,
-      utmActive ? 'true' : 'false',
     ]);
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
       return SecurityReport(
         ip,
         0.0,
-        [RiskItem('error', 'No output from security_report.py')],
+        [const RiskItem('error', 'No output from security_report.py')],
         [],
         '',
         openPorts: [],
@@ -381,7 +348,7 @@ Future<SecurityReport> runSecurityReport({
       data['path']?.toString() ?? '',
       openPorts: ports,
       geoip: country,
-      utmActive: utmActive,
+      utmActive: true,
     );
   } catch (e) {
     return SecurityReport(
@@ -392,14 +359,13 @@ Future<SecurityReport> runSecurityReport({
       '',
       openPorts: [],
       geoip: '',
-      utmActive: utmActive,
+      utmActive: true,
     );
   }
 }
 
 /// Performs diagnostics for [ip] and returns a [SecurityReport].
-Future<SecurityReport> analyzeHost(String ip,
-    {List<int>? ports, bool utmActive = false}) async {
+Future<SecurityReport> analyzeHost(String ip, {List<int>? ports}) async {
   final portSummary = await scanPorts(ip, ports: ports);
   final sslRes = await checkSslCertificate(ip);
   final spfRes = await checkSpfRecord(ip);
@@ -410,7 +376,7 @@ Future<SecurityReport> analyzeHost(String ip,
       if (p.state == 'open') p.port],
     sslValid: sslRes.valid,
     spfValid: spfFound,
-    utmActive: utmActive,
+    utmActive: false,
   );
   return report;
 }
