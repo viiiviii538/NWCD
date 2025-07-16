@@ -28,7 +28,7 @@ Future<List<NetworkDevice>> scanNetwork(
         stderr.writeln(msg);
         if (onError != null) onError(msg);
       } catch (_) {
-        final msg = 'Required scanners not found';
+        const msg = 'Required scanners not found';
         stderr.writeln(msg);
         if (onError != null) onError(msg);
       }
