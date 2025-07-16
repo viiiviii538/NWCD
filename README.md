@@ -99,6 +99,7 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 ```bash
 python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 ```
+`--timing` を指定すると `nmap` のタイミングテンプレート (`-T0`~`-T5`) を調整できます。
 `--script` を省略した場合は `vuln` スクリプトが自動的に指定され、脆弱性チェックが行われます。
 `nmap` 実行には 60 秒のタイムアウトを設けており、極端に時間がかかる場合は自動で終了します。
 
@@ -129,6 +130,7 @@ nmap -V
 ```bash
 python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
 ```
+`--workers` オプションで同時スキャン数を指定すると、環境に合わせて処理速度を調整できます。
 
 出力例:
 

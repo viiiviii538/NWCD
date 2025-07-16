@@ -28,11 +28,15 @@ def scan_hosts(
     service: bool = False,
     os_detect: bool = False,
     scripts: list[str] | None = None,
+    max_workers: int | None = None,
 ):
     hosts = gather_hosts(subnet)
     results = []
     # Limit worker count to avoid exhausting system resources
-    max_workers = min(32, max(1, len(hosts)))
+    if max_workers is None:
+        max_workers = min(32, max(1, len(hosts)))
+    else:
+        max_workers = max(1, max_workers)
     future_to_host = {}
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for h in hosts:
@@ -67,6 +71,11 @@ def main():
     parser.add_argument("--service", action="store_true", help="Enable service version detection")
     parser.add_argument("--os", action="store_true", help="Enable OS detection")
     parser.add_argument("--script", help="Comma separated nmap scripts")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        help="Number of concurrent workers",
+    )
     args = parser.parse_args()
 
     subnet = args.subnet or _get_subnet() or "192.168.1.0/24"
@@ -81,6 +90,7 @@ def main():
         service=args.service,
         os_detect=args.os,
         scripts=scripts,
+        max_workers=args.workers,
     )
     print(json.dumps(results, ensure_ascii=False))
 
