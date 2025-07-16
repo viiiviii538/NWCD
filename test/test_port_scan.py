@@ -61,8 +61,8 @@ class PortScanScriptTest(unittest.TestCase):
             self.assertEqual(res['os'], 'Microsoft Windows 11')
 
     def test_run_scan_timeout_error(self):
-        with patch('subprocess.run') as m:
-            m.side_effect = subprocess.TimeoutExpired(cmd='nmap', timeout=1)
+        with patch('port_scan._exec_nmap') as m:
+            m.side_effect = RuntimeError('nmap scan stalled')
             with self.assertRaises(RuntimeError):
                 port_scan.run_scan('1.1.1.1', [], progress_timeout=None)
 

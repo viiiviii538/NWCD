@@ -64,10 +64,12 @@ class SecurityReport {
   final String path;
   final List<int> openPorts;
   final String geoip;
-  final bool _utmActive;
+  final bool utmActive;
 
   /// Whether unified threat management is enabled for this host.
-  bool get utmActive => _utmActive;
+  ///
+  /// When `true`, unified threat management equipment was detected during
+  /// the scan.
 
   /// Create a new [SecurityReport].
   ///
@@ -82,8 +84,8 @@ class SecurityReport {
     this.path, {
     this.openPorts = const [],
     this.geoip = '',
-    required bool utmActive,
-  }) : _utmActive = utmActive;
+    required this.utmActive,
+  });
 }
 
 class NetworkSpeed {
