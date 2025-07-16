@@ -1,4 +1,5 @@
 import unittest
+import subprocess
 from unittest.mock import patch
 import subprocess
 import port_scan
@@ -64,7 +65,7 @@ class PortScanScriptTest(unittest.TestCase):
         with patch('port_scan._exec_nmap') as m:
             m.side_effect = RuntimeError('nmap scan stalled')
             with self.assertRaises(RuntimeError):
-                port_scan.run_scan('1.1.1.1', [], progress_timeout=1)
+                port_scan.run_scan('1.1.1.1', [], progress_timeout=None)
 
 if __name__ == '__main__':
     unittest.main()

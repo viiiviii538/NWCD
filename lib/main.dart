@@ -222,7 +222,7 @@ pip install speedtest-cli
       _lanScanning = false;
       _devices = devices;
     });
-    if (mounted) {
+    if (mounted && path.isNotEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('結果保存: $path')));
     }

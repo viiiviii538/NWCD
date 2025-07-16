@@ -95,6 +95,11 @@ Future<String> generateTopologyDiagram([List<LanDeviceRisk> devices = const []])
 
 /// Saves [reports] to `history/YYYYMMDD_HHMM.json` and returns the file path.
 Future<String> saveHistoryReports(List<SecurityReport> reports) async {
+  // Allow disabling history saving via environment variable.
+  final disabled = Platform.environment['NWCD_DISABLE_HISTORY'];
+  if (disabled != null && disabled.toLowerCase() == 'true') {
+    return '';
+  }
   final historyDir = Directory(p.join(Directory.current.path, 'history'));
   await historyDir.create(recursive: true);
   final now = DateTime.now();

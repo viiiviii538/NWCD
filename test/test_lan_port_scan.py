@@ -38,7 +38,7 @@ def test_ipv6_hosts(mock_nmap, mock_scan):
         service=False,
         os_detect=False,
         scripts=None,
-        timeout=lan_port_scan.SCAN_TIMEOUT,
+        progress_timeout=lan_port_scan.SCAN_TIMEOUT,
     )
     assert res[0]['ip'] == 'fe80::1'
 

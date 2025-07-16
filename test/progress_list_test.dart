@@ -6,7 +6,7 @@ void main() {
   testWidgets('progress list renders entries', (tester) async {
     const progress = {'1.1.1.1': 2, '2.2.2.2': 1};
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: ScanningProgressList(
             progress: progress,

@@ -63,7 +63,7 @@ class _HistoryPageState extends State<HistoryPage> {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 onPressed: () {
-                  DefaultTabController.of(context)?.animateTo(0);
+                  DefaultTabController.of(context).animateTo(0);
                 },
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('ホームに戻る'),
