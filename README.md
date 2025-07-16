@@ -10,7 +10,7 @@ Python **3.10 以上** といずれかのコマンドがインストールされ
 ください。Python 3.10 未満では `list[str] | None` などの最新の型ヒント構文が
 解釈できず、付属スクリプトが実行できません。
 ネットワーク速度計測には `speedtest-cli` を使用します。
-LAN セキュリティ診断 (`lan_security_check.py`) では `arp`, `nmap`, `upnpc` など
+LAN セキュリティ診断 (`nwcd_cli.py lan-check`) では `arp`, `nmap`, `upnpc` など
 複数の外部コマンドを利用します。Linux でファイアウォール状態を確認する際は
 `ufw` を呼び出します。これらのユーティリティが存在しない場合、該当する
 チェックは自動的にスキップされます。
@@ -90,14 +90,14 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 ## ポートスキャン
 
 
-`port_scan.py` スクリプトでは `nmap` を利用して指定したポート、またはポート指定が
+`nwcd_cli.py port-scan` サブコマンドでは `nmap` を利用して指定したポート、またはポート指定が
 ない場合は全ポート (`-p-`) をスキャンし、結果を JSON 形式で出力します。`-sV` による
 サービスバージョン検出や `-O` による OS 推定、さらに任意の NSE スクリプトを指定でき
 るようになりました。LAN スキャン機能で各ホストの診断に使われるほか、次のように単体
 でも実行できます。
 
 ```bash
-python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
+python nwcd_cli.py port-scan <host> [port_list] [--service] [--os] [--script vuln]
 ```
 `--timing` を指定すると `nmap` のタイミングテンプレート (`-T0`~`-T5`) を調整できます。
 `--script` を省略した場合は `vuln` スクリプトが自動的に指定され、脆弱性チェックが行われます。
@@ -105,12 +105,12 @@ python port_scan.py <host> [port_list] [--service] [--os] [--script vuln]
 
 ## LAN デバイス一覧取得
 
-`discover_hosts.py` は `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。オンライン取得時は 3 秒のタイムアウトを設けており、応答がない場合はベンダー名は空欄となります。
+`nwcd_cli.py discover-hosts` は `nmap -sn` を実行して LAN 内の IP アドレス、MAC アドレス、ベンダー名を収集し、JSON 形式で出力します。アプリの "LANスキャン" ボタンを押すとこのスクリプトが実行され、結果が表に表示されます。ベンダー名取得にはインターネット接続が必要ですが、同じディレクトリに `oui.txt` (OUI 一覧) を置けばオフラインでも利用できます。オンライン取得時は 3 秒のタイムアウトを設けており、応答がない場合はベンダー名は空欄となります。
 `nmap` によるホスト探索も 60 秒のタイムアウトを設定しており、異常に時間がかかる場合は失敗として扱われます。
 
 ### PATH の確認
 
-`discover_hosts.py` が外部ツールとして呼び出す `nmap` は PATH に含まれている必要があります。次のコマンドで認識されるか確認してください。
+`nwcd_cli.py discover-hosts` が外部ツールとして呼び出す `nmap` は PATH に含まれている必要があります。次のコマンドで認識されるか確認してください。
 
 ```bash
 nmap -V
@@ -120,15 +120,15 @@ nmap -V
 
 ### IPv6 スキャン
 
-`discover_hosts.py` と `lan_port_scan.py` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。
+`nwcd_cli.py discover-hosts` と `nwcd_cli.py lan-scan` は IPv6 アドレスにも対応しています。IPv6 ネットワークを指定した場合、`nmap` の IPv6 スキャン (`-6` オプション) を自動で利用します。
 
 
 ## LAN + Port Scan
 
-`lan_port_scan.py` は上記 2 つの機能を組み合わせ、LAN 内の各ホストを自動で検出した後、指定したポート (未指定時は主要ポート) をスキャンします。次のように実行します。
+`nwcd_cli.py lan-scan` は上記 2 つの機能を組み合わせ、LAN 内の各ホストを自動で検出した後、指定したポート (未指定時は主要ポート) をスキャンします。次のように実行します。
 
 ```bash
-python lan_port_scan.py --subnet 192.168.1.0/24 --ports 22,80 --service --os
+python nwcd_cli.py lan-scan --subnet 192.168.1.0/24 --ports 22,80 --service --os
 ```
 `--workers` オプションで同時スキャン数を指定すると、環境に合わせて処理速度を調整できます。
 
@@ -203,7 +203,7 @@ print(result["score"], result["high_risk"])
 
 コマンドラインから UTM スイッチを有効にするには次のように実行します:
 ```bash
-python security_report.py 192.168.1.10 80,443 valid true JP true
+python nwcd_cli.py security-report 192.168.1.10 80,443 valid true JP true
 ```
 
 ## HTML レポート生成
@@ -289,20 +289,20 @@ python external_ip_report.py --geoip-db /path/to/GeoLite2-Country.mmdb
 
 ## LANセキュリティ診断
 
-`lan_security_check.py` を実行すると、ARPスプーフィングやUPnP有効機器の有無、
+`nwcd_cli.py lan-check` を実行すると、ARPスプーフィングやUPnP有効機器の有無、
 複数DHCPサーバなど LAN 内のリスクを確認できます。ローカルサブネットは自動検出
 されますが、引数で `192.168.0.0/24` など任意の範囲を指定することもできます。結果
 は JSON 形式で出力され、UTMで防御可能な項目も一覧化されます。さらに、外部通信
 先の国別件数が `country_counts` フィールドに含まれます。
 
 ```bash
-python lan_security_check.py  # 自動検出されたサブネットを使用
-python lan_security_check.py 10.0.0.0/24  # サブネットを指定する場合
+python nwcd_cli.py lan-check  # 自動検出されたサブネットを使用
+python nwcd_cli.py lan-check 10.0.0.0/24  # サブネットを指定する場合
 ```
 
 ## Network Topology
 
-`generate_topology.py` を使うと `discover_hosts.py` や `lan_port_scan.py` の JSON 出力からネットワーク図を生成できます。
+`generate_topology.py` を使うと `nwcd_cli.py discover-hosts` や `nwcd_cli.py lan-scan` の JSON 出力からネットワーク図を生成できます。
 この機能を利用するには Graphviz の実行ファイルが必要です。`sudo apt install graphviz` などでインストールしてください。
 
 ```bash
@@ -353,11 +353,8 @@ flutter test
 バンドルにこれらを含めないと、アプリから外部スクリプトを呼び出せなくなります。
 主なスクリプトは次の通りです。
 
-- `discover_hosts.py`
-- `port_scan.py`
-- `lan_port_scan.py`
+- `nwcd_cli.py`
 - `system_utils.py`
-- `security_report.py`
 - `generate_html_report.py` (CSV 出力も可能)
 - `generate_topology.py`
 

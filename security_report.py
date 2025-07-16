@@ -18,7 +18,7 @@ def parse_args(argv):
         )
         sys.exit(1)
     ip = argv[1]
-    ports = [p for p in argv[2].split(',') if p]
+    ports = [p for p in argv[2].split(",") if p]
     ssl_status = argv[3].lower()
     spf_valid = argv[4].lower() in {"1", "true", "yes"}
     geoip = argv[5]
@@ -83,20 +83,34 @@ def calc_score(open_ports, ssl_status, spf_valid, geoip, utm_active=False):
     return score, risks, utm_items
 
 
-def main(argv):
-    ip, ports, ssl_status, spf_valid, geoip, utm_active = parse_args(argv)
-    score, risks, utm_items = calc_score(ports, ssl_status, spf_valid, geoip, utm_active)
-    result = {
+def generate_report(
+    ip: str,
+    open_ports: list[str],
+    ssl_status: str,
+    spf_valid: bool,
+    geoip: str,
+    utm_active: bool,
+) -> dict:
+    """Generate security report dictionary."""
+    score, risks, utm_items = calc_score(
+        open_ports, ssl_status, spf_valid, geoip, utm_active
+    )
+    return {
         "ip": ip,
         "score": score,
         "risks": risks,
         "utmItems": utm_items,
-
-        "open_ports": ports,
+        "open_ports": open_ports,
         "geoip": geoip,
     }
+
+
+def main(argv):
+    ip, ports, ssl_status, spf_valid, geoip, utm_active = parse_args(argv)
+    result = generate_report(ip, ports, ssl_status, spf_valid, geoip, utm_active)
     print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == "__main__":
+    print("Deprecated: use nwcd_cli.py security-report", file=sys.stderr)
     main(sys.argv)
