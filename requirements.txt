@@ -30,3 +30,5 @@ weasyprint==65.1
 webencodings==0.5.1
 yarl==1.20.1
 zopfli==0.2.3.post1
+fastapi==0.115.0
+uvicorn==0.30.1
