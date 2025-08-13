@@ -1,41 +1,26 @@
 #!/usr/bin/env python3
-import json
-import sys
-import subprocess
-import xml.etree.ElementTree as ET
+"""Utility functions for network discovery and scanning."""
+
 import ipaddress
-import re
 import os
-
-IP_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]+")
-from pathlib import Path
-from urllib.request import urlopen
-from urllib.error import URLError
+import re
 import socket
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
 
-from network_utils import _get_subnet, _run_nmap_scan, _lookup_vendor, SCAN_TIMEOUT
+# Cache for MAC prefix to vendor lookups
+_VENDOR_CACHE: dict[str, str] = {}
 
-
-def discover_hosts(subnet: str | None = None) -> list[dict[str, str]]:
-    """Return list of discovered hosts with IP, MAC and vendor.
-
-    If ``subnet`` is not provided, the local subnet is determined
-    automatically. ``nmap`` is used for host discovery.
-    """
-    subnet = subnet or _get_subnet() or "192.168.1.0/24"
-    hosts = _run_nmap_scan(subnet)
-    for h in hosts:
-        if not h.get("vendor"):
-            h["vendor"] = _lookup_vendor(h.get("mac", ""))
-    return hosts
-
-
-def get_all_ips(subnet: str | None = None) -> list[str]:
-    """Return list of IP addresses for all discovered hosts."""
-    return [h["ip"] for h in discover_hosts(subnet)]
+# Default timeout for nmap operations
+SCAN_TIMEOUT = 60
 
 
 def _get_subnet():
+    """Return the local subnet in CIDR notation or ``None`` if undetected."""
     if os.name == "nt":
         try:
             proc = subprocess.run(["ipconfig"], capture_output=True, text=True)
@@ -67,17 +52,13 @@ def _get_subnet():
             if proc.returncode == 0:
                 for line in proc.stdout.splitlines():
                     line = line.strip()
-                    m = re.search(
-                        r"inet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)", line
-                    )
+                    m = re.search(r"inet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)", line)
                     if m and not m.group(1).startswith("127."):
                         ip = m.group(1)
                         mask_hex = m.group(2)
                         try:
                             mask_addr = ipaddress.IPv4Address(int(mask_hex, 16))
-                            network = ipaddress.IPv4Network(
-                                f"{ip}/{mask_addr}", strict=False
-                            )
+                            network = ipaddress.IPv4Network(f"{ip}/{mask_addr}", strict=False)
                             return str(network)
                         except Exception:
                             continue
@@ -88,26 +69,21 @@ def _get_subnet():
             proc = subprocess.run(["ip", "addr"], capture_output=True, text=True)
             if proc.returncode == 0:
                 inet = None
-                mask = None
                 for line in proc.stdout.splitlines():
                     line = line.strip()
                     m = re.match(r"inet (\d+\.\d+\.\d+\.\d+)/(\d+)", line)
                     if m and not m.group(1).startswith("127."):
                         inet = m.group(1)
                         masklen = int(m.group(2))
-                        network = ipaddress.IPv4Network(
-                            f"{inet}/{masklen}", strict=False
-                        )
+                        network = ipaddress.IPv4Network(f"{inet}/{masklen}", strict=False)
                         return str(network)
         except Exception:
             pass
     return None
 
 
-SCAN_TIMEOUT = 60
-
-
-def _run_nmap_scan(subnet, *, timeout: int = SCAN_TIMEOUT):
+def _run_nmap_scan(subnet: str, *, timeout: int = SCAN_TIMEOUT):
+    """Run ``nmap`` host discovery and return parsed results."""
     cmd = ["nmap"]
     try:
         if ipaddress.ip_network(subnet, strict=False).version == 6:
@@ -139,7 +115,8 @@ def _run_nmap_scan(subnet, *, timeout: int = SCAN_TIMEOUT):
     return results
 
 
-def _lookup_vendor(mac):
+def _lookup_vendor(mac: str) -> str:
+    """Return vendor name for the given MAC address."""
     prefix = mac.upper().replace(":", "")[:6]
 
     if prefix in _VENDOR_CACHE:
@@ -161,7 +138,6 @@ def _lookup_vendor(mac):
             pass
 
     try:
-        # Limit HTTP request time so vendor lookup does not block scanning
         with urlopen(f"https://api.macvendors.com/{mac}", timeout=3) as resp:
             vendor = resp.read().decode("utf-8")
             _VENDOR_CACHE[prefix] = vendor
@@ -170,14 +146,3 @@ def _lookup_vendor(mac):
         _VENDOR_CACHE[prefix] = ""
         return ""
 
-def main():
-    subnet = None
-    if len(sys.argv) > 1:
-        subnet = sys.argv[1]
-    hosts = discover_hosts(subnet)
-    print(json.dumps({"hosts": hosts}, ensure_ascii=False))
-
-
-if __name__ == "__main__":
-    print("Deprecated: use nwcd_cli.py discover-hosts", file=sys.stderr)
-    main()
