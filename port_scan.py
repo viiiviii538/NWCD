@@ -15,7 +15,9 @@ def _exec_nmap(cmd: list[str], progress_timeout: float | None) -> str:
     terminate the process if no output is received within the timeout."""
     if progress_timeout is None:
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=SCAN_TIMEOUT)
+            proc = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=SCAN_TIMEOUT
+            )
         except subprocess.TimeoutExpired:
             raise RuntimeError("nmap scan timed out")
         if proc.returncode != 0:
@@ -106,26 +108,26 @@ def run_scan(
     root = ET.fromstring(output)
     results = []
     os_name = ""
-    for port in root.findall('.//port'):
-        portid = port.get('portid')
-        state_elem = port.find('state')
-        service_elem = port.find('service')
-        state = state_elem.get('state') if state_elem is not None else ''
-        service = service_elem.get('name') if service_elem is not None else ''
-        item = {'port': portid, 'state': state, 'service': service}
+    for port in root.findall(".//port"):
+        portid = port.get("portid")
+        state_elem = port.find("state")
+        service_elem = port.find("service")
+        state = state_elem.get("state") if state_elem is not None else ""
+        service = service_elem.get("name") if service_elem is not None else ""
+        item = {"port": portid, "state": state, "service": service}
         if service_elem is not None:
-            product = service_elem.get('product') or ''
-            version = service_elem.get('version') or ''
-            extrainfo = service_elem.get('extrainfo') or ''
+            product = service_elem.get("product") or ""
+            version = service_elem.get("version") or ""
+            extrainfo = service_elem.get("extrainfo") or ""
             if product or version or extrainfo:
-                item['service_info'] = ' '.join(
+                item["service_info"] = " ".join(
                     [s for s in [product, version, extrainfo] if s]
                 ).strip()
         results.append(item)
     if os_detect:
-        m = root.find('.//osmatch')
+        m = root.find(".//osmatch")
         if m is not None:
-            os_name = m.get('name', '')
+            os_name = m.get("name", "")
     return {"os": os_name, "ports": results}
 
 
@@ -135,7 +137,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run nmap port scan")
     parser.add_argument("host", help="Target host")
     parser.add_argument("port_list", nargs="?", help="Comma separated ports")
-    parser.add_argument("--service", action="store_true", help="Enable service version detection (-sV)")
+    parser.add_argument(
+        "--service", action="store_true", help="Enable service version detection (-sV)"
+    )
     parser.add_argument("--os", action="store_true", help="Enable OS detection (-O)")
     parser.add_argument(
         "--script",
@@ -149,8 +153,8 @@ def main():
     )
     args = parser.parse_args()
 
-    ports = args.port_list.split(',') if args.port_list else []
-    scripts = args.script.split(',') if args.script else None
+    ports = args.port_list.split(",") if args.port_list else []
+    scripts = args.script.split(",") if args.script else None
     try:
         res = run_scan(
             args.host,
@@ -160,11 +164,12 @@ def main():
             scripts=scripts,
             timing=args.timing,
         )
-        print(json.dumps({'host': args.host, 'os': res['os'], 'ports': res['ports']}))
+        print(json.dumps({"host": args.host, "os": res["os"], "ports": res["ports"]}))
     except Exception as e:
-        print(json.dumps({'error': str(e)}))
+        print(json.dumps({"error": str(e)}))
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    print("Deprecated: use nwcd_cli.py port-scan", file=sys.stderr)
     main()

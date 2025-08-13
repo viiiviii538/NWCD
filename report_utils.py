@@ -8,7 +8,9 @@ import generate_topology
 from common_constants import DANGER_COUNTRIES
 
 
-def calc_utm_items(score: float, open_ports: Iterable[str], countries: Iterable[str]) -> List[str]:
+def calc_utm_items(
+    score: float, open_ports: Iterable[str], countries: Iterable[str]
+) -> List[str]:
     """Return which UTM features help mitigate the detected risks.
 
     Parameters
@@ -36,7 +38,7 @@ def generate_topology_diagram(input_path: str, output: str = "topology.svg") -> 
     Parameters
     ----------
     input_path: str
-        Path to JSON produced by ``discover_hosts.py`` or ``lan_port_scan.py``.
+        Path to JSON produced by ``nwcd_cli.py discover-hosts`` or ``nwcd_cli.py lan-scan``.
     output: str
         Output file path. Extension determines format (.png/.svg/.dot).
 
@@ -55,4 +57,3 @@ def generate_topology_diagram(input_path: str, output: str = "topology.svg") -> 
 
 # Allow camelCase name for compatibility with Dart code expectations.
 generateTopologyDiagram = generate_topology_diagram
-
