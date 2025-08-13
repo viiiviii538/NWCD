@@ -10,6 +10,7 @@ import 'package:nwc_densetsu/progress_list.dart';
 import 'package:nwc_densetsu/result_page.dart';
 import 'package:nwc_densetsu/extended_results.dart';
 import 'config.dart';
+import 'dynamic_scan_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -308,6 +309,20 @@ class _HomePageState extends State<HomePage> {
               child: ElevatedButton(
                 onPressed: _lanScanning ? null : _runLanScan,
                 child: const Text('LANスキャン'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Tooltip(
+              message: 'バックグラウンドで継続的にスキャンします',
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const DynamicScanPage(),
+                    ),
+                  );
+                },
+                child: const Text('ダイナミックスキャン'),
               ),
             ),
             if (_lanScanning) ...[
