@@ -43,12 +43,14 @@ def scan_hosts(
     os_detect: bool = False,
     scripts: list[str] | None = None,
     max_workers: int | None = None,
+    timing: int | None = None,
+    fast: bool = True,
 ):
     hosts = gather_hosts(subnet)
     results = []
     # Limit worker count to avoid exhausting system resources
     if max_workers is None:
-        max_workers = min(32, max(1, len(hosts)))
+        max_workers = min(32, max(1, len(hosts))) if fast else 1
     else:
         max_workers = max(1, max_workers)
     future_to_host = {}
@@ -62,6 +64,8 @@ def scan_hosts(
                 os_detect=os_detect,
                 scripts=scripts,
                 progress_timeout=SCAN_TIMEOUT,
+                timing=timing,
+                fast=fast,
             )
             future_to_host[future] = h
 
@@ -94,6 +98,17 @@ def main():
         type=int,
         help="Number of concurrent workers",
     )
+    parser.add_argument(
+        "--timing",
+        type=int,
+        choices=range(0, 6),
+        help="nmap timing template (0-5)",
+    )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Enable speed optimizations (defaults to -T4 if --timing not set)",
+    )
     args = parser.parse_args()
 
     subnet = args.subnet or _get_subnet() or "192.168.1.0/24"
@@ -109,6 +124,8 @@ def main():
         os_detect=args.os,
         scripts=scripts,
         max_workers=args.workers,
+        timing=args.timing,
+        fast=args.fast,
     )
     print(json.dumps(results, ensure_ascii=False))
 

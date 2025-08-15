@@ -78,6 +78,7 @@ def run_scan(
     scripts: list[str] | None = None,
     progress_timeout: float | None = 60.0,
     timing: int | None = None,
+    fast: bool = False,
 ) -> list[dict[str, str]]:
     cmd = ["nmap"]
     try:
@@ -90,6 +91,8 @@ def run_scan(
         cmd.append("-sV")
     if os_detect:
         cmd.append("-O")
+    if fast and timing is None:
+        timing = 4
     if timing is not None:
         if timing < 0 or timing > 5:
             raise ValueError("timing must be between 0 and 5")
@@ -151,6 +154,11 @@ def main():
         choices=range(0, 6),
         help="nmap timing template (0-5)",
     )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Enable speed optimizations (defaults to -T4 if --timing not set)",
+    )
     args = parser.parse_args()
 
     ports = args.port_list.split(",") if args.port_list else []
@@ -163,6 +171,7 @@ def main():
             os_detect=args.os,
             scripts=scripts,
             timing=args.timing,
+            fast=args.fast,
         )
         print(json.dumps({"host": args.host, "os": res["os"], "ports": res["ports"]}))
     except Exception as e:

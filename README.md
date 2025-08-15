@@ -100,6 +100,7 @@ PDF 生成を行う場合は、`pdfkit` が利用する `wkhtmltopdf` または 
 python nwcd_cli.py port-scan <host> [port_list] [--service] [--os] [--script vuln]
 ```
 `--timing` を指定すると `nmap` のタイミングテンプレート (`-T0`~`-T5`) を調整できます。
+`--fast` を指定すると `--timing` 未指定時に `-T4` が適用され、処理速度を向上させます。
 `--script` を省略した場合は `vuln` スクリプトが自動的に指定され、脆弱性チェックが行われます。
 `nmap` 実行には 60 秒のタイムアウトを設けており、極端に時間がかかる場合は自動で終了します。
 
@@ -131,6 +132,7 @@ nmap -V
 python nwcd_cli.py lan-scan --subnet 192.168.1.0/24 --ports 22,80 --service --os
 ```
 `--workers` オプションで同時スキャン数を指定すると、環境に合わせて処理速度を調整できます。
+`--timing` で `nmap` のタイミングを指定できます。`--fast` を付けると `--timing` 未指定時に `-T4` が適用され、並列数も自動設定されます。
 
 出力例:
 
