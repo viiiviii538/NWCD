@@ -1,0 +1,24 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+      - name: Verify Flutter on PATH
+        run: |
+          which flutter
+          flutter --version
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Run tests
+        run: flutter test
