@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import network_speed
+import system_utils as network_speed
 
 
 class NetworkSpeedTest(unittest.TestCase):

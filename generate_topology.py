@@ -25,14 +25,33 @@ def build_graph(data: Any) -> Graph:
     # be tapped in the Flutter UI.
     g.attr("node", shape="ellipse")
     g.node("LAN")
+
     for host in hosts:
         ip = host.get("ip") or host.get("device") or "unknown"
-        label = ip
+        label_parts = [ip]
+        hostname = host.get("hostname")
+        if hostname:
+            label_parts.append(hostname)
         vendor = host.get("vendor")
         if vendor:
-            label = f"{ip}\n{vendor}"
+            label_parts.append(vendor)
+        label = "\n".join(label_parts)
         g.node(ip, label=label)
-        g.edge("LAN", ip)
+
+        paths = host.get("paths") or []
+        if paths:
+            for path in paths:
+                prev = None
+                for node in path:
+                    g.node(node)
+                    if prev is not None:
+                        g.edge(prev, node)
+                    prev = node
+                if not path or path[-1] != ip:
+                    if prev is not None:
+                        g.edge(prev, ip)
+        else:
+            g.edge("LAN", ip)
     return g
 
 

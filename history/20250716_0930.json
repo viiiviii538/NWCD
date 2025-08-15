@@ -1,1 +1,0 @@
-[{"ip":"192.168.1.1","score":5.5,"utmItems":[],"risks":[{"description":"SPF record missing","countermeasure":"Configure an SPF record"}],"open_ports":[],"geoip":"JP","utmActive":false},{"ip":"192.168.1.2","score":5.5,"utmItems":[],"risks":[{"description":"SPF record missing","countermeasure":"Configure an SPF record"}],"open_ports":[],"geoip":"JP","utmActive":false}]

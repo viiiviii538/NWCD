@@ -92,11 +92,11 @@ Future<String> runPing([String host = 'google.com']) async {
   }
 }
 
-/// Measures network speed using the `network_speed.py` script.
+/// Measures network speed using the `system_utils.py` script.
 Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onError}) async {
-  const script = 'network_speed.py';
+  const script = 'system_utils.py';
   try {
-    final result = await Process.run(pythonExecutable, [script]);
+    final result = await Process.run(pythonExecutable, [script, 'network-speed']);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString().trim();
       if (onError != null && msg.isNotEmpty) onError(msg);
@@ -104,7 +104,7 @@ Future<NetworkSpeed?> measureNetworkSpeed({void Function(String message)? onErro
     }
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
-      const msg = 'network_speed.py produced no output';
+      const msg = 'system_utils.py produced no output';
       if (onError != null) onError(msg);
     }
     final data = jsonDecode(output) as Map<String, dynamic>;
@@ -139,9 +139,9 @@ Future<String?> getWindowsVersion({void Function(String message)? onError}) asyn
 /// Returns a [PortScanSummary] containing all results.
 Future<PortScanSummary> scanPorts(String host,
     {List<int>? ports, void Function(String message)? onError}) async {
-  const script = 'port_scan.py';
+  const script = 'nwcd_cli.py';
   try {
-    final args = <String>[script, host];
+    final args = <String>[script, 'port-scan', host];
     if (ports != null && ports.isNotEmpty) {
       args.add(ports.join(','));
     }
@@ -185,7 +185,7 @@ Future<List<LanPortDevice>> scanLanWithPorts({
   List<int>? ports,
   void Function(String message)? onError,
 }) async {
-  const script = 'lan_port_scan.py';
+  const script = 'nwcd_cli.py';
   final args = <String>[];
   if (subnet != null) {
     args.addAll(['--subnet', subnet]);
@@ -194,7 +194,7 @@ Future<List<LanPortDevice>> scanLanWithPorts({
     args.addAll(['--ports', ports.join(',')]);
   }
   try {
-    final result = await Process.run(pythonExecutable, [script, ...args]);
+    final result = await Process.run(pythonExecutable, [script, 'lan-scan', ...args]);
     if (result.exitCode != 0) {
       final msg = result.stderr.toString();
       if (onError != null) onError(msg);
@@ -280,22 +280,24 @@ Future<SecurityReport> runSecurityReport({
   String geoip = 'JP',
   ProcessRunner processRunner = _defaultRunner,
 }) async {
-  const script = 'security_report.py';
+  const script = 'nwcd_cli.py';
   try {
     final result = await processRunner(pythonExecutable, [
       script,
+      'security-report',
       ip,
       openPorts.join(','),
       sslValid ? 'true' : 'false',
       spfValid ? 'true' : 'false',
       geoip,
+      utmActive ? 'true' : 'false',
     ]);
     final output = result.stdout.toString();
     if (output.trim().isEmpty) {
       return SecurityReport(
         ip,
         0.0,
-        [const RiskItem('error', 'No output from security_report.py')],
+        [const RiskItem('error', 'No output from nwcd_cli.py security-report')],
         [],
         '',
         openPorts: [],

@@ -8,7 +8,7 @@ import re
 from typing import Dict, List, Any
 import sys
 
-from discover_hosts import _get_subnet
+from network_utils import _get_subnet
 
 from external_ip_report import (
     get_external_connections,
@@ -59,7 +59,10 @@ def parse_upnp_output(output: str) -> bool:
 
 
 def check_upnp(subnet: str) -> Dict[str, Any]:
-    cmds = [["upnpc", "-l"], ["nmap", "-p", "1900", "-sU", "--script", "upnp-info", "-oN", "-", subnet]]
+    cmds = [
+        ["upnpc", "-l"],
+        ["nmap", "-p", "1900", "-sU", "--script", "upnp-info", "-oN", "-", subnet],
+    ]
     for cmd in cmds:
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True)
@@ -175,16 +178,19 @@ def check_external_comm(geoip_db: str = "GeoLite2-Country.mmdb") -> Dict[str, An
         reader.close()
     result: Dict[str, Any] = {"status": "ok", "country_counts": country_counts}
     if suspicious:
-        result.update({
-            "status": "warning",
-            "connections": suspicious,
-            "utm": ["web_filter"],
-        })
+        result.update(
+            {
+                "status": "warning",
+                "connections": suspicious,
+                "utm": ["web_filter"],
+            }
+        )
     return result
 
 
-def main() -> None:
-    subnet = sys.argv[1] if len(sys.argv) > 1 else _default_subnet()
+def run_checks(subnet: str | None = None) -> Dict[str, Any]:
+    """Run all LAN security checks and return results."""
+    subnet = subnet or _default_subnet()
     results = {
         "arp_spoofing": check_arp_spoofing(),
         "upnp": check_upnp(subnet),
@@ -198,8 +204,15 @@ def main() -> None:
         if res.get("status") == "warning":
             utm.update(res.get("utm", []))
     results["utm_recommendations"] = sorted(utm)
+    return results
+
+
+def main() -> None:
+    subnet = sys.argv[1] if len(sys.argv) > 1 else None
+    results = run_checks(subnet)
     print(json.dumps(results, ensure_ascii=False))
 
 
 if __name__ == "__main__":
+    print("Deprecated: use nwcd_cli.py lan-check", file=sys.stderr)
     main()
