@@ -34,5 +34,45 @@ class LookupVendorTimeoutTest(unittest.TestCase):
         self.assertEqual(vendor, '')
         self.assertLess(elapsed, 1.0)
 
+
+class RunNmapScanHostnameTest(unittest.TestCase):
+    @patch('network_utils.shutil.which')
+    @patch('subprocess.run')
+    def test_hostname_resolution(self, mock_run, mock_which):
+        xml = (
+            "<nmaprun>"
+            "<host><address addr='192.168.1.2' addrtype='ipv4'/>"
+            "<hostnames><hostname name='host-nmap'/></hostnames></host>"
+            "<host><address addr='192.168.1.3' addrtype='ipv4'/></host>"
+            "<host><address addr='192.168.1.4' addrtype='ipv4'/></host>"
+            "</nmaprun>"
+        )
+
+        def run_side_effect(cmd, capture_output=True, text=True, timeout=None):
+            if cmd[0] == 'nmap':
+                return MagicMock(returncode=0, stdout=xml)
+            if cmd[0] == 'nbtscan':
+                if cmd[-1] == '192.168.1.3':
+                    return MagicMock(returncode=0, stdout='192.168.1.3\thost-nbt\n')
+                return MagicMock(returncode=1, stdout='')
+            if cmd[0] == 'avahi-resolve':
+                return MagicMock(returncode=0, stdout='192.168.1.4 host-mdns.local\n')
+            return MagicMock(returncode=1, stdout='')
+
+        mock_run.side_effect = run_side_effect
+        mock_which.return_value = '/usr/bin/mock'
+
+        res = network_utils._run_nmap_scan('192.168.1.0/24')
+
+        mock_run.assert_any_call(
+            ['nmap', '-R', '-sn', '192.168.1.0/24', '-oX', '-'],
+            capture_output=True,
+            text=True,
+            timeout=network_utils.SCAN_TIMEOUT,
+        )
+        self.assertEqual(res[0]['hostname'], 'host-nmap')
+        self.assertEqual(res[1]['hostname'], 'host-nbt')
+        self.assertEqual(res[2]['hostname'], 'host-mdns.local')
+
 if __name__ == '__main__':
     unittest.main()

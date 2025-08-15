@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
+import shutil
 
 # Cache for MAC prefix to vendor lookups
 _VENDOR_CACHE: dict[str, str] = {}
@@ -83,7 +84,7 @@ def _get_subnet():
 
 
 def _run_nmap_scan(subnet: str, *, timeout: int = SCAN_TIMEOUT):
-    """Run ``nmap`` host discovery and return parsed results."""
+    """Run ``nmap`` host discovery and return parsed results including hostnames."""
     cmd = ["nmap"]
     try:
         if ipaddress.ip_network(subnet, strict=False).version == 6:
@@ -91,7 +92,7 @@ def _run_nmap_scan(subnet: str, *, timeout: int = SCAN_TIMEOUT):
     except Exception:
         if ":" in subnet:
             cmd.append("-6")
-    cmd += ["-sn", subnet, "-oX", "-"]
+    cmd += ["-R", "-sn", subnet, "-oX", "-"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -104,14 +105,59 @@ def _run_nmap_scan(subnet: str, *, timeout: int = SCAN_TIMEOUT):
         ip = None
         mac = ""
         vendor = ""
+        hostname = ""
         for addr in host.findall("address"):
             if addr.get("addrtype") in ("ipv4", "ipv6"):
                 ip = addr.get("addr")
             elif addr.get("addrtype") == "mac":
                 mac = addr.get("addr")
                 vendor = addr.get("vendor", "")
+        hn = host.find("hostnames/hostname")
+        if hn is not None:
+            hostname = hn.get("name", "")
         if ip:
-            results.append({"ip": ip, "mac": mac, "vendor": vendor})
+            results.append({"ip": ip, "mac": mac, "vendor": vendor, "hostname": hostname})
+
+    for h in results:
+        if h.get("hostname"):
+            continue
+        if ":" not in h["ip"] and shutil.which("nbtscan"):
+            try:
+                proc = subprocess.run(
+                    ["nbtscan", "-q", h["ip"]],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                )
+                if proc.returncode == 0:
+                    line = proc.stdout.strip().splitlines()
+                    if line:
+                        parts = line[0].split()
+                        if len(parts) >= 2:
+                            h["hostname"] = parts[1]
+            except Exception:
+                pass
+        if h.get("hostname"):
+            continue
+        if shutil.which("avahi-resolve"):
+            try:
+                proc = subprocess.run(
+                    ["avahi-resolve", "-a", h["ip"]],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                )
+                if proc.returncode == 0:
+                    line = proc.stdout.strip().splitlines()
+                    if line:
+                        parts = line[0].split()
+                        if len(parts) >= 2:
+                            name = parts[1]
+                            if name.endswith('.'):
+                                name = name[:-1]
+                            h["hostname"] = name
+            except Exception:
+                pass
     return results
 
 
