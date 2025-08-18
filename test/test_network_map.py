@@ -1,59 +1,62 @@
-import json
 import io
-import sys
-import unittest
+import json
 from unittest.mock import patch
 
 import network_map
 
 
-class NetworkMapTest(unittest.TestCase):
-    @patch('network_map.discover_hosts')
-    def test_main_success(self, mock_discover):
-        hosts = [{'ip': '1.2.3.4', 'mac': 'aa:bb', 'vendor': 'Vendor'}]
-        mock_discover.return_value = hosts
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        with patch('sys.argv', ['network_map.py']), \
-             patch('sys.stdout', stdout), \
-             patch('sys.stderr', stderr):
-            code = network_map.main()
-        self.assertEqual(code, 0)
-        out_lines = stdout.getvalue().strip().splitlines()
-        self.assertEqual(out_lines[0], json.dumps(hosts, ensure_ascii=False))
-        self.assertEqual(out_lines[1], 'Host discovery succeeded')
-        self.assertEqual(stderr.getvalue(), '')
+def test_main_success():
+    hosts = [{"ip": "1.2.3.4", "mac": "aa:bb", "vendor": "Vendor"}]
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with patch("network_map.discover_hosts", return_value=hosts) as mock_discover, \
+         patch("sys.argv", ["network_map.py", "10.0.0.0/24"]), \
+         patch("sys.stdout", stdout), \
+         patch("sys.stderr", stderr):
+        code = network_map.main()
 
-    @patch('network_map.discover_hosts')
-    def test_main_with_subnet(self, mock_discover):
-        hosts = [{'ip': '1.2.3.4', 'mac': 'aa:bb', 'vendor': 'Vendor'}]
-        mock_discover.return_value = hosts
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        subnet = '10.0.0.0/24'
-        with patch('sys.argv', ['network_map.py', subnet]), \
-             patch('sys.stdout', stdout), \
-             patch('sys.stderr', stderr):
-            code = network_map.main()
-        self.assertEqual(code, 0)
-        mock_discover.assert_called_once_with(subnet)
-        out_lines = stdout.getvalue().strip().splitlines()
-        self.assertEqual(out_lines[0], json.dumps(hosts, ensure_ascii=False))
-        self.assertEqual(out_lines[1], 'Host discovery succeeded')
-        self.assertEqual(stderr.getvalue(), '')
-
-    @patch('network_map.discover_hosts', side_effect=RuntimeError('boom'))
-    def test_main_failure(self, mock_discover):
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        with patch('sys.argv', ['network_map.py']), \
-             patch('sys.stdout', stdout), \
-             patch('sys.stderr', stderr):
-            code = network_map.main()
-        self.assertEqual(code, 1)
-        self.assertEqual(stdout.getvalue(), '')
-        self.assertIn('Host discovery failed: boom', stderr.getvalue().strip())
+    assert code == 0
+    mock_discover.assert_called_once_with("10.0.0.0/24")
+    out_lines = stdout.getvalue().strip().splitlines()
+    assert out_lines[0] == json.dumps({"hosts": hosts}, ensure_ascii=False)
+    assert out_lines[1] == "Host discovery succeeded"
+    assert stderr.getvalue() == ""
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_main_success_without_subnet():
+    hosts = [{"ip": "1.2.3.4", "mac": "aa:bb", "vendor": "Vendor"}]
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with patch("network_map.discover_hosts", return_value=hosts) as mock_discover, \
+         patch("sys.argv", ["network_map.py"]), \
+         patch("sys.stdout", stdout), \
+         patch("sys.stderr", stderr):
+        code = network_map.main()
+
+    assert code == 0
+    mock_discover.assert_called_once_with(None)
+    out_lines = stdout.getvalue().strip().splitlines()
+    assert out_lines[0] == json.dumps({"hosts": hosts}, ensure_ascii=False)
+    assert out_lines[1] == "Host discovery succeeded"
+    assert stderr.getvalue() == ""
+
+
+def test_main_failure():
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with patch("network_map.discover_hosts", side_effect=RuntimeError("boom")), \
+         patch("sys.argv", ["network_map.py"]), \
+         patch("sys.stdout", stdout), \
+         patch("sys.stderr", stderr):
+        code = network_map.main()
+
+    assert code == 1
+    assert stdout.getvalue() == ""
+    assert "Host discovery failed: boom" in stderr.getvalue().strip()
+
+
+if __name__ == "__main__":  # pragma: no cover - allow running directly
+    import pytest
+
+    raise SystemExit(pytest.main([__file__]))
+
