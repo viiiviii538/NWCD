@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 import tempfile
+import json
+import sys
 
 import pytest
 pytest.importorskip("graphviz")
@@ -56,6 +58,59 @@ class GenerateTopologyTest(unittest.TestCase):
         self.assertIn('LAN -- SwitchB', src)
         self.assertIn('SwitchB -- "192.168.1.4"', src)
         self.assertIn('node [shape=ellipse]', src)
+
+    def test_build_graph_with_paths_json(self):
+        data = {
+            "hosts": [
+                {"ip": "192.168.1.5", "hostname": "Device", "vendor": "Vendor"}
+            ]
+        }
+        paths = {"paths": [{"ip": "192.168.1.5", "path": ["LAN", "Router", "Host"]}]}
+        g = generate_topology.build_graph(data, paths)
+        src = g.source
+        self.assertIn('LAN -- Router', src)
+        self.assertIn('Router -- "192.168.1.5"', src)
+        self.assertIn('label="192.168.1.5\nDevice\nVendor"', src)
+
+    def test_build_graph_with_paths_json_missing_host(self):
+        data = {"hosts": []}
+        paths = {
+            "paths": [
+                {"ip": "192.168.1.6", "path": ["LAN", "Router", "Host"]}
+            ]
+        }
+        g = generate_topology.build_graph(data, paths)
+        src = g.source
+        self.assertIn('LAN -- Router', src)
+        self.assertIn('Router -- "192.168.1.6"', src)
+        self.assertIn('label="192.168.1.6"', src)
+
+    def test_main_with_paths_json(self):
+        data = {"hosts": [{"ip": "192.168.1.7"}]}
+        paths = {
+            "paths": [
+                {"ip": "192.168.1.7", "path": ["LAN", "Router", "Host"]}
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_file = Path(tmpdir) / "input.json"
+            paths_file = Path(tmpdir) / "paths.json"
+            output_file = Path(tmpdir) / "graph.dot"
+            input_file.write_text(json.dumps(data))
+            paths_file.write_text(json.dumps(paths))
+            argv = [
+                "generate_topology.py",
+                str(input_file),
+                "-o",
+                str(output_file),
+                "--paths-json",
+                str(paths_file),
+            ]
+            with patch.object(sys, "argv", argv):
+                generate_topology.main()
+            src = output_file.read_text()
+            self.assertIn('LAN -- Router', src)
+            self.assertIn('Router -- "192.168.1.7"', src)
 
     def test_save_graph_dot(self):
         g = generate_topology.Graph("test")
