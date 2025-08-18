@@ -8,6 +8,7 @@ reported to stderr.
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -37,13 +38,24 @@ def _configure_logging() -> logging.Logger:
     return logger
 
 
+def _parse_args(argv: list[str]) -> argparse.Namespace:
+    """Return parsed command line arguments."""
+    parser = argparse.ArgumentParser(description="Discover network hosts")
+    parser.add_argument(
+        "subnet",
+        nargs="?",
+        help="subnet to scan in CIDR notation (e.g. 192.168.1.0/24)",
+    )
+    return parser.parse_args(argv)
+
+
 def main() -> int:
     """Execute host discovery and print results."""
     logger = _configure_logging()
-    subnet = sys.argv[1] if len(sys.argv) > 1 else None
+    args = _parse_args(sys.argv[1:])
     try:
-        hosts = discover_hosts(subnet)
-        print(json.dumps(hosts, ensure_ascii=False))
+        hosts = discover_hosts(args.subnet)
+        print(json.dumps({"hosts": hosts}, ensure_ascii=False))
         logger.info("Host discovery succeeded")
         return 0
     except Exception as exc:  # pragma: no cover - required for test coverage
