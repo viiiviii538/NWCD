@@ -1,8 +1,22 @@
 import io
 import json
+import logging
 from unittest.mock import patch
 
+import pytest
+
 import network_map
+
+
+@pytest.fixture(autouse=True)
+def reset_logger():
+    """Remove handlers from the network_map logger before and after tests."""
+    logger = logging.getLogger("network_map")
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+    yield
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
 
 
 def test_main_success():
@@ -17,9 +31,7 @@ def test_main_success():
 
     assert code == 0
     mock_discover.assert_called_once_with("10.0.0.0/24")
-    out_lines = stdout.getvalue().strip().splitlines()
-    assert out_lines[0] == json.dumps({"hosts": hosts}, ensure_ascii=False)
-    assert out_lines[1] == "Host discovery succeeded"
+    assert stdout.getvalue().strip() == json.dumps({"hosts": hosts}, ensure_ascii=False)
     assert stderr.getvalue() == ""
 
 
@@ -35,9 +47,7 @@ def test_main_success_without_subnet():
 
     assert code == 0
     mock_discover.assert_called_once_with(None)
-    out_lines = stdout.getvalue().strip().splitlines()
-    assert out_lines[0] == json.dumps({"hosts": hosts}, ensure_ascii=False)
-    assert out_lines[1] == "Host discovery succeeded"
+    assert stdout.getvalue().strip() == json.dumps({"hosts": hosts}, ensure_ascii=False)
     assert stderr.getvalue() == ""
 
 
@@ -52,11 +62,23 @@ def test_main_failure():
 
     assert code == 1
     assert stdout.getvalue() == ""
-    assert "Host discovery failed: boom" in stderr.getvalue().strip()
+    assert stderr.getvalue().strip() == "boom"
+
+
+def test_configure_logging_routes_output():
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with patch("sys.stdout", stdout), patch("sys.stderr", stderr):
+        logger = network_map._configure_logging()
+        logger.info("hello")
+        logger.error("oops")
+
+    assert stdout.getvalue().strip() == "hello"
+    assert stderr.getvalue().strip() == "oops"
+    assert "oops" not in stdout.getvalue()
+    assert "hello" not in stderr.getvalue()
 
 
 if __name__ == "__main__":  # pragma: no cover - allow running directly
-    import pytest
-
     raise SystemExit(pytest.main([__file__]))
 
