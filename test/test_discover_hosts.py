@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 import time
 import socket
 import network_utils
+import discover_hosts
 
 class DiscoverHostsSubnetTest(unittest.TestCase):
     @patch('network_utils.os.name', 'posix')
@@ -36,9 +37,10 @@ class LookupVendorTimeoutTest(unittest.TestCase):
 
 
 class RunNmapScanHostnameTest(unittest.TestCase):
+    @patch('network_utils._lookup_vendor', return_value='')
     @patch('network_utils.shutil.which')
     @patch('subprocess.run')
-    def test_hostname_resolution(self, mock_run, mock_which):
+    def test_hostname_resolution(self, mock_run, mock_which, _mock_lookup):
         xml = (
             "<nmaprun>"
             "<host><address addr='192.168.1.2' addrtype='ipv4'/>"
@@ -73,6 +75,44 @@ class RunNmapScanHostnameTest(unittest.TestCase):
         self.assertEqual(res[0]['hostname'], 'host-nmap')
         self.assertEqual(res[1]['hostname'], 'host-nbt')
         self.assertEqual(res[2]['hostname'], 'host-mdns.local')
+
+
+class RunNmapScanVendorTest(unittest.TestCase):
+    @patch('network_utils._lookup_vendor', return_value='Vendor Inc')
+    @patch('network_utils.shutil.which', return_value=None)
+    @patch('subprocess.run')
+    def test_vendor_lookup(self, mock_run, _mock_which, mock_lookup):
+        xml = (
+            "<nmaprun>"
+            "<host><address addr='192.168.1.2' addrtype='ipv4'/>"
+            "<address addr='AA:BB:CC:DD:EE:FF' addrtype='mac'/></host>"
+            "</nmaprun>"
+        )
+        mock_run.return_value = MagicMock(returncode=0, stdout=xml)
+
+        res = network_utils._run_nmap_scan('192.168.1.0/24')
+
+        mock_lookup.assert_called_once_with('AA:BB:CC:DD:EE:FF')
+        self.assertEqual(res[0]['vendor'], 'Vendor Inc')
+
+
+class DiscoverHostsResultTest(unittest.TestCase):
+    @patch('network_utils.Path.exists', return_value=False)
+    @patch('network_utils.urlopen')
+    @patch('discover_hosts._run_nmap_scan')
+    def test_hostname_and_vendor_present(self, mock_scan, mock_urlopen, _mock_exists):
+        mock_scan.return_value = [
+            {
+                'ip': '192.168.1.2',
+                'mac': 'AA:BB:CC:DD:EE:FF',
+                'vendor': '',
+                'hostname': 'host-nmap',
+            }
+        ]
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = b'Vendor Inc'
+        hosts = discover_hosts.discover_hosts('192.168.1.0/24')
+        self.assertEqual(hosts[0]['hostname'], 'host-nmap')
+        self.assertEqual(hosts[0]['vendor'], 'Vendor Inc')
 
 if __name__ == '__main__':
     unittest.main()

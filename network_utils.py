@@ -158,6 +158,10 @@ def _run_nmap_scan(subnet: str, *, timeout: int = SCAN_TIMEOUT):
                             h["hostname"] = name
             except Exception:
                 pass
+
+    for h in results:
+        if h.get("mac") and not h.get("vendor"):
+            h["vendor"] = _lookup_vendor(h["mac"])
     return results
 
 
