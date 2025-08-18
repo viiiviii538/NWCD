@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Discover network hosts and output the result as JSON.
 
-This module calls ``discover_hosts`` to obtain a list of hosts and prints the
-list in JSON format. A success message is written to stdout while failures are
-reported to stderr.
+This module calls :func:`discover_hosts` to obtain a list of hosts and prints
+the list in JSON format to ``stdout``.  Failures are written to ``stderr`` and
+result in a non-zero exit code.
 """
 
 from __future__ import annotations
@@ -56,10 +56,9 @@ def main() -> int:
     try:
         hosts = discover_hosts(args.subnet)
         print(json.dumps({"hosts": hosts}, ensure_ascii=False))
-        logger.info("Host discovery succeeded")
         return 0
     except Exception as exc:  # pragma: no cover - required for test coverage
-        logger.error("Host discovery failed: %s", exc)
+        logger.error("%s", exc)
         return 1
 
 
