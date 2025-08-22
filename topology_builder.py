@@ -1,9 +1,10 @@
 import json
 import os
+import re
 import subprocess
 from typing import List, Dict
 
-from discover_hosts import IP_RE
+IP_RE = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$")
 
 
 def traceroute(ip: str, *, timeout: int = 30) -> List[str]:
@@ -40,15 +41,16 @@ def _classify_hops(hops: List[str]) -> List[str]:
 def _augment_with_snmp(path: List[str], ip: str) -> List[str]:
     """Augment path information using SNMP/LLDP if pysnmp is available.
 
-    Currently this function acts as a placeholder and returns the path
-    unchanged when SNMP data cannot be retrieved.
+    When ``pysnmp`` can be imported, a placeholder hop labelled ``"SNMP"`` is
+    appended to the path to represent additional neighbour information.  When
+    ``pysnmp`` is unavailable, the path is returned unchanged.
     """
-    try:
-        from pysnmp.hlapi import SnmpEngine  # type: ignore
+    try:  # pragma: no cover - import behaviour is tested via mocks
+        from pysnmp.hlapi import SnmpEngine  # type: ignore  # noqa: F401
     except Exception:
         return path
     # Placeholder for SNMP/LLDP augmentation logic
-    return path
+    return path + ["SNMP"]
 
 
 def build_paths(hosts: List[Dict[str, str]], use_snmp: bool = False) -> Dict[str, List[Dict[str, List[str]]]]:
